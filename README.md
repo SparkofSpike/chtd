@@ -61,19 +61,31 @@ The harness is therefore not merely a container for the experiment; it is the in
 ## Repository layout
 
 ```
-harness/   The frozen preset, its freeze gate, and rollout collection
+harness/   The frozen track, its freeze gate, the Profile, and rollout collection
 packages/  The frozen track delivered as a package the harness can install
-distill/   Dataset construction and LoRA training
+distill/   Dataset construction, the signal-quality gate, and LoRA training
 eval/      Co-harness evaluation, the arm comparison and distractor analysis
+tests/     The pipeline's tests — real ledgers, no model, no GPU, no network
 docs/      Design, method and experiment plan
 data/      Generated artifacts (not tracked)
 ```
 
 ## Status
 
-The method is specified in [docs/design.md](docs/design.md); the delivery plan is in [docs/plan.md](docs/plan.md).
+The method is specified in [docs/design.md](docs/design.md); the delivery plan is in [docs/plan.md](docs/plan.md), and the code that implements it in [docs/pipeline.md](docs/pipeline.md).
 
-The frozen co-harness track is in place and verified: `harness/presets/chtd.yaml` is byte-frozen by `harness/freeze.py`, a one-character edit is refused, and the stored bytes survive git unchanged. The track is also delivered as an installable package — `packages/chtd/` — whose own load-time gate refuses drifted bytes; `packages/chtd/README.md` records why it ships as a JS module and what an upstream loader quirk requires of it. No rollout or training run has been performed yet; those wait on the open questions in the design (compute, model sizes, target capability).
+The frozen co-harness track is in place and verified: `harness/presets/chtd.yaml` is byte-frozen by `harness/freeze.py`, a one-character edit is refused, and the stored bytes survive git unchanged. The track is also delivered as an installable package — `packages/chtd/` — whose own load-time gate refuses drifted bytes; `packages/chtd/README.md` records why it ships as a JS module and what an upstream loader quirk requires of it.
+
+The pipeline is built and tested without a model: reading a ledger, extracting decision points,
+aligning the teacher's forks against the student's states, gating the divergences, building the
+dataset with a digest a reader can reproduce, refusing to compare arms that were not run
+identically, assessing the stripping ladder, and generating the write-up. Its four refusals — a
+writable ledger, a dataset from two tracks, a comparison of unlike arms, a kept co-mover without a
+reason — are listed with the reason each is a refusal rather than a warning in
+[docs/pipeline.md](docs/pipeline.md).
+
+No rollout or training run has been performed yet. Those wait on the open questions in the design
+(compute, model sizes, target capability) and, for the training step, on a machine with a GPU.
 
 ## License
 

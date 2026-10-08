@@ -1,0 +1,12 @@
+# A task set, in the form `harness.rollout.load_tasks` reads.
+#
+# One JSON object per line: `id` and `prompt` are required, `cwd` is optional. Ids must be unique —
+# a duplicate would let two runs collide on one output file, and the later would silently replace
+# the earlier, which looks exactly like a task that never ran.
+#
+# These are placeholders. The real task set waits on the M0 decisions (target capability, model
+# sizes), because the tasks have to be ones where the target capability is what decides success.
+
+{"id": "recover-failing-test", "prompt": "The test suite is failing. Find out why, fix it, and confirm the suite passes."}
+{"id": "recover-bad-flag", "prompt": "A command in this repository fails with an unknown-flag error. Find the correct invocation and make it work."}
+{"id": "recover-partial-edit", "prompt": "A previous edit left this module inconsistent. Restore it to a working state and explain what was wrong."}

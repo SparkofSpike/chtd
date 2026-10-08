@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chtd"
+version = "0.1.0"
+description = "Co-Harness Targeted Distillation: dataset construction, LoRA training and evaluation."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+# No runtime dependencies on purpose. The pipeline reads a SQLite ledger and emits JSONL and a
+# dataset hash; the training step is the only part that needs a heavy stack, and it is optional by
+# design so the rest of the pipeline runs on a laptop with nothing installed.
+dependencies = []
+
+[project.optional-dependencies]
+train = ["torch", "transformers", "peft", "datasets"]
+
+[tool.setuptools]
+packages = ["harness", "distill", "eval"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# The repository root, so `harness`, `distill` and `eval` import as packages without an install step.
+pythonpath = ["."]
+# `--strict-markers` because a typo'd marker silently skips a test rather than failing it, and a
+# suite that quietly stopped running is how a broken gate ships.
+addopts = "-q --strict-markers"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

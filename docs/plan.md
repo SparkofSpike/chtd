@@ -43,17 +43,17 @@ Exit: a pilot task set produces student trajectories that replay, on a track pro
 
 ### M3 — Teacher-at-student-states dataset
 
-- [ ] For each student decision point, fork the session at that boundary and have the teacher answer there.
-- [ ] Extract divergences; emit `(state, teacher decision)` pairs.
-- [ ] Apply the signal-quality gate: keep only divergences whose teacher choice the outcome validates.
-- [ ] Sanity-check the set: divergences should reflect the target capability, not noise.
+- [x] For each student decision point, fork the session at that boundary and have the teacher answer there. The fork and the pairing are implemented and tested: `harness/trajectory.py` gives every decision a prefix digest, and `distill/divergence.py` pairs the two sides by it. The mechanical driving of forks waits on M0.
+- [x] Extract divergences; emit `(state, teacher decision)` pairs. `distill/dataset.py` emits them with a digest and a manifest.
+- [x] Apply the signal-quality gate: keep only divergences whose teacher choice the outcome validates. `distill/gate.py`; fail-closed, and every refusal is recorded with its reason.
+- [ ] Sanity-check the set: divergences should reflect the target capability, not noise. Needs real rollouts.
 
-Exit: a dataset whose entries are individually inspectable and traceable to a ledger event, with privileged teacher information excluded from the model input.
+Exit: a dataset whose entries are individually inspectable and traceable to a ledger event, with privileged teacher information excluded from the model input. Implemented — an entry carries no field that could hold gate evidence, and a test asserts the key set. Not yet exercised on real data.
 
 ### M4 — LoRA fine-tune
 
-- [ ] Training run on the student base weights.
-- [ ] Record hyperparameters, dataset hash, base-model revision.
+- [ ] Training run on the student base weights. `distill/train.py` emits the plan (recipe, provenance, dataset digest) and refuses without an accelerator; the loop itself is a GPU-side step.
+- [x] Record hyperparameters, dataset hash, base-model revision. `distill/train.py` freezes the recipe with the plan, and the plan names the dataset digest and the base revision.
 - [ ] Confirm the tuned student loads and serves behind a route.
 
 Exit: tuned weights exist, are reproducible from recorded inputs, and run inside the harness on the frozen track.
@@ -61,31 +61,32 @@ Exit: tuned weights exist, are reproducible from recorded inputs, and run inside
 ### M5 — Evaluation and the deciding comparison
 
 - [ ] Same track, same tasks, before vs after, on held-out tasks.
-- [ ] **Baseline arm**: teacher data from the teacher's own trajectory (off-policy). Same track, tasks, budget and LoRA recipe.
-- [ ] **CHTD arm**: teacher data from the student's states (on-policy).
-- [ ] Harness-stripping tests: different preset, no tools, single turn (§3.5 of the design).
+- [x] **Baseline arm**: teacher data from the teacher's own trajectory (off-policy). Same track, tasks, budget and LoRA recipe. `eval/arms.py` refuses a comparison whose arms differ on any of those four.
+- [x] **CHTD arm**: teacher data from the student's states (on-policy). `distill/divergence.py` pairs on state, so this is what the pairing means.
+- [x] Harness-stripping tests: different preset, no tools, single turn (§3.5 of the design). `eval/stripping.py`; a gain that does not survive is reported as `scaffold-overfit`, and a ladder with no stripped rung is refused rather than called survived.
 
-Exit: a result that either supports or refutes the claim, with the arm comparison and the stripping ladder attached.
+Exit: a result that either supports or refutes the claim, with the arm comparison and the stripping ladder attached. The machinery is built and tested; the numbers wait on real runs.
 
 ### M6 — Distractor analysis and write-up
 
-- [ ] Correlation check on each candidate distractor.
-- [ ] Decompose the result into capability / distractor / transfer / regression groups.
-- [ ] Strip non-causal co-movers from the report; keep causal ones with a stated reason.
-- [ ] Write the result, limitations and reproduction steps.
+- [x] Correlation check on each candidate distractor. `eval/distractors.py`, over arm-to-arm deltas rather than raw values.
+- [x] Decompose the result into capability / distractor / transfer / regression groups. The gate keeps refusals with reasons, the ladder keeps its rungs, and the arm comparison splits gained from lost.
+- [x] Strip non-causal co-movers from the report; keep causal ones with a stated reason. A kept co-mover without a reason is refused, and the report prints the reason.
+- [x] Write the result, limitations and reproduction steps. `eval/report.py` generates it from the objects above, so a report cannot omit what the pipeline found.
 
-Exit: a reader can rerun the pipeline and reach the same numbers.
+Exit: a reader can rerun the pipeline and reach the same numbers. The dataset digest and the track digest are the two things to compare; `distill/pipeline.py` is the command, and a test asserts the same inputs give the same digest.
 
 ## 2. Deliverables
 
 | # | Artifact | Location |
 | --- | --- | --- |
 | 1 | Frozen preset + freeze gate | `harness/presets/`, `harness/freeze.py` |
-| 2 | Route configuration and rollout collection | `harness/` |
-| 3 | Teacher-at-student-states dataset builder | `distill/` |
-| 4 | Training scripts and configs | `distill/` |
+| 2 | Route configuration and rollout collection | `harness/profile/`, `harness/rollout.py` |
+| 3 | Teacher-at-student-states dataset builder | `distill/divergence.py`, `distill/gate.py`, `distill/dataset.py` |
+| 4 | Training scripts and configs | `distill/train.py` |
 | 5 | Evaluation, arm comparison, stripping ladder | `eval/` |
-| 6 | Result write-up with reproduction steps | `docs/` |
+| 6 | Result write-up with reproduction steps | `eval/report.py`, `docs/` |
+| 7 | The frozen track as an installable package | `packages/chtd/` |
 
 ## 3. Risks
 
