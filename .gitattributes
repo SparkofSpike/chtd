@@ -3,3 +3,9 @@
 # are marked non-text and the recorded hash is checked against the raw file.
 harness/presets/*.yaml -text -diff
 harness/presets/*.sha256 -text -diff
+
+# Same reason, for the delivered form of the same track. These are the bytes a
+# run actually loads and the bytes packages/chtd/index.mjs checks its hash
+# against, so a checkout that rewrote line endings would refuse to load.
+packages/chtd/presets/*.mjs -text -diff
+packages/chtd/presets/*.sha256 -text -diff

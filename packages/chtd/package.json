@@ -1,0 +1,26 @@
+{
+  "name": "@chtd/track",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "CHTD's frozen co-harness track, delivered to the harness as a package.",
+  "license": "Apache-2.0",
+  "exports": "./index.mjs",
+  "files": [
+    "index.mjs",
+    "presets"
+  ],
+  "scripts": {
+    "freeze": "node tools/freeze.mjs check",
+    "freeze:write": "node tools/freeze.mjs write",
+    "test": "node --test test/*.test.mjs"
+  },
+  "agnes": {
+    "plugins": [
+      {
+        "export": "trackMarker",
+        "id": "ext:chtd/track-marker"
+      }
+    ]
+  }
+}

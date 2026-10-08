@@ -33,7 +33,7 @@ Measured: `chtd.yaml` is `4663943a4802f4559b6e0c73f91e242e8bb7b2aff051608a5a4afe
 
 ### M2 — Delivery, routes and rollout collection
 
-- [ ] Package the frozen track as a CHTD package exporting `presets.chtd`; install and trust it through the normal package flow.
+- [x] Package the frozen track as a CHTD package exporting `presets.chtd`. Author and verified: the package is `packages/chtd/`, its load-time gate refuses drifted bytes, and an end-to-end run against `assemble()` mounts `preset:chtd` from a snapshot install. The track is delivered as a JS module rather than the YAML because a non-builtin package is installed without `node_modules` — see `packages/chtd/README.md`. Not yet exercised: installing through `agnes package add` against a built harness, which is the next item's prerequisite.
 - [ ] Add the package to a Profile's `packages` and `presets.allowed`; confirm the track resolves.
 - [ ] Register a teacher route and a student route in that Profile, each with its own `baseUrl`.
 - [ ] Run both against the `chtd` preset and confirm from recorded evidence that they ran the same track: the CHTD package's `integrity` identical in both lockfiles, and the two `resolvedProfileHash` values differing only through `provider.routes`.

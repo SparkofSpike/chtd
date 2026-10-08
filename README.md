@@ -62,6 +62,7 @@ The harness is therefore not merely a container for the experiment; it is the in
 
 ```
 harness/   The frozen preset, its freeze gate, and rollout collection
+packages/  The frozen track delivered as a package the harness can install
 distill/   Dataset construction and LoRA training
 eval/      Co-harness evaluation, the arm comparison and distractor analysis
 docs/      Design, method and experiment plan
@@ -72,7 +73,7 @@ data/      Generated artifacts (not tracked)
 
 The method is specified in [docs/design.md](docs/design.md); the delivery plan is in [docs/plan.md](docs/plan.md).
 
-The frozen co-harness track is in place and verified: `harness/presets/chtd.yaml` is byte-frozen by `harness/freeze.py`, a one-character edit is refused, and the stored bytes survive git unchanged. No rollout or training run has been performed yet; those wait on the open questions in the design (compute, model sizes, target capability).
+The frozen co-harness track is in place and verified: `harness/presets/chtd.yaml` is byte-frozen by `harness/freeze.py`, a one-character edit is refused, and the stored bytes survive git unchanged. The track is also delivered as an installable package — `packages/chtd/` — whose own load-time gate refuses drifted bytes; `packages/chtd/README.md` records why it ships as a JS module and what an upstream loader quirk requires of it. No rollout or training run has been performed yet; those wait on the open questions in the design (compute, model sizes, target capability).
 
 ## License
 
