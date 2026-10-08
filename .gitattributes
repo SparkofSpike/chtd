@@ -1,0 +1,5 @@
+# Byte-level freezing is the point of harness/presets/: a preset that drifts
+# measures a different experiment. Git must never rewrite these bytes, so they
+# are marked non-text and the recorded hash is checked against the raw file.
+harness/presets/*.yaml -text -diff
+harness/presets/*.sha256 -text -diff
