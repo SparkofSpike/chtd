@@ -31,13 +31,15 @@ Exit: the four items are written down and no longer open.
 
 Measured: `chtd.yaml` is `4663943a4802f4559b6e0c73f91e242e8bb7b2aff051608a5a4afe80ef2e3252`; a one-character comment edit is refused.
 
-### M2 — Routes and rollout collection
+### M2 — Delivery, routes and rollout collection
 
-- [ ] Register a teacher route and a student route in a Profile, each with its own `baseUrl`.
+- [ ] Package the frozen track as a CHTD package exporting `presets.chtd`; install and trust it through the normal package flow.
+- [ ] Add the package to a Profile's `packages` and `presets.allowed`; confirm the track resolves.
+- [ ] Register a teacher route and a student route in that Profile, each with its own `baseUrl`.
 - [ ] Run both against the `chtd` preset and confirm `resolvedPresetHash` is identical across the two sessions.
 - [ ] Drive AGH from its CLI/SDK, one session per task; collect student trajectories from the ledger.
 
-Exit: a pilot task set produces student trajectories that replay, on a track provably identical to the teacher's.
+Exit: a pilot task set produces student trajectories that replay, on a track provably identical to the teacher's, with the track's integrity recorded in the lockfile.
 
 ### M3 — Teacher-at-student-states dataset
 

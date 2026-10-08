@@ -119,6 +119,18 @@ Using the same harness under a different preset is a deliberate substitute for s
 
 Levels: L1 tunes the context only; **L2 fine-tunes weights**; L3 is full-parameter pretraining. CHTD takes L2: L1 is too light to support the claim that a capability actually moved, and L3 does not fit the window.
 
+### 4.0 Delivery shape: how the track reaches the harness
+
+Verified against the harness source, not assumed. A preset reaches the runtime through a **package's `presets` export**: `packages/host/src/assemble.ts` collects `module.presets` from the package modules selected for the Host generation, and `validatePresetCatalog` refuses a profile whose `presets.allowed` names a preset no package provides.
+
+A package outside the built-in set is resolved through the **lockfile**: `packages/host/src/profile/resolve.ts` throws `E_DEP_MISSING` for any non-builtin package without an `agnes-lock.json` entry, and only the closed builtin set receives the `builtin:` integrity sentinel. Everything else carries its recorded `version`, `integrity` and `trust`.
+
+The consequence for CHTD — and the reason this section exists:
+
+- CHTD ships as its **own package** exporting `presets.chtd`, installed and trusted through the normal package flow. No harness file is edited.
+- The Profile then names it: `packages` gains the CHTD entry, `presets.allowed` gains `chtd`.
+- Because presence and integrity are lockfile facts, **the exact track a run used is attributable after the fact** — which is the property the experiment needs.
+
 ### 4.1 Roles
 
 | Role | Model | Weights | Responsibility |
@@ -156,12 +168,12 @@ Hard constraint: **[2], [3] and [6] must use the identical frozen preset.** Enfo
 
 CHTD does not modify harness core code. The integration points:
 
-1. **Preset** — `harness/presets/chtd.yaml`, frozen by `harness/freeze.py`. A preset reaches the harness through a package's `presets` export (`packages/host/src/assemble.ts` collects them), so CHTD ships its track as its own package rather than editing anyone else's.
-2. **Routes** — teacher and student are separate routes in the Profile's `provider.routes`, each with its own `baseUrl`. This is what allows a locally served fine-tuned student and a remotely served teacher to run the same track.
+1. **Preset** — `harness/presets/chtd.yaml`, frozen by `harness/freeze.py`, delivered as a package `presets` export (§4.0).
+2. **Routes** — teacher and student are separate routes in the Profile's `provider.routes`. `RouteDecl` carries a `baseUrl` (visible in `packages/host/test/assemble/assemble.test.ts`), so a locally served fine-tuned student and a remotely served teacher can run the same track. This is configuration, not a core change.
 3. **Task driver** — AGH CLI and SDK to launch sessions and run tasks in batch.
 4. **Trace reader** — trajectories from the append-only ledger; same-prefix fork for teacher-at-student-states.
 
-Qwen is a first-class provider in the harness (`packages/ai/src/adapters/pi/api-key-providers.ts` lists `qwen`), which settles the teacher side. The student side needs a route that points at wherever the fine-tuned weights are served; `RouteDecl` carries a `baseUrl`, so this is configuration rather than a core change.
+Qwen is a first-class provider in the harness: `packages/ai/src/adapters/pi/api-key-providers.ts` declares a `qwen` provider (`ApiKeyProviderId` includes `'qwen'`, served over `openai-completions`). The teacher side is therefore a configuration entry, not new code. The student side needs a route pointing at wherever the fine-tuned weights are served.
 
 ## 5. The comparison that decides whether co-harness earns its name
 
