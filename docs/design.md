@@ -175,7 +175,9 @@ Hard constraint: **[2], [3] and [6] must use the identical frozen preset.** Enfo
 CHTD does not modify harness core code. The integration points:
 
 1. **Preset** — `harness/presets/chtd.yaml`, frozen by `harness/freeze.py`, delivered as a package `presets` export (§4.0).
-2. **Routes** — teacher and student are separate routes in the Profile's `provider.routes`. `RouteDecl` carries a `baseUrl` (visible in `packages/host/test/assemble/assemble.test.ts`), so a locally served fine-tuned student and a remotely served teacher can run the same track. This is configuration, not a core change.
+2. **Routes** — teacher and student are separate routes in one Profile's `provider.routes`, declared in `harness/profile/chtd.yaml`. `RouteDecl` carries a `baseUrl` (visible in `packages/host/test/assemble/assemble.test.ts`), so a locally served fine-tuned student and a remotely served teacher can run the same track. This is configuration, not a core change.
+
+   The model is then selected *per session* (`--model main=<route>/<model>`) rather than by two Profiles. Two Profiles would each declare a route, and a Profile's hash covers `provider.routes`, so the two sessions would record different `resolvedProfileHash` values — true, but a weaker statement than "same profile, same track, different model". With one Profile the difference lands in `session/start.modelSettings`, where a reader can see it, and the track bytes stay pinned by the package `integrity` in the lockfile.
 3. **Task driver** — AGH CLI and SDK to launch sessions and run tasks in batch.
 4. **Trace reader** — trajectories from the append-only ledger; same-prefix fork for teacher-at-student-states.
 

@@ -1,0 +1,102 @@
+# CHTD's Profile: one deployment, two routes, one frozen track.
+#
+# Deploy by copying this to `<home>/profiles/chtd/profile.yaml` (see the harness's configuration
+# reference for the layer paths). Nothing here modifies the harness; the track arrives as a
+# package and is named below under `presets`.
+#
+# WHY ONE PROFILE AND NOT TWO
+#
+# The co-harness claim is that the only difference between the teacher's run and the student's is
+# the model. Two Profiles would each declare their own route, and because a Profile's hash covers
+# `provider.routes` (packages/host/src/profile/resolve.ts — hashInput returns the profile
+# unchanged), the two sessions would record *different* `resolvedProfileHash` values. That is true,
+# but it is a weaker statement than "same profile, same track, different model".
+#
+# So this Profile declares both endpoints, and the model is chosen per session:
+#
+#   agnes -p --model main=teacher/<model-id> "<task>"     # a teacher rollout
+#   agnes -p --model main=student/<model-id> "<task>"     # a student rollout
+#
+# Both sessions then record the same `resolvedProfileHash` and the same preset name, and the
+# difference lands in `session/start.modelSettings`, where a reader can see it. The track bytes are
+# pinned separately and more strongly, by the `@chtd/track` entry's `integrity` in the lockfile.
+#
+# OPEN — pending the M0 decisions (compute, model sizes): the two `models` catalogues and the
+# teacher's `baseUrl`. The student's `baseUrl` is a local endpoint serving the fine-tuned weights.
+# The structure below is fixed; only those values are missing.
+name: chtd
+schemaVersion: 1
+packages:
+  - { id: "@agnes/ai", source: "builtin" }
+  - { id: "@agnes/base", source: "builtin" }
+  - { id: "@agnes/code", source: "builtin" }
+  # The track. Installed from this repository rather than a registry: a `file:` source must be a
+  # contained `./`-relative path (packages/package-manager/src/sources.ts). Installing it records
+  # its integrity in `agnes-lock.json`, which is the fact that makes "the same track" checkable
+  # after the fact rather than asserted.
+  - { id: "@chtd/track", source: "file:./packages/chtd" }
+seams:
+  approval: "@agnes/base"
+  checkpoint: "@agnes/base"
+  ledger: "@agnes/base"
+  sandbox: "@agnes/base"
+  verifier: "@agnes/base"
+  repair: "@agnes/base"
+  artifacts: "@agnes/base"
+  principals: "@agnes/base"
+  platform: "@agnes/host"
+  harness: "@agnes/base"
+provider:
+  package: "@agnes/ai"
+  adapters: ["@agnes/ai"]
+  routes:
+    # Declared first: the track's `model.route.primary` is the `default` sentinel, which resolves to
+    # the first declared route. A session that names neither route nor model therefore runs as the
+    # teacher — the safer default, since a misconfigured student run is the one that would silently
+    # produce training data.
+    - route: teacher
+      api: openai-completions
+      baseUrl: "https://<M0: the teacher endpoint>/v1"
+      models:
+        - # M0: the teacher's model record. `id` is what the route is asked to run; `cost`,
+          # `contextWindow` and `maxTokens` are read by the provider layer, and `toolCallFormats`
+          # decides how the model's tool calls are parsed.
+          id: "<M0: teacher model id>"
+          name: "<M0: teacher model id>"
+          reasoning: false
+          input: ["text"]
+          cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
+          contextWindow: 32768
+          maxTokens: 8192
+          toolCallFormats: ["native"]
+          thinkingReplay: "native"
+          contract_id: null
+    - route: student
+      api: openai-completions
+      baseUrl: "http://127.0.0.1:8000/v1"
+      models:
+        - id: "<M0: student model id>"
+          name: "<M0: student model id>"
+          reasoning: false
+          input: ["text"]
+          cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
+          contextWindow: 32768
+          maxTokens: 8192
+          toolCallFormats: ["native"]
+          thinkingReplay: "native"
+          contract_id: null
+adapters:
+  storage: sqlite
+  fs: local
+  exec: local
+  platform: host
+  secrets: { kind: file }
+transports:
+  - { kind: stdio }
+# `chtd` must be listed here or a session cannot select it, and it is provided by the package above
+# rather than by the harness — assembly refuses a name no package provides.
+presets: { default: chtd, allowed: [chtd] }
+policy:
+  capabilityCeiling:
+    ["tools", "hooks", "slots", "events", "resources", "ui", "network", "network.publicRead", "tools.invoke", "artifacts", "subagent"]
+  workspacePackages: require-project-trust
