@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Training artifacts
+data/
+outputs/
+checkpoints/
+*.safetensors
+*.bin
+*.pt
+*.pth
+wandb/
+runs/
+
+# Node
+node_modules/
+
+# Logs and local state
+*.log
+.agh/
+.codewhale/
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
