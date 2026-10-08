@@ -76,4 +76,4 @@ The frozen co-harness track is in place and verified: `harness/presets/chtd.yaml
 
 ## License
 
-TBD — Apache-2.0 proposed, to match the harness this work builds on.
+Apache-2.0 — see [LICENSE](LICENSE). Chosen to match the harness this work builds on.
