@@ -53,7 +53,9 @@ Each of those is a mechanism below, not an assumption.
 
 One frozen preset, shared by both sides, with the model supplied by the deployment rather than the recipe. The preset's route targets are the `default` sentinel, which is what lets the *same* preset resolve to a teacher adapter in one session and a student adapter in another and remain one track.
 
-This is verifiable rather than asserted: a session records `resolvedPresetHash` in its metadata (`packages/protocol/schema/session-v1.json`), so two runs can be shown to have run the same track instead of being claimed to have done so. CHTD refuses to compare runs whose hashes differ.
+This is enforced rather than asserted, through the mechanism the harness already applies to its own frozen baseline. The track ships inside a package whose `presets` export runs the freeze gate at module load, so drifted bytes fail the import itself rather than a check somebody can skip (`packages/code/src/index.ts` calls `verifyFrozenPreset` when it builds its `presets` export). At assembly the package's `treeIntegrity` — a hash over the package directory, the preset bytes included — is verified and recorded in the lockfile (`packages/package-manager/src/package-plugin-loader.ts`), and that recorded `integrity` enters the profile hash (`packages/host/src/profile/resolve.ts`). A run therefore cannot have used a drifted track, and the integrity covering the track it did use is attributable afterwards.
+
+One field that looks like it should carry this does not, as of `cde816b8`: `resolvedPresetHash` exists in the session schema (`packages/protocol/schema/session-v1.json`) but is optional and has **no writer** — `git grep resolvedPresetHash` finds only the schema, its generated types and tests. What `session/start` records is `resolvedProfileHash`, the preset's *name*, and `modelSettings` (`packages/core/src/step/session.ts`). The profile hash cannot stand in for a track hash either: it covers `provider.routes`, which differ by design between the teacher's route and the student's. CHTD does not depend on `resolvedPresetHash`.
 
 ### 3.2 Targeted distillation: teach on the student's states
 
@@ -162,7 +164,7 @@ Both are served behind the same harness through different deployment routes, so 
 
 Note the ordering, which is the whole point: **the student runs first**. Supervision is collected on the states the student actually visits, not on the teacher's own path. This is DAgger's correction applied through the harness, and it is why the harness must be shared — the teacher has to be dropped into the student's exact prefix, which requires both to be running the same loop against the same ledger.
 
-Hard constraint: **[2], [3] and [6] must use the identical frozen preset.** Enforced by `resolvedPresetHash`, not by convention.
+Hard constraint: **[2], [3] and [6] must use the identical frozen preset.** Enforced by the package's load-time freeze gate and its recorded `treeIntegrity`, not by convention (§3.1).
 
 ### 4.3 Interface to Agnes Harness
 

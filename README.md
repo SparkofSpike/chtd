@@ -51,7 +51,7 @@ Model sizes are fixed together with the target capability; see [docs/design.md](
 Agnes Harness already provides the pieces co-harness execution needs:
 
 - **One loop, pluggable models.** Teacher and student are two routes behind the same runtime loop; the track names neither model, so the same recipe resolves to either.
-- **A verifiable track.** A session records the resolved preset hash, so two runs can be *shown* to have run the same track instead of being claimed to have done so.
+- **A verifiable track.** The track is delivered as a package whose bytes are hash-checked at load, so a drifted track fails to load at all; the integrity that covered it is recorded per run, in the lockfile.
 - **Append-only session records.** Trajectories are exact and replayable rather than reconstructed after the fact.
 - **Fork and rewind.** The same prefix can be continued under a different policy — which is exactly what dropping the teacher into the student's states requires.
 - **A frozen-baseline precedent.** The shipped `minimal-rl` preset already freezes its bytes, for the reason this project rests on: a baseline that drifts measures a different experiment.
