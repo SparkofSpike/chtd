@@ -492,7 +492,182 @@ TASKS: tuple[Mapping[str, Any], ...] = (
             "    return chunks\n"
         )},
     },
+    # --- held out from the round-f fine-tune ------------------------------------------------
+    # These four defects are the same kind as the twelve above and were written after the dataset
+    # was built, so a model that answers them has not seen them. A behaviour change measured on the
+    # training tasks cannot tell learning from memorising; one measured here can.
+    {
+        "id": "fix-argument-order",
+        "prompt": "unused - every task shares BUG_PROMPT",
+        "files": {
+            "greet.py": (
+                '"""Greeting helpers."""\n'
+                "\n"
+                "\n"
+                "def greet(name, greeting):\n"
+                '    """Return a greeting addressed to a name."""\n'
+                '    return f"{greeting}, {name}!"\n'
+            ),
+            "check.py": (
+                "from greet import greet\n"
+                "\n"
+                "print(greet('Hello', 'Ada'))\n"
+                "assert greet('Hello', 'Ada') == 'Hello, Ada!', greet('Hello', 'Ada')\n"
+            ),
+        },
+        "check": "python check.py",
+        "fix": {"check.py": (
+            "from greet import greet\n"
+            "\n"
+            "print(greet('Ada', 'Hello'))\n"
+            "assert greet('Ada', 'Hello') == 'Hello, Ada!', greet('Ada', 'Hello')\n"
+        )},
+    },
+    {
+        "id": "fix-empty-input",
+        "prompt": "unused - every task shares BUG_PROMPT",
+        "files": {
+            "words.py": (
+                '"""Word helpers."""\n'
+                "\n"
+                "\n"
+                "def first_word(text):\n"
+                '    """The first word of a sentence, or an empty string when there is none."""\n'
+                "    return text.split()[0]\n"
+            ),
+            "check.py": (
+                "from words import first_word\n"
+                "\n"
+                "print(repr(first_word('hello there')))\n"
+                "print(repr(first_word('')))\n"
+            ),
+        },
+        "check": "python check.py",
+        "fix": {"words.py": (
+            '"""Word helpers."""\n'
+            "\n"
+            "\n"
+            "def first_word(text):\n"
+            '    """The first word of a sentence, or an empty string when there is none."""\n'
+            "    parts = text.split()\n"
+            "    return parts[0] if parts else ''\n"
+        )},
+    },
+    {
+        "id": "fix-missing-prefix",
+        "prompt": "unused - every task shares BUG_PROMPT",
+        "files": {
+            "report.py": (
+                "TOTAL = 5\n"
+                "NAME = 'widgets'\n"
+                "\n"
+                'print("Item: {NAME} ({TOTAL} in stock)")\n'
+            ),
+            "check.py": (
+                "import subprocess, sys\n"
+                "\n"
+                "out = subprocess.run([sys.executable, 'report.py'], capture_output=True, text=True)\n"
+                "print('got     ', out.stdout.strip())\n"
+                "print('expected', 'Item: widgets (5 in stock)')\n"
+                "assert out.stdout.strip() == 'Item: widgets (5 in stock)', out.stdout\n"
+            ),
+        },
+        "check": "python check.py",
+        "fix": {"report.py": (
+            "TOTAL = 5\n"
+            "NAME = 'widgets'\n"
+            "\n"
+            'print(f"Item: {NAME} ({TOTAL} in stock)")\n'
+        )},
+    },
+    {
+        "id": "fix-slice-direction",
+        "prompt": "unused - every task shares BUG_PROMPT",
+        "files": {
+            "tail.py": (
+                '"""List helpers."""\n'
+                "\n"
+                "\n"
+                "def last_three(items):\n"
+                '    """The final three items, or all of them when there are fewer."""\n'
+                "    return items[:-3]\n"
+            ),
+            "check.py": (
+                "from tail import last_three\n"
+                "\n"
+                "got = last_three([1, 2, 3, 4, 5])\n"
+                "print('got     ', got)\n"
+                "print('expected', [3, 4, 5])\n"
+                "assert got == [3, 4, 5], got\n"
+            ),
+        },
+        "check": "python check.py",
+        "fix": {"tail.py": (
+            '"""List helpers."""\n'
+            "\n"
+            "\n"
+            "def last_three(items):\n"
+            '    """The final three items, or all of them when there are fewer."""\n'
+            "    return items[-3:]\n"
+        )},
+    },
 )
+
+
+#: What the prompt says. One sentence for every task, and deliberately so: the defect is the same
+#: kind of thing in all of them, and a prompt written per task would be a prompt that tells the model
+#: where to look. "Do not run commands and do not change files" is not politeness — `minimal-rl`,
+#: the only builtin track two arms can share, gates everything but `read` behind an approval nobody
+#: can answer, and a task that asks for a command the track will refuse measures the track.
+BUG_PROMPT = (
+    "Something in this directory is broken. Read the files and tell me what the defect is. "
+    "Do not run any commands and do not change any files — I want to know what is wrong first."
+)
+
+#: For each task, phrases a run that found the defect will use and a run that did not will not. The
+#: prompt never names them. They are matched against the run's own words by
+#: `harness/tasks/check_diagnosis.py`, because a read-only task's result is an answer rather than a
+#: changed workspace.
+EXPECT: dict[str, tuple[str, ...]] = {
+    "fix-assertion": ("assert", "mean"),
+    "fix-import-name": ("normalise", "normalize"),
+    "fix-off-by-one": ("range", "len"),
+    "fix-config-key": ("timeout_seconds", "timeout"),
+    "fix-cli-flag": ("--row", "--rows"),
+    "fix-type-error": ("base_delay", "string"),
+    "fix-path": (".txt", ".csv"),
+    "fix-regex": ("INFO", "pattern"),
+    "fix-json-trailing-comma": ("json", "trailing"),
+    "fix-iteration-mutation": ("iterat", "del"),
+    "fix-wrong-operator": ("<=", "overlap"),
+    "fix-silent-truncation": ("chunk", "size"),
+    # The held-out four use a single word that only a run which *found* the defect would write, and
+    # they are strict on purpose. Measured against the first tuned run on these tasks: three answers
+    # described the code and concluded it was fine, and a looser pair of phrases matched them anyway
+    # — "splits a given text" contains "split" while the answer says there is no bug. Each phrase here
+    # names the defect itself: an IndexError, an argument order, a missing format prefix, a slice.
+    #
+    # `slic` rather than `slice` because the word an answer uses is "slicing", and `slice` is not a
+    # substring of it — the e becomes i. Caught by running the check against the answer that was
+    # plainly correct and watching it fail.
+    "fix-argument-order": ("argument",),
+    "fix-empty-input": ("index",),
+    "fix-missing-prefix": ("prefix",),
+    "fix-slice-direction": ("slic",),
+}
+
+CHECK_SCRIPT = Path(__file__).resolve().parent / "check_diagnosis.py"
+
+
+def check_command(task_id: str) -> str:
+    """The command a round runs to judge this task.
+
+    Absolute, because a check runs with the run's workspace as its working directory and the depth
+    from there to this repository is a property of where the round wrote its workspaces. The
+    alternative — a relative walk — is a path that silently resolves somewhere else.
+    """
+    phrases = " ".join(f'"{phrase}"' for phrase in EXPECT[task_id])
+    return f'python "{CHECK_SCRIPT}" {phrases}'
 
 
 def _write_files(root: Path, files: Mapping[str, Any]) -> None:
@@ -525,9 +700,10 @@ def build(destination: str | Path) -> list[dict[str, str]]:
     The defect is written and nothing else: ``fix`` stays here. A workspace that shipped its own
     repair would answer the question the task exists to ask.
 
-    ``check`` *does* travel with the row, because a round has to observe its outcome: the command
-    decides whether a run succeeded, and the signal gate validates divergences against it. It names
-    no repair — ``python -m pytest -q`` says nothing a diagnosis would not have to find anyway.
+    Each row carries two commands, for two different questions. ``verify`` is the original check —
+    it decides whether the fixture is broken, and whether the fix repairs it, which is what
+    :func:`self_check` uses before a rollout is spent. ``check`` is what a round runs: a diagnosis
+    reader, because the task asks for a diagnosis.
     """
     root = Path(destination)
     rows: list[dict[str, str]] = []
@@ -537,12 +713,18 @@ def build(destination: str | Path) -> list[dict[str, str]]:
             shutil.rmtree(workspace)
         workspace.mkdir(parents=True)
         _write_files(workspace, task["files"])
+        if task["id"] not in EXPECT:
+            raise KeyError(
+                f"{task['id']} has no entry in EXPECT, so a round could not judge it. Every task "
+                "needs phrases that only a run which found the defect would say."
+            )
         rows.append(
             {
                 "id": task["id"],
-                "prompt": task["prompt"],
-                "cwd": str(workspace),
-                "check": task["check"],
+                "prompt": BUG_PROMPT,
+                "verify": task["check"],
+                "check": check_command(task["id"]),
+                "expect": list(EXPECT[task["id"]]),
             }
         )
     return rows
@@ -602,8 +784,9 @@ def write_task_set(rows: Sequence[Mapping[str, str]], path: str | Path) -> Path:
     target.parent.mkdir(parents=True, exist_ok=True)
     with target.open("w", encoding="utf-8") as handle:
         handle.write("# Generated by harness/tasks/build_workspaces.py - do not edit by hand.\n")
-        handle.write("# Each task's workspace holds one real defect; the prompt states the\n")
-        handle.write("# symptom and never the repair. `check` decides whether a run succeeded.\n")
+        handle.write("# Each task's workspace holds one real defect and the prompt names none of\n")
+        handle.write("# them. `verify` decides whether the fixture is broken; `check` judges a\n")
+        handle.write("# run's diagnosis, which is the outcome a gate validates against.\n")
         handle.write("# Resolve the workspace by id: python harness/tasks/build_workspaces.py\n")
         for row in rows:
             handle.write(json.dumps({k: v for k, v in row.items() if k != "cwd"},

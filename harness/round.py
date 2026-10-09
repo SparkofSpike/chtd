@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -97,16 +98,34 @@ def load_round_tasks(path: str | Path) -> tuple[RoundTask, ...]:
                 raise ValueError(f"{source}:{number} ({task_id}) has no {field_name}")
         # The workspace is resolved from the id: the task set records no absolute path, because the
         # fixtures are generated into a gitignored directory and a recorded path would be one
-        # machine's. `harness/tasks/build_workspaces.py` produces exactly this layout.
-        fixture = row.get("cwd") or str(source.parent.parent / "data" / "tasks" / task_id)
+        # machine's. Three levels up from `harness/tasks/<file>.jsonl` is the repository root;
+        # `harness/tasks/build_workspaces.py` produces exactly this layout.
+        fixture = row.get("cwd") or str(
+            source.resolve().parent.parent.parent / "data" / "tasks" / task_id
+        )
         tasks.append(RoundTask(id=task_id, prompt=row["prompt"], fixture=fixture, check=row["check"]))
     if not tasks:
         raise ValueError(f"{source} holds no tasks")
     return tuple(tasks)
 
 
-def _run_check(workspace: Path, check: str, *, timeout: int = 300) -> tuple[bool, str]:
-    """Run a task's own check in a run's workspace. The exit code is the outcome."""
+def _run_check(
+    workspace: Path,
+    check: str,
+    *,
+    timeout: int = 300,
+    env: Mapping[str, str] | None = None,
+) -> tuple[bool, str]:
+    """Run a task's own check in a run's workspace. The exit code is the outcome.
+
+    ``env`` is merged over the ambient environment. It exists because a task's result is not always
+    something in the workspace: a read-only task produces an answer, and the answer lives in the
+    ledger. A check that has to read one is given the session key and the ledger path rather than
+    guessing them from the directory, since the directory is what does not identify a run.
+    """
+    child_env = dict(os.environ)
+    if env:
+        child_env.update(env)
     try:
         completed = subprocess.run(
             check,
@@ -115,6 +134,7 @@ def _run_check(workspace: Path, check: str, *, timeout: int = 300) -> tuple[bool
             capture_output=True,
             text=True,
             timeout=timeout,
+            env=child_env,
         )
     except subprocess.TimeoutExpired:
         return False, f"check timed out after {timeout}s"
@@ -251,7 +271,17 @@ def run_round(
                 continue
             record = replace(record, track_sha256=digest, preset=preset)
 
-            passed, output = _run_check(workspace, task.check)
+            passed, output = _run_check(
+                workspace,
+                task.check,
+                env={
+                    "CHTD_TASK": task.id,
+                    "CHTD_ARM": arm.name,
+                    "CHTD_SESSION_KEY": record.session_key,
+                    "CHTD_LEDGER": record.ledger_path,
+                    "CHTD_WORKSPACE": str(workspace),
+                },
+            )
             log(f"    session {record.session_key[-18:]}  preset={preset}  "
                 f"check={'pass' if passed else 'FAIL'}  {time.time() - started:.0f}s")
             outcomes.append(
