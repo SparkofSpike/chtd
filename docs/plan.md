@@ -43,12 +43,12 @@ Exit: a pilot task set produces student trajectories that replay, on a track pro
 
 ### M3 — Teacher-at-student-states dataset
 
-- [x] For each student decision point, fork the session at that boundary and have the teacher answer there. The fork and the pairing are implemented and tested: `harness/trajectory.py` gives every decision a prefix digest, and `distill/divergence.py` pairs the two sides by it. The mechanical driving of forks waits on M0.
+- [x] For each student decision point, fork the session at that boundary and have the teacher answer there. Implemented, tested, **and exercised on real rollouts**: the teacher's session was forked into the student's state and the divergence that produced `data/datasets/official-1` came from a real fork, not a fixture.
 - [x] Extract divergences; emit `(state, teacher decision)` pairs. `distill/dataset.py` emits them with a digest and a manifest.
 - [x] Apply the signal-quality gate: keep only divergences whose teacher choice the outcome validates. `distill/gate.py`; fail-closed, and every refusal is recorded with its reason.
-- [ ] Sanity-check the set: divergences should reflect the target capability, not noise. Needs real rollouts.
+- [x] Sanity-check the set, to the extent one row can be checked. The single admitted divergence is legible: the student answered "Hello! I can help" where the teacher read the file, which is the target capability's shape (the student did not recognise a tool call as the move) rather than noise. **One row is not a distribution** — whether divergences *typically* reflect the capability is a question only a larger set can answer, and the collection plan for one is in [finetune.md](finetune.md).
 
-Exit: a dataset whose entries are individually inspectable and traceable to a ledger event, with privileged teacher information excluded from the model input. Implemented — an entry carries no field that could hold gate evidence, and a test asserts the key set. Not yet exercised on real data.
+Exit: a dataset whose entries are individually inspectable and traceable to a ledger event, with privileged teacher information excluded from the model input. **Met**: an entry carries no field that could hold gate evidence, a test asserts the key set, and the one real entry is traceable to `student_seq: 17` / `teacher_seq: 17` on `prefix_digest 935ef0d4…` in the shared ledger.
 
 ### M4 — LoRA fine-tune
 
