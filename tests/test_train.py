@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -32,9 +34,9 @@ def _manifest(entries: int = 12, track: str = TRACK) -> DatasetManifest:
     )
 
 
-def test_the_accelerator_is_asked_for_rather_than_assumed() -> None:
-    # Asks the runtime, not a config file. This machine has no GPU, so the honest answer is a
-    # refusal that names what is missing — and that is what should happen here.
+def test_the_accelerator_is_asked_for_rather_than_assumed(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Simulate a runtime without CUDA so this test has the same result on CPU and GPU hosts.
+    monkeypatch.setitem(sys.modules, "torch", SimpleNamespace(cuda=SimpleNamespace(is_available=lambda: False)))
     with pytest.raises(AcceleratorMissing) as caught:
         require_accelerator()
     message = str(caught.value)

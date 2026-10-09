@@ -108,16 +108,16 @@ dataset digest a8c373b104ab442c4780c7f3f9914014cafe1243ec5ecfe7123f14211e525f9b
 
 ## Compliance
 
-The registration carries a technical commitment that models are limited to Agnes, and the
-project's student is a Qwen. The competition's own rules resolve this, in 3.2:
+As checked on 2026-10-09, the current official technical rule 3.2 says that **all model
+calls must use Agnes models; other vendors, brands and third-party models are not allowed**:
+https://agnes-ai.cn/hackathon . The earlier wording quoted here, which allowed other
+open-source models at the team's own cost, is no longer the rule shown on that page.
 
-> 报名成功后，请加入官方赛事群，赛事组委会将统一向参赛团队提供 **Agnes 自研模型调用 Key** …
-> 如参赛团队使用其他开源模型或第三方商业模型，所需的**账号、API Key、调用额度及相关费用由参赛团队自行解决并承担**。
-
-So third-party and open models are permitted, at the team's own cost, provided the
-submission states each model's name, version, where it is used and how it is called. The
-teacher is an Agnes model — the one the organisers issued — so the core task runs on the
-platform the competition names, and the student's use is declared.
+The existing Qwen student and its LoRA adapters can support a methods experiment, but
+their inference calls do not satisfy the current competition rule. Replacing the teacher
+alone is insufficient. Before using this result in a submission, rerun the student side
+with an eligible Agnes model, or obtain an explicit written ruling from the organisers
+that this particular model use is allowed. Record the ruling and exact model versions.
 
 What is *not* available is the design's control for model family: CHTD asks the teacher
 and student to share a tokenizer, to rule out tokenizer and pretraining differences. That
