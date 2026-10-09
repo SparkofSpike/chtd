@@ -34,19 +34,21 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from typing import Any, Iterable, Literal, Sequence
+from typing import Any, Literal
 
 from harness.ledger import Event, Ledger
 
 __all__ = [
-    "Action",
     "BOOKKEEPING_TYPES",
     "EXTENSION_EVENT_PREFIX",
+    "Action",
     "DecisionPoint",
     "Trajectory",
     "decision_points",
     "is_conversation",
+    "message_text",
     "prefix_chain",
     "read_trajectory",
 ]
@@ -125,13 +127,15 @@ BOOKKEEPING_TYPES = frozenset(
 EXTENSION_EVENT_PREFIX = "x/"
 
 
-def _message_text(data: Any) -> str:
+def message_text(data: Any) -> str:
     """The text an ``assistant/message`` carries, or the empty string when it carries none.
 
-    One function because two callers must agree: :func:`_action_of` decides whether such a row is a
-    decision, and :func:`is_conversation` decides whether it is state. When those two disagreed, a
-    row that was not a decision still advanced the prefix chain — and the failure that produced is
-    described on :func:`is_conversation`.
+    Public because three callers must agree and one of them is outside this package.
+    :func:`_action_of` here decides whether such a row is a decision, :func:`is_conversation`
+    decides whether it is state, and `distill.sft` rebuilds a conversation from the same rows — a
+    sample whose idea of a message differed from the harness's would be a conversation nobody ran.
+    When those first two disagreed, a row that was not a decision still advanced the prefix chain,
+    and the failure that produced is described on :func:`is_conversation`.
 
     The payload shapes are read leniently on purpose. Agnes Harness is pre-alpha and has already
     changed its event vocabulary once; a reader that required an exact key set would stop producing
@@ -180,7 +184,7 @@ def is_conversation(event: Event) -> bool:
     """
     if event.type.startswith(EXTENSION_EVENT_PREFIX):
         return False
-    if event.type == "assistant/message" and not _message_text(event.data):
+    if event.type == "assistant/message" and not message_text(event.data):
         return False
     return event.type not in BOOKKEEPING_TYPES
 
@@ -315,7 +319,7 @@ def _action_of(event: Event) -> Action | None:
         return Action(kind="tool_call", name=data.get("name"), payload=data.get("args"))
 
     if event.type == "assistant/message":
-        text = _message_text(data)
+        text = message_text(data)
         if text:
             return Action(kind="message", name=None, payload=text)
 

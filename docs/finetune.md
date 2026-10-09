@@ -39,45 +39,82 @@ they were captured from and the route and model that received them. It is an inp
 `harness/` rather than `data/` because `data/` is gitignored and a fine-tune cannot be reproduced
 without it.
 
-**How to take another one.** The endpoint on the box dumps each request body when `SERVE_DUMP_DIR`
-is set; `serve_openai.py --adapter` is the current version and the dump path is a two-line change
-that was reverted after use. One ordinary student session on the frozen track is enough — a capture
-is not a scored rollout.
+**It also holds the message shape, which was measured rather than read.** The first capture held the
+system prompt and the tools but no messages, so the shape of a multi-turn conversation — an
+assistant turn carrying a tool call, and the tool result answering it — had been taken from the
+engine's source. It has since been captured: a stand-in endpoint placed in the student route answers
+turn 1 with a tool call, the harness runs the tool, and the request it then assembles is dumped. That
+request is in the fixture as `tool_turn`, and `tests/test_sft.py` requires the rebuild to reproduce
+its fields exactly. It earned its keep immediately: the rebuild was silently stripping the trailing
+carriage return off tool output, one byte per result, and the real capture is what exposed it.
 
-## The lock that keeps training honest
+**How to take another capture.** The endpoint on the box dumps each request body when `SERVE_DUMP_DIR`
+is set — that switch is in `serve_openai.py` now, off unless the variable is set. For the multi-turn
+shape, `fake_student.py` stands in for the model and forces the situation; the swap and restore
+scripts are `swap_to_standin.sh` and `restore_server.sh` on the box. A capture is not a scored
+rollout: it exists to fix the format against reality.
 
-`distill.finetune.build_example` renders each sample twice: once with `add_generation_prompt=True`
-(the prompt, as the endpoint renders it) and once without (the whole conversation). If the first is
-not a token-for-token prefix of the second, the sample is refused with `PrefixDrift`.
+## The two checks that keep training honest
 
-The alternative — a comment asking future editors to keep two renderers in sync — fails silently.
-A model trained against a differently-rendered prompt learns a distribution the endpoint never
-produces, and nothing downstream can detect it: the loss looks normal, the adapter loads, and the
-result is unattributable.
+`distill.finetune` refuses two things, and it is worth being precise about what each one covers.
+
+**`PrefixDrift`** — a sample is rendered twice, once with `add_generation_prompt=True` (the prompt,
+as the endpoint renders it) and once without (the whole conversation). If the first is not a
+token-for-token prefix of the second, the sample is refused. This catches a chat template whose
+prompt rendering is not an extension of its full rendering, which is the bug a template upgrade tends
+to produce. **It does not prove that training and serving agree.** Both renderings come from the same
+function in the same process, so a change made only on the serving side is invisible to it; keeping
+those in step is a separate obligation, discharged by serving a request and comparing, not by this
+check. An earlier version of this document claimed otherwise and was wrong.
+
+**`SampleTooLong`** — a sample needing more tokens than the recipe allows is refused rather than
+truncated, because the label is the last thing in the conversation and truncation does not shorten
+the input, it deletes the answer. It is its own exception and not a `PrefixDrift` because the two
+name different fixes: reconcile a template, or raise the recipe's limit — which changes the
+experiment and re-freezes it.
+
+**And the state itself is checked.** `distill.sft` rebuilds each conversation from the ledger and
+compares its `prefix_chain` digest against the `prefix_digest` the dataset recorded, refusing a
+mismatch (`StateMismatch`). Without that, a row could be stamped with a state it does not hold and
+every claim about which state the teacher answered in would be false while looking normal. The same
+module refuses a row that is *state* to the harness but which it does not know how to render
+(`UnknownState`), rather than skipping it — the harness's own default is that an unrecognised type
+counts as state, and a reader that dropped one quietly would train on a conversation missing a
+message.
 
 Two consequences of the same reasoning are visible in the recipe:
 
-- **Only the teacher's turn is supervised.** Everything before it is masked to `-100`. The student's
-  own wrong answer is part of the state it must learn to recover from, so it stays in the input and
-  out of the loss.
+- **Only the teacher's turn is supervised.** Everything before it is masked to `-100`. The state
+  is the conversation *up to* the decision the dataset names, so the student's own action at that
+  decision is not in it — that action is what is being aligned, and the teacher's answer replaces
+  it. For a one-step task this teaches the correct *first* move, which is what the shipped dataset
+  does; teaching recovery-from-a-mistake needs a multi-step task where the student's error lands in
+  the state a later decision is made in. The distinction is easy to lose in a summary and it changes
+  what a result can be read as.
 - **The prefix stays in.** The untrusted-content rules and the skills block read like noise for a
   task about opening a file. They are kept because the claim under test is that a capability
   transfers *within the harness*, and the harness is what the student meets at inference.
 
 ## The first run, and the size of the problem
 
-One entry, three steps, 8.9 seconds. The loss falls on the third step and the adapter loads and
-serves — the mechanism works end to end. The behaviour does not move, and `runs/chtd-1/README.md`
-carries the numbers and the reasoning. The short version:
+One entry, three steps, about nine seconds of training. The loss falls on the third step and the
+adapter loads and serves — the mechanism works end to end. The behaviour does not move, and
+`runs/chtd-1/README.md` carries the numbers and the reasoning. The short version:
 
 > Three steps on one sample move the weights and do not move the behaviour.
 
-**And it is not bit-reproducible.** The same plan against the same samples was run twice and
-produced two different adapters (`db98b9c9…` and `d2923b1b…`, mean loss 4.1329 and 4.1219). 4-bit
-quantisation and bfloat16 accumulation on a GPU are not order-deterministic, so what a reader can
-check is the **protocol** — the inputs, the recipe, the track, the digest — and the numbers land
-near the recorded ones rather than on them. A claim that needs two runs to agree to the byte is not
-available from this setup, and the preserved first-run numbers are in `runs/chtd-1/README.md`.
+**And it is not bit-reproducible.** The same plan against the same samples has now been run three
+times and produced three different adapters — mean loss 4.1329, 4.1219, 4.1261 — with shas
+`db98b9c9…`, `d2923b1b…`, `62af2dc7…`. 4-bit quantisation and bfloat16 accumulation on a GPU are not
+order-deterministic, so what a reader can check is the **protocol** — the inputs, the recipe, the
+track, the digests — and the numbers land near the recorded ones rather than on them. A claim that
+needs two runs to agree to the byte is not available from this setup.
+
+**And the base is not pinned by name.** `base_model` records a path ending in
+`snapshots/master`, which is a mutable ref. `run.json` therefore carries
+`base_weights_fingerprint`: the sha256 of the model's `config.json`, `tokenizer_config.json` and
+`generation_config.json`. That identifies the weights without reading several gigabytes of them, and
+it does not catch a weight swap that left those three files alone.
 
 One row cannot support a statistical claim, and the first run must not be presented as if it could.
 What the size problem actually is:

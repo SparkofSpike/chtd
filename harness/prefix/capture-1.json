@@ -968,5 +968,44 @@
    }
   ]
  },
- "tool_choice": null
+ "tool_choice": null,
+ "tool_turn": {
+  "provenance": {
+   "why": "The message wire shape a sample must reproduce. Captured by putting a stand-in endpoint in the student route that answers turn 1 with a tool call, so the harness runs the tool and sends a second request carrying the assistant turn and its result. Recorded rather than read out of engine source: the shape is decided by two layers, and only one of them is in this repository.",
+   "method": "stand-in endpoint on the training box, one session through Agnes Harness on the frozen track",
+   "session": "agnes:local:local-dev:cli:workspace:ca782c4f74fb7701",
+   "turn1_dump": "fake-turn1-45f7a9.json",
+   "turn1_sha256": "6b454a6c39984f10b07196f3a9c97fcb048dcd12d5334a2d2e0b40b990cb5e3a",
+   "turn2_dump": "fake-turn2-7322d3.json",
+   "turn2_sha256": "3c10bdf2cc7f5cf8a55a9b185d450a045861ef20bd1b8940642aa14909b07a57",
+   "turn2_tools_count": 22,
+   "dumps_not_in_repo": "The dump files are not in this repository: they are the working output of a capture, and what is kept here is the part a sample must reproduce. A reader checking the provenance can re-take a capture rather than fetch them; the sha256 values above describe files that existed on the training box when this was written.",
+   "note": "Only the assistant and tool turns are copied below. The system prompt and the tool disclosure in turn 2 are the same 22-tool / 7279-character prefix held at the top of this file, so repeating them would be two copies waiting to disagree."
+  },
+  "message_roles": [
+   "system",
+   "user",
+   "assistant",
+   "tool"
+  ],
+  "assistant_turn": {
+   "role": "assistant",
+   "content": null,
+   "tool_calls": [
+    {
+     "id": "t0-0482ff71376d8d1c7f31e73674cbc5e5",
+     "type": "function",
+     "function": {
+      "name": "read",
+      "arguments": "{\"path\":\"notes.txt\"}"
+     }
+    }
+   ]
+  },
+  "tool_result_turn": {
+   "role": "tool",
+   "content": "1\talpha\r\n2\tbravo\r\n3\tcharlie\r",
+   "tool_call_id": "t0-0482ff71376d8d1c7f31e73674cbc5e5"
+  }
+ }
 }

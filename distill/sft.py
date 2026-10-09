@@ -38,13 +38,15 @@ from typing import Any
 
 from distill.dataset import Dataset, DatasetEntry, read_dataset
 from harness.ledger import Ledger, open_ledger
-from harness.trajectory import _message_text
+from harness.trajectory import is_conversation, prefix_chain
 
 __all__ = [
     "HarnessPrefix",
     "PrefixMissing",
+    "StateMismatch",
     "TrainingSample",
     "UnknownAction",
+    "UnknownState",
     "build_samples",
     "conversation_before",
     "main",
@@ -52,11 +54,9 @@ __all__ = [
     "write_samples",
 ]
 
-#: The event types that become messages. Deliberately narrower than
-#: `harness.trajectory.is_conversation`: that function answers "is this state?" for prefix
-#: alignment, where an `assistant/message` with no text counts as nothing. Here the question is
-#: "what did the model read?", and a tool call belongs to the assistant turn that emitted it even
-#: when that turn carried no prose.
+#: The event types that become messages. Each is checked to *be* state by the harness's own
+#: :func:`~harness.trajectory.is_conversation` before it is read, and a row that is state but is not
+#: on this list stops the build rather than being skipped — see :func:`conversation_before`.
 _MESSAGE_EVENTS = ("user/message", "assistant/message", "tool/call", "tool/result")
 
 
@@ -66,6 +66,28 @@ class PrefixMissing(RuntimeError):
 
 class UnknownAction(RuntimeError):
     """A teacher action whose kind this module cannot turn into a message."""
+
+
+class StateMismatch(RuntimeError):
+    """A rebuilt conversation is not the state the dataset row names.
+
+    The dataset carries a ``prefix_digest`` — the harness's own hash of the conversation in force at
+    a decision — and this module rebuilds the messages independently. Without a check the two can
+    disagree: the sample would then be stamped with a state it does not hold, and every downstream
+    claim about which state the teacher answered in would be false while looking entirely normal.
+    """
+
+
+class UnknownState(RuntimeError):
+    """A row the harness counts as state, which this module does not know how to turn into a message.
+
+    Raised rather than skipped, and the direction matters. `harness.trajectory.is_conversation`
+    treats an unrecognised event type as state on purpose — the harness's own note says the opposite
+    default "would align two genuinely different states". A reader that silently dropped such a row
+    would build a conversation missing a message the model actually read, and nothing downstream
+    could tell: the sample would look well-formed, the label would be right, and the input would be
+    a state that never existed.
+    """
 
 
 @dataclass(frozen=True)
@@ -153,18 +175,32 @@ class TrainingSample:
         return self.messages[-1]
 
 
-def _blocks_text(content: Any) -> str:
-    """The text of a content block list, joined the way the harness joins it."""
-    if isinstance(content, str):
-        return content
-    if not isinstance(content, list):
-        return ""
-    parts = [
-        block["text"]
-        for block in content
-        if isinstance(block, dict) and isinstance(block.get("text"), str)
-    ]
-    return "\n".join(parts).strip()
+def _block_text(data: Any) -> str:
+    """The text of a content block list, exactly as the ledger holds it.
+
+    **No stripping.** It is tempting to tidy this — and an earlier version did, with ``.strip()`` —
+    but the harness sends these bytes unchanged: its own conversion to the wire maps each text block
+    across without touching it. The capture proves the point: a tool result stored as
+    ``'1\\talpha\\r\\n2\\tbravo\\r\\n3\\tcharlie\\r'`` reaches the endpoint with its trailing carriage
+    return intact, so a rebuild that stripped it would be training on a conversation one byte
+    different from the one that ran. Small, real, and exactly what the capture exists to catch.
+
+    ``harness.trajectory.message_text`` *does* strip, on purpose: it answers "does this row carry
+    text?" for the harness's own bookkeeping, where whitespace-only is the same as empty. That is a
+    different question from "what did the model read?", and answering the second with the first is
+    the bug this function's missing ``.strip()`` documents.
+    """
+    blocks = data.get("content")
+    if isinstance(blocks, list):
+        texts = [
+            block["text"]
+            for block in blocks
+            if isinstance(block, dict) and isinstance(block.get("text"), str)
+        ]
+        if texts:
+            return "\n".join(texts)
+    text = data.get("text")
+    return text if isinstance(text, str) else ""
 
 
 def conversation_before(
@@ -176,13 +212,21 @@ def conversation_before(
     """The messages a model read, up to but not including one decision.
 
     ``before_seq`` is the decision's own sequence, so the range is exclusive and the state rebuilt
-    here is the state that decision was made *in* — the same state
-    :func:`harness.trajectory.prefix_chain` digests, read out as messages rather than hashed.
+    here is the state that decision was made *in*.
 
-    The output is in the shape the harness actually puts on the wire, which was measured rather
-    than assumed (``harness/prefix/capture-1.json``): a user message carries content blocks, an
-    assistant message carries a plain string or ``null``, a tool call lives inside the assistant
-    turn that emitted it, and a tool result is its own ``tool`` role naming the call it answers.
+    **The whole event stream is read, not one lane's rows.** That is the range
+    :func:`harness.trajectory.prefix_chain` digests — it walks every row and lets only conversation
+    rows advance the chain, lanes included — so reading anything narrower would rebuild a
+    conversation the digest does not describe. :func:`build_samples` then *checks* the two agree
+    rather than assuming it, which is what makes this a measurement of a state rather than a story
+    about one.
+
+    The output is in the shape the harness puts on the wire, which was measured rather than
+    assumed. A stand-in endpoint answered with a tool call, the harness ran the tool, and the
+    request it assembled was captured (`harness/prefix/capture-1.json`, field ``tool_turn``): a user
+    message carries content blocks, an assistant message carries ``null`` alongside its
+    ``tool_calls``, and the result is its own ``tool`` role naming the call it answers by
+    ``tool_call_id``.
 
     An assistant message that ends up with neither prose nor a tool call is dropped, because the
     provider layer drops it: a row that reached the trainer but never reached the model would make
@@ -197,17 +241,26 @@ def conversation_before(
     for event in ledger.events(session_key):
         if event.seq >= before_seq:
             break
-        if event.type not in _MESSAGE_EVENTS:
+        # The harness decides what counts as state; this module decides how to render it. A row that
+        # is state per the harness but unknown here is an error, not a row to skip.
+        if not is_conversation(event):
             continue
+        if event.type not in _MESSAGE_EVENTS:
+            raise UnknownState(
+                f"{event.type!r} is state to the harness but has no message form here, so a "
+                "conversation rebuilt past it would be missing something the model read. Add its "
+                "rendering to _MESSAGE_EVENTS, or the fine-tune will train on a state that never "
+                "existed."
+            )
         data = event.data if isinstance(event.data, dict) else {}
 
         if event.type == "user/message":
-            text = _blocks_text(data.get("content")) or _message_text(data)
+            text = _block_text(data)
             if text:
                 messages.append({"role": "user", "content": [{"type": "text", "text": text}]})
             open_assistant = None
         elif event.type == "assistant/message":
-            text = _message_text(data)
+            text = _block_text(data)
             messages.append({"role": "assistant", "content": text or None})
             open_assistant = len(messages) - 1
         elif event.type == "tool/call":
@@ -243,7 +296,7 @@ def conversation_before(
             messages.append(
                 {
                     "role": "tool",
-                    "content": _blocks_text(data.get("content")),
+                    "content": _block_text(data),
                     "tool_call_id": call_id,
                 }
             )
@@ -320,6 +373,10 @@ def build_samples(
     The student's ledger is the source of the states because the dataset names a session and a
     sequence, not a conversation: storing the conversation in the dataset would let it drift from
     the ledger it came from, and the ledger is the record the experiment rests on.
+
+    Every row is checked before it becomes a sample: the rebuilt conversation must hash to the
+    ``prefix_digest`` the dataset recorded. Refusing on a mismatch is the difference between
+    sampling a state and claiming to — see :class:`StateMismatch`.
     """
     ledger_path = Path(student_ledger)
     if not ledger_path.exists():
@@ -328,6 +385,22 @@ def build_samples(
     samples: list[TrainingSample] = []
     with open_ledger(ledger_path) as ledger:
         for entry in dataset.entries:
+            events = ledger.events(entry.student_session)
+            rebuilt = prefix_chain(events).get(entry.student_seq)
+            if rebuilt is None:
+                raise StateMismatch(
+                    f"session {entry.student_session} has no event at seq {entry.student_seq}, so "
+                    "the state this row names cannot be rebuilt"
+                )
+            if rebuilt != entry.prefix_digest:
+                raise StateMismatch(
+                    f"the conversation rebuilt for {entry.task_id} at seq {entry.student_seq} "
+                    f"hashes to {rebuilt[:16]}… but the dataset recorded "
+                    f"{entry.prefix_digest[:16]}…. The sample would be stamped with a state it does "
+                    "not hold; the ledger, the dataset or this module's reading of an event type "
+                    "has drifted, and a fine-tune built on it would teach the wrong state."
+                )
+
             conversation = conversation_before(
                 ledger, entry.student_session, before_seq=entry.student_seq
             )

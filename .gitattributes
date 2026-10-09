@@ -9,3 +9,11 @@ harness/presets/*.sha256 -text -diff
 # against, so a checkout that rewrote line endings would refuse to load.
 packages/chtd/presets/*.mjs -text -diff
 packages/chtd/presets/*.sha256 -text -diff
+
+# The captured harness prefix is a record of bytes a live run sent, and the
+# project treats it as one: `docs/finetune.md` points a reader at it to check what
+# the harness disclosed. A checkout that rewrote its line endings would hand that
+# reader different bytes from the ones recorded. (Its semantics survive either
+# way — it is JSON — so this is about the record staying the record, not about
+# the file refusing to parse.)
+harness/prefix/*.json -text -diff

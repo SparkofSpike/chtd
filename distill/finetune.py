@@ -4,25 +4,34 @@
 two are separate because a plan has to be checkable anywhere — a reviewer can read a recipe and a
 dataset digest on a laptop — while this cannot run anywhere but a machine with a GPU.
 
-**The rendering is copied from the serving path on purpose.** A fine-tune learns the distribution
-it is shown, and if training renders a conversation differently from the way the endpoint renders
-it, the model is trained on a world it will never be asked about. So :func:`render_chat` is the
-same code as `serve_openai.py`'s `render` — same key filtering, same content coercion from `null`
-to `""`, same `tools` argument — and :func:`build_example` refuses a sample whose prefix does not
-tokenize identically under the two renderings. That refusal is the mechanism; a comment saying
-"keep these in sync" is not.
+**What this refuses, and what that is worth.** The weights come out of a plan the run may not
+alter, and a sample whose prompt does not tokenize to a prefix of its rendered conversation is
+refused (:class:`PrefixDrift`), as is one that needs more tokens than the recipe allows
+(:class:`SampleTooLong`). Those catch a template that renders one conversation two ways, and a
+budget that was set too small for its data. They do **not** establish that :func:`render_chat`
+still agrees with whatever serves the model — that is a separate program, and keeping the two in
+step is checked on the box, by serving a request and comparing, not by anything here.
 
-**Only the teacher's turn is supervised.** Every token before the label is masked to ``-100``. The
-student's own wrong answer is part of the state it has to learn to recover from, so it stays in the
-input and out of the loss — which is the difference between teaching a decision and teaching a
-sentence.
+**Only the teacher's turn is supervised.** Every token before the label is masked to ``-100``, so
+the loss is over the decision and nothing else — the difference between teaching a decision and
+teaching a sentence.
+
+**What the input contains, stated exactly.** The state is the conversation *up to* the decision the
+dataset names, so the student's own action at that decision is not in it; that action is the thing
+being aligned, and the teacher's answer replaces it. For a one-step task this means the sample
+teaches the correct *first* move, which is what the shipped dataset does. "Recovering from its own
+mistake" is a different training shape and needs a task where the student's error lands in the
+state a later decision is made in — a multi-step task, which this project does not yet have. The
+distinction is easy to lose in a summary and it changes what a result can be read as.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
+import time
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
@@ -32,10 +41,12 @@ from distill.train import LoraRecipe, TrainingPlan
 
 __all__ = [
     "PrefixDrift",
+    "SampleTooLong",
     "build_example",
     "load_sample_lines",
     "main",
     "render_chat",
+    "render_examples",
     "samples_digest_over",
     "train",
 ]
@@ -47,6 +58,23 @@ class PrefixDrift(RuntimeError):
     Raised rather than warned about, because a warning here produces a fine-tune that looks
     healthy and was trained against an input distribution the endpoint never produces. The numbers
     would be unremarkable and the result unattributable.
+
+    **What this checks, and what it does not.** Both renderings come from the same function and the
+    same tokenizer, so this catches a *template* whose prompt rendering is not a prefix of its full
+    rendering — a real class of bug, and the one a chat-template upgrade tends to produce. It does
+    **not** prove that :func:`render_chat` still matches whatever serves the model: nothing here
+    can, because the serving path is a separate program. Keeping the two in step is a separate
+    obligation, discharged on the box by serving a request and comparing, not by this check.
+    """
+
+
+class SampleTooLong(RuntimeError):
+    """A sample needs more tokens than the recipe allows.
+
+    Its own exception rather than a :class:`PrefixDrift` because the two name different fixes: a
+    drifted render means reconciling a template, an over-long sample means deciding to raise the
+    recipe's limit — which changes the experiment and re-freezes it. Reporting one as the other
+    sends a reader looking in the wrong place.
     """
 
 
@@ -183,6 +211,92 @@ def samples_digest_over(row_lines: Sequence[str]) -> str:
     return samples_digest(row_lines)
 
 
+def _base_weights_fingerprint(base_model: str) -> dict[str, Any]:
+    """What the base weights were, in a form that can be compared later.
+
+    ``base_model`` is a *path*, and on this box it ends in ``snapshots/master`` — a mutable ref. A
+    record that names only the path cannot tell a later reader whether the weights changed under it,
+    which is the one thing a reproduction needs to know about the base.
+
+    Hashing the weights themselves would mean reading several gigabytes; hashing the files that
+    *describe* them is cheap and discriminating: two different models do not ship the same config and
+    tokenizer. A model whose weights were swapped while its config and tokenizer stayed identical is
+    not a case this distinguishes, and saying so here is better than implying it does.
+    """
+    root = Path(base_model)
+    digest = hashlib.sha256()
+    parts: dict[str, str | None] = {}
+    for name in ("config.json", "tokenizer_config.json", "generation_config.json"):
+        candidate = root / name
+        if candidate.exists():
+            value = hashlib.sha256(candidate.read_bytes()).hexdigest()
+            parts[name] = value
+            digest.update(f"{name}\0{value}\n".encode())
+        else:
+            parts[name] = None
+    return {"files": parts, "digest": digest.hexdigest()}
+
+
+def _logical_parameter_count(config: Any) -> int:
+    """The base model's parameters, counted from its config rather than from its tensors.
+
+    Needed because a quantised model cannot report this. After ``load_in_4bit`` the Linears are
+    packed two values per element, so summing ``p.numel()`` understates the model — measured on the
+    student: 2,205,810,176 reported against 3,739,343,360 logical. A share computed against the
+    packed figure is inflated by the same factor, which is the sort of number a write-up quotes
+    without noticing.
+
+    The formula is the ordinary transformer shape, and every term is taken from the config so a
+    different base model reports its own count. Norms are ``2 * hidden`` per layer plus a final one;
+    the embedding is not tied here, so it is counted once.
+    """
+    hidden = config.hidden_size
+    layers = config.num_hidden_layers
+    heads = config.num_attention_heads
+    kv_heads = getattr(config, "num_key_value_heads", heads)
+    head_dim = getattr(config, "head_dim", hidden // heads)
+    intermediate = config.intermediate_size
+
+    attention = hidden * hidden + 2 * hidden * kv_heads * head_dim + hidden * hidden
+    mlp = 3 * hidden * intermediate
+    return layers * (attention + mlp) + config.vocab_size * hidden + layers * hidden * 2 + hidden
+
+
+def render_examples(
+    tokenizer: Any,
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    limit: int,
+    log=print,
+) -> tuple[list[dict[str, list[int]]], list[int]]:
+    """Render every sample, refusing a drifted one or one over the recipe's limit.
+
+    Split out of :func:`train` so both refusals can be tested without a GPU: they happen while
+    rendering, before any model is loaded, and a check that can only be exercised on the training box
+    is a check that mostly goes unexercised.
+
+    A sample over ``limit`` is refused rather than truncated. The label is the last thing in the
+    conversation, so truncation does not shorten the input — it deletes the answer, and the run would
+    report a healthy loss on a label that was not there.
+    """
+    examples: list[dict[str, list[int]]] = []
+    lengths: list[int] = []
+    for row in rows:
+        example = build_example(tokenizer, row)
+        if len(example["input_ids"]) > limit:
+            raise SampleTooLong(
+                f"sample {row.get('task_id')!r} renders to {len(example['input_ids'])} tokens, "
+                f"over the recipe's max_sequence_length of {limit}. Truncating would cut the "
+                "conversation at an arbitrary point and the label with it; raise the recipe's "
+                "limit deliberately instead, which changes the experiment and re-freezes it."
+            )
+        examples.append(example)
+        lengths.append(len(example["input_ids"]))
+    log(f"rendered {len(examples)} samples: {min(lengths)}-{max(lengths)} tokens "
+        f"(prefix drift check passed)")
+    return examples, lengths
+
+
 def train(
     *,
     plan: TrainingPlan,
@@ -217,26 +331,14 @@ def train(
 
     free, total = torch.cuda.mem_get_info()
     log(f"gpu free={free / 1024**3:.1f}GB total={total / 1024**3:.1f}GB")
+    started = time.time()
 
     tokenizer = AutoTokenizer.from_pretrained(base_model)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     log(f"tokenizer loaded, vocab={tokenizer.vocab_size}")
 
-    examples, lengths = [], []
-    for row in rows:
-        example = build_example(tokenizer, row)
-        if len(example["input_ids"]) > limit:
-            raise PrefixDrift(
-                f"sample {row.get('task_id')!r} renders to {len(example['input_ids'])} tokens, "
-                f"over the recipe's max_sequence_length of {limit}. Truncating would cut the "
-                "conversation at an arbitrary point and the label with it; raise the recipe's "
-                "limit deliberately instead, which changes the experiment and re-freezes it."
-            )
-        examples.append(example)
-        lengths.append(len(example["input_ids"]))
-    log(f"rendered {len(examples)} samples: {min(lengths)}-{max(lengths)} tokens "
-        f"(prefix drift check passed)")
+    examples, lengths = render_examples(tokenizer, rows, limit=limit, log=log)
 
     model = AutoModelForCausalLM.from_pretrained(
         base_model,
@@ -265,8 +367,14 @@ def train(
     )
     trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
     total_params = sum(p.numel() for p in model.parameters())
-    log(f"lora injected: trainable={trainable:,} / total={total_params:,} "
-        f"({100 * trainable / total_params:.3f}%)")
+    # The 4-bit count is **not** the model's parameter count. A bitsandbytes `Params4bit` reports
+    # its packed elements — about two 4-bit values per element — so sizing the adapter's share
+    # against it roughly doubles the share. Measured on the box: 3,739,343,360 logical parameters
+    # are reported as 2,205,810,176 packed elements. The logical count is the one a reader means, so
+    # it is computed from the model's own config rather than read off a quantised tensor.
+    logical_params = _logical_parameter_count(model.config)
+    log(f"lora injected: trainable={trainable:,} / logical={logical_params:,} "
+        f"({100 * trainable / logical_params:.4f}%)  [4-bit packed count={total_params:,}]")
 
     dataset = Dataset.from_list(examples)
     arguments = TrainingArguments(
@@ -307,6 +415,7 @@ def train(
         "arm": plan.arm,
         "base_model": plan.base_model,
         "base_model_revision": plan.base_model_revision,
+        "base_weights_fingerprint": _base_weights_fingerprint(base_model),
         "teacher_model": plan.teacher_model,
         "track_sha256": plan.track_sha256,
         "dataset_sha256": plan.dataset_sha256,
@@ -317,8 +426,11 @@ def train(
         "recipe": json.loads(recipe.fingerprint()),
         "max_sequence_length_used": limit,
         "trainable_parameters": trainable,
-        "total_parameters": total_params,
+        "logical_parameters": logical_params,
+        "packed_parameters_4bit": total_params,
+        "trainable_share_of_logical_pct": round(100 * trainable / logical_params, 4),
         "training_loss": result.training_loss,
+        "wall_clock_seconds": round(time.time() - started, 1),
         "global_step": result.global_step,
         "epochs": recipe.epochs,
         "peak_gpu_memory_gb": round(torch.cuda.max_memory_allocated() / 1024**3, 3),

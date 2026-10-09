@@ -15,9 +15,11 @@ import pytest
 
 from distill.finetune import (
     PrefixDrift,
+    SampleTooLong,
     build_example,
     load_sample_lines,
     render_chat,
+    render_examples,
     samples_digest_over,
 )
 from distill.sft import samples_digest
@@ -79,11 +81,13 @@ def _sample(messages=None, tools=None):
 
 
 def test_only_the_teacher_turn_is_supervised() -> None:
-    """Everything the student saw is masked; only the teacher's answer carries loss.
+    """The loss is over the teacher's decision and nothing before it.
 
-    The student's own wrong answer is in the state it has to learn to recover from, so it stays in
-    the input — and out of the loss. Getting this backwards trains the model to reproduce the
-    mistake.
+    Note what the input does *not* contain: the state is the conversation up to the decision, so the
+    student's own action at that decision is absent — it is the thing being aligned. The tail of
+    `labels` equals the tail of `input_ids` because the label was appended last, which is why the
+    stronger evidence for the boundary is the test below: it re-derives the boundary from the
+    template rather than restating this implementation's own formula.
     """
     example = build_example(FakeTokenizer(), _sample())
     prompt_len = len([v for v in example["labels"] if v == -100])
@@ -93,6 +97,13 @@ def test_only_the_teacher_turn_is_supervised() -> None:
     # Every supervised position is a real token, and the masked region is exactly the prompt.
     assert example["labels"][prompt_len:] == example["input_ids"][prompt_len:]
     assert example["attention_mask"] == [1] * len(example["input_ids"])
+    # The masked prefix is the state's own rendering, and the label follows it.
+    state = _sample()["messages"][:-1]
+    assert prompt_len == len(
+        [ord(char) for char in render_chat(
+            FakeTokenizer(), state, _sample()["tools"], add_generation_prompt=True)]
+    )
+    assert "read" in json.dumps(_sample()["messages"][-1])
 
 
 def test_the_prompt_ends_where_the_model_started_answering() -> None:
@@ -210,3 +221,27 @@ def test_an_empty_sample_file_is_refused(tmp_path) -> None:
 def test_a_missing_sample_file_is_named(tmp_path) -> None:
     with pytest.raises(FileNotFoundError, match="no samples at"):
         load_sample_lines(tmp_path / "absent.jsonl")
+
+
+def test_a_sample_longer_than_the_recipe_is_refused() -> None:
+    """Refused rather than truncated: the label is last, so truncation deletes the answer.
+
+    A `SampleTooLong` and not a `PrefixDrift` — the two name different fixes, and reporting one as
+    the other sends a reader looking in the wrong place. Both refusals happen while rendering, which
+    is why `render_examples` is a function of its own: a check that can only run on the training box
+    is a check that mostly goes unexercised.
+    """
+    tokenizer = FakeTokenizer()
+    with pytest.raises(SampleTooLong, match="over the recipe"):
+        render_examples(tokenizer, [_sample()], limit=4, log=lambda *_: None)
+
+
+def test_a_sample_inside_the_limit_renders() -> None:
+    """The other half of the same check: the limit is a refusal, not a policy of refusing."""
+    examples, lengths = render_examples(
+        FakeTokenizer(), [_sample()], limit=10_000, log=lambda *_: None
+    )
+    assert len(examples) == 1
+    assert lengths == [len(examples[0]["input_ids"])]
+    assert any(value == -100 for value in examples[0]["labels"])
+    assert any(value != -100 for value in examples[0]["labels"])
