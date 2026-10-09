@@ -30,6 +30,7 @@ __all__ = [
     "SignalGate",
     "Validator",
     "Verdict",
+    "WorkspaceRelativePaths",
 ]
 
 
@@ -179,6 +180,61 @@ class OutcomeValidator:
                 self.name,
             )
         return Verdict(True, "the teacher's choice succeeded where the student's did not", self.name)
+
+
+@dataclass(frozen=True)
+class WorkspaceRelativePaths:
+    """Refuse a teacher action that names a path outside the workspace.
+
+    **Why this is a gate and not a style rule.** In a co-harness run the two arms work in different
+    directories — a session key is derived from the working directory, so one directory would make
+    them one session. An absolute path therefore cannot be right for both, and an action that
+    carries one is wrong for at least the side being taught. It is the same objection that rules out
+    a preset injecting its `cwd`, arriving through a label instead of through the input.
+
+    **What this caught.** The first dataset admitted three teacher actions among twenty-two that
+    named `/` or a `/tmp/...` directory. No outcome check could see them: the teacher's *run*
+    succeeded, so the rows were admitted, and the model learned the style. Measured on the finished
+    adapter: it calls `read({"path": "/answers.py"})` in a workspace whose files are `answers.py`,
+    gets `E_FS_DENIED` twice, and gives up — a run that looks like a diagnosis failure and is a
+    path-format failure learned from its own training data.
+
+    The rule is deliberately narrow. It reads one argument, on the tools that take a path, and
+    refuses only what is unambiguously absolute: a leading `/`, a drive letter, or a UNC prefix.
+    A relative path that escapes the workspace is the Host's business — it never reaches a rule
+    — and a `shell` command may legitimately contain an absolute path to an interpreter.
+    """
+
+    #: The tools whose first argument names a path, from base's approval-policy normaliser.
+    tools: tuple[str, ...] = ("read", "write", "edit", "ls", "grep", "find")
+    name: str = "workspace-relative"
+
+    def assess(self, divergence: Divergence) -> Verdict:
+        action = divergence.teacher.action
+        if action.kind != "tool_call" or action.name not in self.tools:
+            return Verdict(True, "not a path-taking call", self.name)
+        payload = action.payload
+        if not isinstance(payload, dict):
+            return Verdict(True, "no arguments to read", self.name)
+        path = payload.get("path")
+        if not isinstance(path, str) or not path:
+            return Verdict(True, "no path named", self.name)
+
+        if path.startswith("/") or path.startswith("\\"):
+            return Verdict(
+                False,
+                f"the teacher called {action.name} on {path!r}, an absolute path; the two arms run "
+                "in different directories, so a path that is right for one is wrong for the other",
+                self.name,
+            )
+        if len(path) >= 2 and path[1] == ":" and path[0].isalpha():
+            return Verdict(
+                False,
+                f"the teacher called {action.name} on {path!r}, a drive-qualified path; the arms "
+                "run in different directories and neither drive letter is portable",
+                self.name,
+            )
+        return Verdict(True, f"{action.name} names a relative path", self.name)
 
 
 @dataclass(frozen=True)

@@ -28,11 +28,28 @@ import tempfile
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-__all__ = ["TASKS", "build", "self_check", "write_task_set", "main"]
+__all__ = ["EXPECT", "FINAL_HOLDOUT", "TASKS", "build", "self_check", "split", "write_task_set", "main"]
 
 
 #: Each task: an id, the symptom a user would report, the files to write, the check that must fail
 #: now and pass afterwards, and the fix that proves it can.
+def _bug(task_id: str, module_name: str, broken: str, fixed: str, check: str) -> dict[str, Any]:
+    """A one-module defect and its repair, with a check that fails now and passes after.
+
+    Most of the set has this shape: one file holds the defect, a second exercises it and asserts.
+    Spelling the pair out as a dict each time was boilerplate that invited transcription mistakes —
+    putting the broken and fixed versions next to each other in one call keeps them from drifting
+    apart. `--check-only` still proves both halves on every build.
+    """
+    return {
+        "id": task_id,
+        "prompt": "unused - every task shares BUG_PROMPT",
+        "files": {module_name: broken, "check.py": check},
+        "check": "python check.py",
+        "fix": {module_name: fixed},
+    }
+
+
 TASKS: tuple[Mapping[str, Any], ...] = (
     {
         "id": "fix-assertion",
@@ -611,6 +628,250 @@ TASKS: tuple[Mapping[str, Any], ...] = (
             "    return items[-3:]\n"
         )},
     },
+    # --- the wider set -------------------------------------------------------------------------
+    # Twenty-four more defects, written to the same rule: a real break, a real repair, and a check
+    # that proves both. `FINAL_HOLDOUT` names the ones no run will train on.
+    _bug(
+        "fix-default-mutable", "collect.py",
+        'def collect(item, into=[]):\n'
+        '    """Append an item and return the collection."""\n'
+        "    into.append(item)\n"
+        "    return into\n",
+        'def collect(item, into=None):\n'
+        '    """Append an item and return the collection."""\n'
+        "    if into is None:\n"
+        "        into = []\n"
+        "    into.append(item)\n"
+        "    return into\n",
+        "from collect import collect\n"
+        "\n"
+        "first = collect(1)\n"
+        "second = collect(2)\n"
+        "print('first ', first)\n"
+        "print('second', second)\n"
+        "assert first == [1], first\n"
+        "assert second == [2], second\n",
+    ),
+    _bug(
+        "fix-integer-division", "average.py",
+        'def average(values):\n'
+        '    """The arithmetic mean."""\n'
+        "    return sum(values) // len(values)\n",
+        'def average(values):\n'
+        '    """The arithmetic mean."""\n'
+        "    return sum(values) / len(values)\n",
+        "from average import average\n"
+        "\n"
+        "got = average([1, 2])\n"
+        "print('got     ', got)\n"
+        "print('expected', 1.5)\n"
+        "assert got == 1.5, got\n",
+    ),
+    _bug(
+        "fix-shadowed-total", "prices.py",
+        'def total(prices):\n'
+        '    """The sum of the prices."""\n'
+        "    total = 0\n"
+        "    for price in prices:\n"
+        "        total = price\n"
+        "    return total\n",
+        'def total(prices):\n'
+        '    """The sum of the prices."""\n'
+        "    total = 0\n"
+        "    for price in prices:\n"
+        "        total += price\n"
+        "    return total\n",
+        "from prices import total\n"
+        "\n"
+        "got = total([3, 4, 5])\n"
+        "print('got     ', got)\n"
+        "print('expected', 12)\n"
+        "assert got == 12, got\n",
+    ),
+    _bug(
+        "fix-string-case", "answers.py",
+        'def is_yes(answer):\n'
+        '    """Whether the answer means yes, however it was typed."""\n'
+        "    return answer == 'yes'\n",
+        'def is_yes(answer):\n'
+        '    """Whether the answer means yes, however it was typed."""\n'
+        "    return answer.strip().lower() == 'yes'\n",
+        "from answers import is_yes\n"
+        "\n"
+        "for value in ('yes', 'Yes', 'YES', ' yes '):\n"
+        "    print(repr(value), is_yes(value))\n"
+        "    assert is_yes(value) is True, value\n"
+        "print('no ->', is_yes('no'))\n"
+        "assert is_yes('no') is False\n",
+    ),
+    _bug(
+        "fix-missing-dict-default", "wordcount.py",
+        'def count_words(words):\n'
+        '    """How often each word appears."""\n'
+        "    counts = {}\n"
+        "    for word in words:\n"
+        "        counts[word] = counts[word] + 1\n"
+        "    return counts\n",
+        'def count_words(words):\n'
+        '    """How often each word appears."""\n'
+        "    counts = {}\n"
+        "    for word in words:\n"
+        "        counts[word] = counts.get(word, 0) + 1\n"
+        "    return counts\n",
+        "from wordcount import count_words\n"
+        "\n"
+        "got = count_words(['a', 'b', 'a'])\n"
+        "print('got     ', got)\n"
+        "print('expected', {'a': 2, 'b': 1})\n"
+        "assert got == {'a': 2, 'b': 1}, got\n",
+    ),
+    _bug(
+        "fix-sort-key", "sorting.py",
+        'def by_length(words):\n'
+        '    """The words shortest first."""\n'
+        "    return sorted(words, key=len(words))\n",
+        'def by_length(words):\n'
+        '    """The words shortest first."""\n'
+        "    return sorted(words, key=len)\n",
+        "from sorting import by_length\n"
+        "\n"
+        "got = by_length(['ccc', 'a', 'bb'])\n"
+        "print('got     ', got)\n"
+        "print('expected', ['a', 'bb', 'ccc'])\n"
+        "assert got == ['a', 'bb', 'ccc'], got\n",
+    ),
+    _bug(
+        "fix-parity-test", "parity.py",
+        'def is_even(number):\n'
+        '    """Whether a whole number is even."""\n'
+        "    return number % 2 == 1\n",
+        'def is_even(number):\n'
+        '    """Whether a whole number is even."""\n'
+        "    return number % 2 == 0\n",
+        "from parity import is_even\n"
+        "\n"
+        "for value, expected in ((4, True), (7, False)):\n"
+        "    print(value, is_even(value), 'expected', expected)\n"
+        "    assert is_even(value) is expected, value\n",
+    ),
+    _bug(
+        "fix-loop-continue", "search.py",
+        'def first_negative(values):\n'
+        '    """The first negative value, or None when there is none."""\n'
+        "    for value in values:\n"
+        "        if value < 0:\n"
+        "            continue\n"
+        "    return None\n",
+        'def first_negative(values):\n'
+        '    """The first negative value, or None when there is none."""\n'
+        "    for value in values:\n"
+        "        if value < 0:\n"
+        "            return value\n"
+        "    return None\n",
+        "from search import first_negative\n"
+        "\n"
+        "got = first_negative([3, -4, 5])\n"
+        "print('got     ', got)\n"
+        "print('expected', -4)\n"
+        "assert got == -4, got\n"
+        "print('none    ', first_negative([1, 2]))\n"
+        "assert first_negative([1, 2]) is None\n",
+    ),
+    _bug(
+        "fix-missing-return", "doubling.py",
+        'def double(number):\n'
+        '    """Twice the number."""\n'
+        "    number * 2\n",
+        'def double(number):\n'
+        '    """Twice the number."""\n'
+        "    return number * 2\n",
+        "from doubling import double\n"
+        "\n"
+        "got = double(21)\n"
+        "print('got     ', got)\n"
+        "print('expected', 42)\n"
+        "assert got == 42, got\n",
+    ),
+    _bug(
+        "fix-min-max-clamp", "clamp.py",
+        'def clamp(value, low, high):\n'
+        '    """Keep a value inside a range."""\n'
+        "    return min(low, max(high, value))\n",
+        'def clamp(value, low, high):\n'
+        '    """Keep a value inside a range."""\n'
+        "    return max(low, min(high, value))\n",
+        "from clamp import clamp\n"
+        "\n"
+        "for value, expected in ((-5, 0), (5, 5), (50, 10)):\n"
+        "    got = clamp(value, 0, 10)\n"
+        "    print(value, '->', got, 'expected', expected)\n"
+        "    assert got == expected, value\n",
+    ),
+    _bug(
+        "fix-shallow-copy", "table.py",
+        'def blanked(table, column):\n'
+        '    """A copy of the table with a column filled with zeroes."""\n'
+        "    for row in table:\n"
+        "        row[column] = 0\n"
+        "    return table\n",
+        'def blanked(table, column):\n'
+        '    """A copy of the table with a column filled with zeroes."""\n'
+        "    result = [dict(row) for row in table]\n"
+        "    for row in result:\n"
+        "        row[column] = 0\n"
+        "    return result\n",
+        "from table import blanked\n"
+        "\n"
+        "original = [{'n': 1}, {'n': 2}]\n"
+        "result = blanked(original, 'n')\n"
+        "print('result  ', result)\n"
+        "print('original', original)\n"
+        "assert original == [{'n': 1}, {'n': 2}], original\n"
+        "assert result == [{'n': 0}, {'n': 0}], result\n",
+    ),
+    _bug(
+        "fix-ordinal-index", "ordinals.py",
+        'def nth(items, position):\n'
+        '    """The item at a 1-based position."""\n'
+        "    return items[position]\n",
+        'def nth(items, position):\n'
+        '    """The item at a 1-based position."""\n'
+        "    return items[position - 1]\n",
+        "from ordinals import nth\n"
+        "\n"
+        "got = nth(['a', 'b', 'c'], 1)\n"
+        "print('got     ', got)\n"
+        "print('expected', 'a')\n"
+        "assert got == 'a', got\n"
+        "assert nth(['a', 'b', 'c'], 3) == 'c'\n",
+    ),
+    {
+        "id": "fix-single-name",
+        "prompt": "unused - every task shares BUG_PROMPT",
+        "files": {
+            "names.py": (
+                'def split_name(full):\n'
+                '    """The first and last name, from a full name."""\n'
+                "    parts = full.split()\n"
+                "    return parts[0], parts[1]\n"
+            ),
+            "check.py": (
+                "from names import split_name\n"
+                "\n"
+                "print('two names:', split_name('Ada Lovelace'))\n"
+                "print('one name :', split_name('Ada'))\n"
+            ),
+        },
+        "check": "python check.py",
+        "fix": {"names.py": (
+            'def split_name(full):\n'
+            '    """The first and last name, from a full name."""\n'
+            "    parts = full.split()\n"
+            "    if len(parts) < 2:\n"
+            "        return parts[0] if parts else '', ''\n"
+            "    return parts[0], parts[1]\n"
+        )},
+    },
 )
 
 
@@ -654,7 +915,35 @@ EXPECT: dict[str, tuple[str, ...]] = {
     "fix-empty-input": ("index",),
     "fix-missing-prefix": ("prefix",),
     "fix-slice-direction": ("slic",),
+    # The wider set. One word each, chosen to name the defect rather than its subject — the lesson
+    # from the held-out four above, where a phrase matching the subject passed an answer saying
+    # there was no bug at all.
+    "fix-default-mutable": ("mutable",),
+    "fix-integer-division": ("floor", "int"),
+    "fix-shadowed-total": ("assign", "+="),
+    "fix-string-case": ("case", "lower"),
+    "fix-missing-dict-default": ("keyerror", "get"),
+    "fix-sort-key": ("key",),
+    "fix-parity-test": ("odd", "even"),
+    "fix-loop-continue": ("continue",),
+    "fix-missing-return": ("return",),
+    "fix-min-max-clamp": ("min", "max"),
+    "fix-shallow-copy": ("copy", "mutat"),
+    "fix-ordinal-index": ("index",),
+    "fix-single-name": ("index", "length"),
 }
+
+#: Tasks no run will train on and no result reported so far has used. The held-out four in the tuple
+#: above were written before run 2 and were used to measure it; reusing them would measure the same
+#: model on the same questions and call it evidence. These five are for the next measurement, and
+#: `build` leaves them out of the training set rather than trusting a caller to remember.
+FINAL_HOLDOUT: frozenset[str] = frozenset({
+    "fix-string-case",
+    "fix-sort-key",
+    "fix-shallow-copy",
+    "fix-ordinal-index",
+    "fix-single-name",
+})
 
 CHECK_SCRIPT = Path(__file__).resolve().parent / "check_diagnosis.py"
 
@@ -794,6 +1083,23 @@ def write_task_set(rows: Sequence[Mapping[str, str]], path: str | Path) -> Path:
     return target
 
 
+def split(rows: Sequence[Mapping[str, str]]) -> tuple[list[Mapping[str, str]], list[Mapping[str, str]]]:
+    """The rows a round may train on, and the rows it may not.
+
+    A single call rather than two filters at two call sites: the holdout is only a holdout if every
+    training path leaves it out, and a caller who forgets is a caller who trains on the test set
+    without noticing.
+    """
+    training = [row for row in rows if row["id"] not in FINAL_HOLDOUT]
+    held_out = [row for row in rows if row["id"] in FINAL_HOLDOUT]
+    if not held_out:
+        raise ValueError(
+            "FINAL_HOLDOUT names nothing in the task set; a training set with no held-out tasks "
+            "cannot be measured on anything it has not seen"
+        )
+    return training, held_out
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Build the error-recovery task set.")
     parser.add_argument(
@@ -804,7 +1110,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         "--out",
         default="harness/tasks/error-recovery.jsonl",
-        help="the task set harness.rollout.load_tasks reads",
+        help="the training task set harness.rollout.load_tasks reads",
+    )
+    parser.add_argument(
+        "--holdout-out",
+        default="harness/tasks/final-holdout.jsonl",
+        help="the tasks no round trains on",
     )
     parser.add_argument(
         "--check-only",
@@ -822,9 +1133,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         return code
 
     rows = build(args.workspaces)
-    path = write_task_set(rows, args.out)
+    training, held_out = split(rows)
+    path = write_task_set(training, args.out)
+    held_path = write_task_set(held_out, args.holdout_out)
     print(f"\nwrote {len(rows)} workspaces under {args.workspaces}")
-    print(f"wrote {path}")
+    print(f"wrote {path}  ({len(training)} training tasks)")
+    print(f"wrote {held_path}  ({len(held_out)} held out)")
+    for row in held_out:
+        print(f"    held out: {row['id']}")
     return 0
 
 

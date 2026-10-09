@@ -39,12 +39,44 @@ class LoraRecipe:
     Frozen with the plan. The design's comparison holds everything else equal across the two arms —
     same track, same tasks, same budget — and the recipe is on that list: an arm comparison between
     two recipes compares the recipes.
+
+    **The target set covers every linear projection, not just attention.** The first two runs
+    adapted `q/k/v/o` only, which is half a LoRA: on this base model the feed-forward block holds
+    2,689,597,440 of the weights against attention's 943,718,400 — roughly three times as much — so a
+    recipe that leaves it frozen asks attention to carry a change it was never the part holding.
+    QLoRA's own configuration and most practice after it target the full set.
+
+    The counts come from the checkpoint's own tensor shapes, and the LoRA figures from injecting the
+    adapter and summing what requires a gradient. Both were got wrong once by arithmetic on assumed
+    shapes — `q_proj` is `4096 x 2560`, not square, and Qwen3 adds two `head_dim` QK-norm vectors per
+    layer — which is why the authority is the weight file rather than a formula.
+
+        attention weights           943,718,400
+        feed-forward weights      2,689,597,440
+        both                   3,633,315,840   (90.33% of the model)
+        model total            4,022,468,096
+
+        attention only, rank 16     11,796,480 trainable   0.2933%
+        attention only, rank 32     23,592,960             0.5865%
+        all seven,     rank 16      33,030,144             0.8211%
+        all seven,     rank 32      66,060,288             1.6423%
+
+    Rank 32 with `alpha` twice it is the middle of that table and the largest that fits a 47 GB card
+    alongside the activations of a 6711-token sample without changing how the run is batched.
     """
 
-    rank: int = 16
-    alpha: int = 32
+    rank: int = 32
+    alpha: int = 64
     dropout: float = 0.05
-    target_modules: tuple[str, ...] = ("q_proj", "k_proj", "v_proj", "o_proj")
+    target_modules: tuple[str, ...] = (
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj",
+    )
     learning_rate: float = 2e-4
     epochs: int = 3
     batch_size: int = 1

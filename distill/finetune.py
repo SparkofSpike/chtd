@@ -242,13 +242,16 @@ def _logical_parameter_count(config: Any) -> int:
 
     Needed because a quantised model cannot report this. After ``load_in_4bit`` the Linears are
     packed two values per element, so summing ``p.numel()`` understates the model — measured on the
-    student: 2,205,810,176 reported against 3,739,343,360 logical. A share computed against the
+    student: 2,205,810,176 reported against 4,022,468,096 logical. A share computed against the
     packed figure is inflated by the same factor, which is the sort of number a write-up quotes
     without noticing.
 
-    The formula is the ordinary transformer shape, and every term is taken from the config so a
-    different base model reports its own count. Norms are ``2 * hidden`` per layer plus a final one;
-    the embedding is not tied here, so it is counted once.
+    **`q_proj` is not square, and assuming it was is a mistake this function made.** Qwen3 projects
+    the query to `num_attention_heads * head_dim`, which on this model is 4096 against a hidden size
+    of 2560, and `o_proj` maps back from 4096. Counting both as `hidden * hidden` understated the
+    model by 283,124,736 parameters and every share derived from it. The shapes are now taken from
+    the checkpoint itself, which is the authority: this function reproduces the 4,022,468,096 that
+    `count_from_weights.py` reads out of the safetensors headers exactly.
     """
     hidden = config.hidden_size
     layers = config.num_hidden_layers
@@ -257,9 +260,20 @@ def _logical_parameter_count(config: Any) -> int:
     head_dim = getattr(config, "head_dim", hidden // heads)
     intermediate = config.intermediate_size
 
-    attention = hidden * hidden + 2 * hidden * kv_heads * head_dim + hidden * hidden
-    mlp = 3 * hidden * intermediate
-    return layers * (attention + mlp) + config.vocab_size * hidden + layers * hidden * 2 + hidden
+    query_out = heads * head_dim
+    key_value_out = kv_heads * head_dim
+
+    attention = hidden * query_out + hidden * key_value_out * 2 + query_out * hidden
+    mlp = hidden * intermediate * 3
+    # Qwen3 normalises the query and key vectors before the attention itself, which is two more
+    # vectors of `head_dim` per layer. Leaving them out put this function 9,216 parameters below the
+    # checkpoint, which is how they were noticed.
+    qk_norm = 2 * head_dim
+    return (
+        layers * (attention + mlp + hidden * 2 + qk_norm)
+        + config.vocab_size * hidden
+        + hidden
+    )
 
 
 def render_examples(

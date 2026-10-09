@@ -27,7 +27,13 @@ from typing import Sequence
 
 from distill.dataset import Dataset, build_dataset, write_dataset
 from distill.divergence import Alignment, align
-from distill.gate import Outcome, OutcomeTable, OutcomeValidator, SignalGate
+from distill.gate import (
+    Outcome,
+    OutcomeTable,
+    OutcomeValidator,
+    SignalGate,
+    WorkspaceRelativePaths,
+)
 from harness.ledger import open_ledger
 from harness.rollout import RolloutRecord, read_records
 from harness.trajectory import Trajectory, read_trajectory
@@ -74,31 +80,48 @@ def build_round_dataset(
     if not by_task:
         raise RoundIncomplete("no tasks in the round")
 
+    # A task with only one side is skipped and counted, not fatal. A run that failed is a fact about
+    # the round — the endpoint refused it, a turn was blocked, an adapter was not loaded — and
+    # aborting the build would throw away every other task's data to punish one. What would be fatal
+    # is a task whose side *is* present and whose outcome is missing, which is an inconsistency in
+    # this repository rather than in the world; that is checked below.
+    complete: dict[str, dict[str, RolloutRecord]] = {}
+    incomplete: dict[str, list[str]] = {}
+    for task_id, sides in sorted(by_task.items()):
+        missing = [arm for arm in arms if arm not in sides]
+        if missing:
+            incomplete[task_id] = missing
+            continue
+        complete[task_id] = sides
+
+    if not complete:
+        raise RoundIncomplete(
+            "every task in the round is missing one side; there is nothing to align"
+        )
+
     # Every state a row is built from has to be gated on both sides, so the outcomes are derived
     # from each run's own check rather than passed in: one verdict per run, applied to every state
     # in it. The alternative — a file somebody maintains — drifts from the checks silently.
     table = OutcomeTable({})
-    for task_id, sides in sorted(by_task.items()):
+    for task_id, sides in sorted(complete.items()):
         for arm in arms:
-            record = sides.get(arm)
-            if record is None:
-                raise RoundIncomplete(
-                    f"{task_id} has no {arm} run; a divergence needs both sides, and a task with "
-                    "one side produces nothing the gate can admit"
-                )
+            record = sides[arm]
             passed = checks.get((task_id, arm))
             if passed is None:
-                raise RoundIncomplete(f"{task_id}/{arm} has no observed outcome")
+                raise RoundIncomplete(
+                    f"{task_id}/{arm} has a record but no observed outcome; the round is internally "
+                    "inconsistent and a dataset built from it would gate on nothing"
+                )
             outcome = Outcome.SUCCEEDED if passed else Outcome.FAILED
             with open_ledger(record.ledger_path) as ledger:
                 trajectory = read_trajectory(ledger, record.session_key)
             for point in trajectory.points:
                 table.record(record.session_key, point.prefix_digest, outcome)
 
-    gate = SignalGate([OutcomeValidator(table)])
+    gate = SignalGate([OutcomeValidator(table), WorkspaceRelativePaths()])
 
     alignments: dict[str, Alignment] = {}
-    for task_id, sides in sorted(by_task.items()):
+    for task_id, sides in sorted(complete.items()):
         student_record = sides["student"]
         teacher_record = sides["teacher"]
         with open_ledger(student_record.ledger_path) as ledger:
@@ -118,7 +141,14 @@ def build_round_dataset(
         records=records,
         arms=list(arms),
     )
-    return dataset, alignments
+    if incomplete:
+        # Carried out on the dataset rather than printed, because every report is generated from
+        # these objects and a limitation that only reached a console would not reach the write-up.
+        dataset.reasons = {
+            **dataset.reasons,
+            "task-missing-a-side": sum(len(v) for v in incomplete.values()),
+        }
+    return dataset, alignments, incomplete
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -130,7 +160,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     source = Path(args.round)
-    dataset, alignments = build_round_dataset(
+    dataset, alignments, incomplete = build_round_dataset(
         records_path=source / "records.jsonl",
         checks_path=source / "checks.jsonl",
     )
@@ -140,7 +170,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     assert manifest is not None
     total_divergences = sum(len(a.divergences) for a in alignments.values())
     total_agreements = sum(len(a.agreements) for a in alignments.values())
-    print(f"tasks      : {len(alignments)}")
+    print(f"tasks      : {len(alignments)} aligned, {len(incomplete)} skipped")
+    for task_id, missing in sorted(incomplete.items()):
+        print(f"  skipped {task_id}: no {' and '.join(missing)} run")
     print(f"aligned    : {total_divergences} divergences, {total_agreements} agreements")
     print(f"admitted   : {manifest.entries}, refused: {manifest.refusals}")
     for reason, count in sorted(dataset.reasons.items()):

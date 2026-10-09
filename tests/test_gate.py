@@ -15,6 +15,7 @@ from distill.gate import (
     RecordedVerdicts,
     SignalGate,
     Verdict,
+    WorkspaceRelativePaths,
 )
 from harness.trajectory import Action, DecisionPoint
 
@@ -242,3 +243,76 @@ def test_outcome_table_builds_from_rollout_records() -> None:
 def test_a_malformed_outcome_record_is_refused() -> None:
     with pytest.raises(ValueError, match="session_key and prefix_digest"):
         OutcomeTable.from_records([{"outcome": "failed"}])
+
+
+# ------------------------------------ paths a co-harness run cannot share
+
+
+def _call(tool: str, args: object, digest: str = _STATE) -> Divergence:
+    return Divergence(
+        prefix_digest=digest,
+        student=DecisionPoint(seq=3, ordinal=0, prefix_digest=digest,
+                              action=Action("message", None, "hello")),
+        teacher=DecisionPoint(seq=6, ordinal=0, prefix_digest=digest,
+                              action=Action("tool_call", tool, args)),
+        student_session="student",
+        teacher_session="teacher",
+    )
+
+
+def test_a_relative_path_is_admitted() -> None:
+    verdict = WorkspaceRelativePaths().assess(_call("read", {"path": "average.py"}))
+    assert verdict.admitted
+
+
+def test_an_absolute_path_is_refused() -> None:
+    """The two arms run in different directories, so a path that is right for one is wrong for the
+    other. The first dataset admitted three of these and the finished adapter learned the habit."""
+    verdict = WorkspaceRelativePaths().assess(_call("read", {"path": "/answers.py"}))
+    assert not verdict.admitted
+    assert "absolute path" in verdict.reason
+
+
+def test_a_drive_qualified_path_is_refused() -> None:
+    verdict = WorkspaceRelativePaths().assess(_call("read", {"path": "E:/chtd/answers.py"}))
+    assert not verdict.admitted
+    assert "drive-qualified" in verdict.reason
+
+
+def test_a_leading_backslash_is_refused() -> None:
+    verdict = WorkspaceRelativePaths().assess(_call("ls", {"path": r"\server\share"}))
+    assert not verdict.admitted
+
+
+def test_a_bare_or_dotted_path_is_admitted() -> None:
+    """`ls {}` is what fifteen of the nineteen admitted rows carry; `.` is the same idea written
+    out."""
+    assert WorkspaceRelativePaths().assess(_call("ls", {})).admitted
+    assert WorkspaceRelativePaths().assess(_call("ls", {"path": "."})).admitted
+
+
+def test_a_tool_that_takes_no_path_is_admitted() -> None:
+    """A shell command may legitimately name an absolute interpreter. The rule reads one argument,
+    on the tools whose first parameter is a workspace path."""
+    assert WorkspaceRelativePaths().assess(_call("shell", {"command": "python /usr/bin/x"})).admitted
+    assert WorkspaceRelativePaths().assess(_call("todo", {"items": []})).admitted
+
+
+def test_a_message_action_is_admitted() -> None:
+    """Only tool calls carry paths. A message that mentions one is prose, not an instruction to the
+    filesystem, and three of the nineteen admitted rows are messages."""
+    teacher = DecisionPoint(seq=6, ordinal=0, prefix_digest=_STATE,
+                            action=Action("message", None, "the file /etc/hosts is not it"))
+    divergence = Divergence(prefix_digest=_STATE, student=_call("read", {}).student,
+                            teacher=teacher, student_session="student",
+                            teacher_session="teacher")
+    assert WorkspaceRelativePaths().assess(divergence).admitted
+
+
+def test_a_malformed_payload_is_admitted_rather_than_crashing() -> None:
+    """`assess` runs over every divergence in a dataset, so one that raised would take the build with
+    it — and the shapes here come from a ledger that is pre-alpha."""
+    assert WorkspaceRelativePaths().assess(_call("read", None)).admitted
+    assert WorkspaceRelativePaths().assess(_call("read", "not a dict")).admitted
+    assert WorkspaceRelativePaths().assess(_call("read", {"path": 17})).admitted
+    assert WorkspaceRelativePaths().assess(_call("read", {"path": ""})).admitted

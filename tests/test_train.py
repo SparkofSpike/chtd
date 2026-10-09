@@ -76,7 +76,11 @@ def test_a_plan_records_the_provenance_a_reproduction_needs() -> None:
     assert plan.base_model_revision == "abc123"
     assert plan.entries == 12
     payload = json.loads(plan.to_json())
-    assert payload["recipe"]["rank"] == 16
+    # Against the recipe's own default rather than a literal: the subject is that the recipe is
+    # recorded at all, and a literal here fails whenever the default is deliberately changed — which
+    # is how a test announces a decision it was never about.
+    assert payload["recipe"]["rank"] == LoraRecipe().rank
+    assert payload["recipe"]["target_modules"] == list(LoraRecipe().target_modules)
     assert payload["arm"] == "chtd"
 
 

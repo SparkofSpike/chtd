@@ -13,7 +13,7 @@ run.json                   6892ba94257238da8f7768ef4aef4e083c552e8d3c3241870f079
 
 ```
 base model   Qwen3-4B-Instruct-2507, 4-bit NF4, LoRA on q/k/v/o_proj
-adapter      11,796,480 trainable of 3,739,343,360 logical parameters (0.3155%)
+adapter      11,796,480 trainable — see the correction below about the denominator
 dataset      bd090f51d3db8c7380f02bbb5cad227b9364c457c0f74b79c951c495cb3f68cf  (12 entries)
 samples      7ad38c32926a47e678afaf5e00baec6cf382028b54bddd4222d57ac1a7149c51  (12 rows)
 track        1eb6b3ffaee3fb07228abebf4d3ce67112debb525c49e2dd0bc1eb363be0a97a
@@ -72,6 +72,25 @@ describe the code and conclude it is fine — `fix-empty-input` says "there are 
 bugs in the implementation" about a function that raises `IndexError` on an empty string. So this is
 a behaviour change with a small accuracy gain, not a capability, and one correct diagnosis out of
 four is a single data point rather than a rate.
+
+## A correction to the denominator
+
+`run.json` records `logical_parameters: 3739343360` and `trainable_share_of_logical_pct: 0.3155`, and
+both are wrong. The model has **4,022,468,096** parameters, so the adapter's share is **0.2933%**.
+
+The record is not edited, because a run record is what a run recorded and rewriting it would destroy
+the only evidence of the mistake.
+
+Two errors in one function, both from arithmetic on assumed shapes instead of the shapes the
+checkpoint has. `q_proj` is `4096 x 2560` here — the query projects to
+`num_attention_heads * head_dim`, not to `hidden_size` — and Qwen3 adds a `q_norm` and a `k_norm` of
+`head_dim` per layer. Counting the first pair as square understated the model by 283,124,736
+parameters; leaving out the norms understated it by 9,216 more.
+
+Found while measuring what a *complete* LoRA would cover, which needs the same number for a
+different question. `distill/finetune.py` now reproduces the checkpoint exactly —
+`count_from_weights.py` reads 4,022,468,096 out of the safetensors headers and the formula agrees to
+the parameter.
 
 ## What that does and does not license
 
