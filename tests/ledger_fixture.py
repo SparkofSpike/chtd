@@ -65,6 +65,7 @@ class LedgerBuilder:
         boundary_seq: int,
         *,
         created_at: str = "2026-10-01T00:01:00Z",
+        model_selections: Sequence[dict] | None = None,
     ) -> "LedgerBuilder":
         """Give the child the parent's prefix, the way the harness's `forkInto` does.
 
@@ -72,6 +73,12 @@ class LedgerBuilder:
         the child's own sequence there (storage.createChild). A fixture that gave the child only its
         own rows would model a session that shared no state with its parent — which is not a fork,
         and would let a broken prefix digest pass a test named after forks.
+
+        ``model_selections`` reproduces the rest of what `forkInto` writes after the boundary: one
+        `x/core/model-switch` row per pinned model slot. The harness writes those whenever the
+        preset pins a model id, which is the normal case — the host resolves a preset's `default`
+        sentinel before core ever sees it. A fixture that omitted them would let a reader that
+        mishandles extension rows pass.
         """
         columns = (
             "seq, ts, id, type, lane, actor, origin, trust, register, ignorable, surface_op,"
@@ -90,7 +97,23 @@ class LedgerBuilder:
                 (child_key, *row),
             )
         self._seq[child_key] = boundary_seq
-        return self.session(child_key, created_at=created_at, parent_key=parent_key, boundary_seq=boundary_seq)
+        self.session(child_key, created_at=created_at, parent_key=parent_key, boundary_seq=boundary_seq)
+        for selection in model_selections or ():
+            self.append(
+                child_key,
+                "x/core/model-switch",
+                {
+                    "slot": selection["slot"],
+                    "from": {"route": selection["route"], "model": selection["model"]},
+                    "to": {
+                        "route": selection["route"],
+                        "model": selection["model"],
+                    },
+                    "reason": "fork-origin",
+                },
+                origin="system",
+            )
+        return self
 
     def start(
         self,

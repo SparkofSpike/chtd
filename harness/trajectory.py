@@ -42,6 +42,7 @@ from harness.ledger import Event, Ledger
 __all__ = [
     "Action",
     "BOOKKEEPING_TYPES",
+    "EXTENSION_EVENT_PREFIX",
     "DecisionPoint",
     "Trajectory",
     "decision_points",
@@ -55,38 +56,91 @@ ActionKind = Literal["tool_call", "message"]
 #: Rows the harness writes about its own operation rather than about the conversation. The prefix
 #: digest skips these: they are not state, and a same-prefix fork writes some of its own at the
 #: boundary, so counting them would make the teacher's prefix differ from the student's in the very
-#: state the fork reproduces. See the module docstring for why this is a bookkeeping list and not a
-#: content list.
+#: state the fork reproduces.
+#:
+#: Enumerated from Agnes Harness rather than guessed. The conversation proper is a small, stable
+#: vocabulary — `user/message`, `assistant/message`, `tool/call`, `tool/result` — while the
+#: bookkeeping is large and grows with every feature. Every type below was found by searching the
+#: harness source for written event types and deciding what each one is:
+#:
+#: - lifecycle and registers: `session/*`, `turn/*`, `step/*`, and the reducer's own register rows
+#:   (`OBJECT_REGISTERS` in `packages/core/src/reduce/reducer.ts`).
+#: - the model's streamed progress as opposed to its output: `assistant/output` carries `state`,
+#:   `chars` and `estimatedTokens`, and is written several times per turn, so counting it would make
+#:   two runs differ by how the stream was chunked.
+#: - audit and accounting rows: approvals, cost, effects, deviations, verifier signals, subagent
+#:   cost, runtime and tree convergence, repair decisions, user feedback.
+#:
+#: The `x/` namespace is handled separately, as a prefix, because it is not enumerable: an ordinary
+#: plugin names its own events (`x/plugin/<hash>/<name>`, see `ctx.extension().events.append`) and
+#: the harness writes about thirty `x/core/*` audit types of its own. A reader that had to list them
+#: would stop aligning the moment somebody installed a plugin.
 BOOKKEEPING_TYPES = frozenset(
     {
+        # lifecycle
         "session/start",
+        "session/opened",
         "turn/start",
         "turn/end",
         "step/start",
         "step/end",
+        # registers (`OBJECT_REGISTERS` and the rows that maintain them)
         "budget.state",
         "inbox",
+        "plan.items",
+        "artifact/job",
+        "op.state",
+        "harness/entry",
+        # request accounting
         "request/header",
         "request/sent",
-        "request/error",
-        "cost/ledger",
-        "effect/intent",
-        "harness/entry",
-        "repair/decision",
+        # the model's streamed progress, not its output
+        "assistant/output",
+        "assistant/chunk",
+        # approvals
         "approval/asked",
         "approval/decided",
         "approval/guardian-decided",
+        # audit and accounting
+        "cost/ledger",
+        "effect/intent",
+        "effect/settled",
+        "format/deviation",
+        "harness/refine",
+        "repair/decision",
+        "runtime.converged",
+        "runtime.other",
+        "runtime.stale",
+        "tree.stale",
+        "subagent/cost",
+        "verifier/signal",
+        "feedback/implicit",
+        "feedback/rating",
     }
 )
+
+#: The harness's extension namespace. Everything under it is about the run rather than part of it:
+#: core's own audit rows (`x/core/*`) and plugin-declared rows (`x/plugin/*`) alike. Matched by
+#: prefix because a plugin chooses its own event names, so no list can be complete.
+EXTENSION_EVENT_PREFIX = "x/"
 
 
 def is_conversation(event: Event) -> bool:
     """Whether a row is part of the state the model was in.
 
-    Anything not named as bookkeeping counts as conversation. A type this module has never seen is
-    therefore treated as state, which is the safe reading: it can only ever produce a visible
-    failure to align, never a quiet alignment of two states that were not the same.
+    Anything neither named below nor under the extension namespace counts as conversation. A type
+    this module has never seen is therefore treated as state, which is the reading that surfaces a
+    mistake: an unrecognised bookkeeping row makes two identical states look different, and that
+    shows up at once as a pipeline finding no divergences — while the opposite default, silently
+    ignoring a content row, would align two genuinely different states and teach from a comparison
+    that was never true.
+
+    The `x/` prefix is the one place the opposite default applies, because there the set is open by
+    construction: a plugin's event name is its own, and a reader that waited to learn it would stop
+    aligning the moment somebody installed one.
     """
+    if event.type.startswith(EXTENSION_EVENT_PREFIX):
+        return False
     return event.type not in BOOKKEEPING_TYPES
 
 

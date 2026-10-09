@@ -242,12 +242,22 @@ def _path_of_environment() -> str:
 
 
 def _newest_session(ledger_path: Path) -> str:
-    """The session the run just created: the one with the highest last sequence number.
+    """The session the run just created.
 
-    Found rather than parsed out of the CLI's output, because the ledger is the record that matters
-    and stdout is a convenience that a future version may change shape.
+    Ordered by the session's own `created_at` and not by its highest sequence number. Sequence would
+    be wrong wherever a fork is present: a fork's child starts at its parent's boundary, so a child
+    that ran on can hold a lower last sequence than the parent it forked from, and picking the
+    larger number would then name the parent.
+
+    The sequence-based ordering is kept as the fallback for a ledger whose `sessions` table is empty
+    — a fixture, or a ledger written before that table existed. There it cannot be wrong, because
+    with no `sessions` rows there are no forks to confuse it with.
     """
     with open_ledger(ledger_path) as ledger:
+        rows = ledger.sessions()
+        if rows:
+            newest = max(rows, key=lambda row: (row.created_at, row.session_key))
+            return newest.session_key
         keys = ledger.session_keys()
         if not keys:
             raise RuntimeError(f"the run wrote no session to {ledger_path}")

@@ -9,6 +9,7 @@ import pytest
 from harness.ledger import open_ledger
 from harness.trajectory import (
     BOOKKEEPING_TYPES,
+    EXTENSION_EVENT_PREFIX,
     Action,
     DecisionPoint,
     Trajectory,
@@ -100,15 +101,25 @@ def test_different_conversations_do_not_share_a_prefix(tmp_path: Path) -> None:
 
 def test_a_forked_child_meets_its_parent_in_the_same_state(tmp_path: Path) -> None:
     # The design's central mechanism: the teacher is dropped into the student's exact prefix. The
-    # child writes its own session/start (and the harness its budget.state and inbox) at the
-    # boundary, so this is also the test that those rows stay out of the digest — with them in it,
-    # nothing would ever align and the pipeline would find no divergences at all.
+    # child writes its own session/start (and the harness its budget.state, inbox and one
+    # x/core/model-switch per pinned model slot) at the boundary, so this is also the test that
+    # those rows stay out of the digest — with them in it, nothing would ever align and the
+    # pipeline would find no divergences at all.
+    #
+    # The model-switch row is the one that bites: the host resolves a preset's `default` sentinel
+    # before core sees it, so `preset.model.id` is non-empty in the ordinary case and `forkInto`
+    # therefore writes one of these on every fork.
     builder = build_ledger(tmp_path / "sessions.db")
     builder.session("student").start("student")
     builder.user("student", "run the suite")
     # The fork boundary is the state *before* the student decides: this is where the teacher is
     # dropped in, and it is where its own rows begin.
-    builder.fork_from("student", "teacher", 2)
+    builder.fork_from(
+        "student",
+        "teacher",
+        2,
+        model_selections=[{"slot": "primary", "route": "teacher", "model": "qwen-large"}],
+    )
     builder.start("teacher", parent={"key": "student", "boundarySeq": 2})
     builder.append("teacher", "budget.state", None)
     builder.append("teacher", "inbox", None)
@@ -123,6 +134,32 @@ def test_a_forked_child_meets_its_parent_in_the_same_state(tmp_path: Path) -> No
 
     assert student.points[0].prefix_digest == teacher.points[0].prefix_digest
     assert student.points[0].action.fingerprint() != teacher.points[0].action.fingerprint()
+
+
+def test_extension_events_never_move_the_chain() -> None:
+    # `x/` is the harness's extension namespace — core's own audit rows and ordinary plugin rows
+    # alike. A plugin names its own events (`x/plugin/<hash>/<name>`), so the set is not
+    # enumerable; a reader that had to list them would silently stop aligning the moment somebody
+    # installed a plugin.
+    for event_type in (
+        "x/core/model-switch",
+        "x/core/preset-switch",
+        "x/core/context-breakdown",
+        "x/core/compaction-begin",
+        "x/plugin/6a629743672f8122/my-event",
+        "x/agnes/whatever/next",
+    ):
+        assert is_conversation(_event(event_type)) is False, event_type
+    # And the fixed conversation vocabulary is still state.
+    for event_type in ("user/message", "assistant/message", "tool/call", "tool/result"):
+        assert is_conversation(_event(event_type)) is True, event_type
+
+
+def test_register_rows_never_move_the_chain() -> None:
+    # The reducer's OBJECT_REGISTERS set: rows that maintain a register rather than carry a
+    # message. A fork rewrites some of them at the boundary, which is reason enough.
+    for event_type in ("budget.state", "inbox", "plan.items", "artifact/job", "op.state"):
+        assert is_conversation(_event(event_type)) is False, event_type
 
 
 def test_a_child_that_inherited_a_different_prefix_does_not_align(tmp_path: Path) -> None:
@@ -153,10 +190,21 @@ def test_the_known_bookkeeping_rows_are_not_state() -> None:
 
 
 def test_a_type_nobody_has_seen_counts_as_state() -> None:
-    # The safe default. An unlisted bookkeeping row makes two identical states look different, which
-    # shows up at once as a pipeline that finds nothing; the opposite default would align two
-    # genuinely different states and teach from a comparison that was never true.
-    assert is_conversation(_event("x/some-new-conversation-row"))
+    # The default outside the extension namespace. An unlisted bookkeeping row makes two identical
+    # states look different, which shows up at once as a pipeline that finds nothing; the opposite
+    # default would align two genuinely different states and teach from a comparison that was never
+    # true. So an unknown type is state until somebody classifies it.
+    assert is_conversation(_event("some-new-type-nobody-has-seen"))
+    assert is_conversation(_event("session/something-added-later"))
+
+
+def test_the_extension_namespace_is_the_one_open_set() -> None:
+    # `x/` inverts the default, because there the set is open by construction: a plugin chooses its
+    # own event name, so no list can be complete and a reader that waited to learn one would stop
+    # aligning the moment somebody installed a plugin.
+    assert EXTENSION_EVENT_PREFIX == "x/"
+    assert not is_conversation(_event("x/anything/at/all"))
+    assert not is_conversation(_event("x/plugin/a/b/c"))
 
 
 def test_the_chain_does_not_move_across_bookkeeping_rows() -> None:

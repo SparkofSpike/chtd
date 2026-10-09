@@ -107,6 +107,45 @@ def test_collect_refuses_a_task_with_no_prepared_run(tmp_path: Path) -> None:
         )
 
 
+def test_the_newest_session_is_chosen_by_creation_not_by_sequence(tmp_path: Path) -> None:
+    # A fork's child starts at its parent's boundary. A child that ran on can therefore hold a lower
+    # last sequence than the parent it forked from, and ordering by sequence would name the parent.
+    from harness.rollout import _newest_session
+
+    builder = build_ledger(tmp_path / "sessions.db")
+    builder.session("parent", created_at="2026-10-01T00:00:00Z").start("parent")
+    builder.tool_call("parent", "read", {"path": "a"})
+    builder.tool_call("parent", "read", {"path": "b"})
+    builder.tool_call("parent", "read", {"path": "c"})
+    # The child is created later and stops early: lower last sequence, later creation.
+    builder.fork_from("parent", "child", 1, created_at="2026-10-01T00:05:00Z")
+    builder.start("child", parent={"key": "parent", "boundarySeq": 1})
+    builder.close()
+
+    assert _newest_session(tmp_path / "sessions.db") == "child"
+
+
+def test_a_ledger_with_no_sessions_rows_falls_back_to_sequence(tmp_path: Path) -> None:
+    # A fixture, or a ledger written before the sessions table existed. There it cannot be wrong:
+    # with no sessions rows there are no forks to confuse it with.
+    from harness.rollout import _newest_session
+
+    builder = build_ledger(tmp_path / "sessions.db")
+    builder.start("only")
+    builder.tool_call("only", "read", {})
+    builder.close()
+    assert _newest_session(tmp_path / "sessions.db") == "only"
+
+
+def test_a_ledger_with_no_sessions_at_all_is_an_error(tmp_path: Path) -> None:
+    from harness.rollout import _newest_session
+
+    builder = build_ledger(tmp_path / "sessions.db")
+    builder.close()
+    with pytest.raises(RuntimeError, match="wrote no session"):
+        _newest_session(tmp_path / "sessions.db")
+
+
 def test_records_survive_a_round_trip(tmp_path: Path) -> None:
     record = RolloutRecord(
         task_id="t1",
