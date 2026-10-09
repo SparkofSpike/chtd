@@ -18,7 +18,9 @@ harness/rollout.py       drive sessions, collect trajectories, record what each 
 distill/divergence.py    pair two trajectories by state; report what differed and what did not meet
 distill/gate.py          the signal-quality gate: admit only outcome-validated divergences
 distill/dataset.py       rows + manifest + refusals; refuses to mix tracks
+distill/sft.py           rows + the captured harness prefix -> the JSONL a trainer eats
 distill/train.py         the LoRA plan, and the accelerator check that stops it without a GPU
+distill/finetune.py      the run itself, and the prefix-drift refusal that keeps it honest
 distill/pipeline.py      the command that runs the above over recorded rollouts
 eval/metrics.py          one run's numbers, from the trajectory rather than from a self-report
 eval/arms.py             the baseline-vs-CHTD comparison, after refusing mismatched conditions
@@ -49,6 +51,30 @@ python -m distill.pipeline dataset \
 `{prefix_digest, admitted}` for judgements a human or a verifier recorded. At least one is required —
 the command refuses to build an ungated dataset, because a gate with no validators admits everything
 and admitting everything is the behaviour the gate exists to prevent.
+
+Turn the dataset into training rows, and run the fine-tune:
+
+```
+# rows: the state from the ledger, the teacher's turn as the label
+python -m distill.sft \
+    --dataset data/datasets/official-1 \
+    --student-ledger data/agh_home/data/sessions.db \
+    --prefix harness/prefix/capture-1.json \
+    --out data/sft/official-1.jsonl
+
+# the recipe, the dataset digest and the base model, frozen together
+python -c "from distill.train import ..."   # build_plan + write_plan; see distill/train.py
+
+# the run itself, on a machine with a GPU
+python -m distill.finetune \
+    --plan data/sft/plan-chtd.json --samples data/sft/official-1.jsonl \
+    --base-model <local Qwen3-4B-Instruct-2507> --output <adapter dir>
+```
+
+`distill.finetune` refuses a sample whose prompt does not tokenize to a prefix of its rendering
+(`PrefixDrift`) and refuses a sample longer than the recipe's `max_sequence_length` rather than
+truncate it — the label is the last thing in the conversation, so truncation removes the answer.
+`--dry-run` renders and checks without loading the model.
 
 Then compare, strip and report with `eval/arms.py`, `eval/stripping.py`, `eval/distractors.py` and
 `eval/report.py`. `tests/test_pipeline.py` runs the first half of that chain end to end over real
@@ -93,21 +119,26 @@ fail.
 
 ## What is not built yet
 
-- **The training loop.** `distill/train.py` produces the plan — recipe, provenance, dataset digest —
-  and refuses without an accelerator. It does not run PEFT; that is a GPU-side step.
-- **The runner has not driven a rollout against a live model.** The harness builds, its CLI runs,
-  and its exact argv was checked against the real binary — which is how two mistakes were found: the
-  slot is `primary` rather than `main`, and `--standalone` is needed because the daemon does not come
-  up here. With both fixed a real session was created, written to a real ledger, and read back by
-  `harness/ledger.py`. What remains is an endpoint: the probe pointed at a closed port, so the turn
-  ended in an auth error *after* its rows were durable. Choosing the models is the M0 decision.
-  Everything the runner produces — ledger reading, trajectory extraction, divergence, gating — is
-  exercised against real ledgers.
+- **The training loop is built, and one run has happened.** `distill/finetune.py` carries out the
+  plan `distill/train.py` writes: 4-bit load, LoRA injection, the sample rendering with its
+  prefix-drift refusal, and the adapter on disk. Its first real run is recorded in
+  `runs/chtd-1/` and described in [finetune.md](finetune.md). What is *not* built is a dataset large
+  enough for the run to mean anything: one entry, 20 supervised tokens, one effective step.
+- **The runner has driven rollouts against live models, and the training-side gap is the ladder.**
+  Both arms have run the frozen track against real endpoints — the teacher at the organisers'
+  Agnes endpoint and the student at the box's local one — and the teacher's session was forked into
+  the student's state to produce the divergence the gate admitted. What the runner still cannot do
+  is produce a **stripping-ladder rung**: it takes a route and a model but no preset and no tool or
+  turn limit, so `eval/stripping.py` assesses a ladder somebody else's run would have to supply.
 
   Building needs `AGNES_NODE_HEADERS` pointed at a Node header cache (see *Prerequisites* below);
   without it the build stops in its own native step.
 - **One DAgger round.** `distill/pipeline.py` collects one round. Aggregation across rounds is
   future work, and the limitation is carried in every report.
+- **A task set.** `harness/tasks/example.jsonl` is a placeholder and says so in its first line; the
+  one task that has actually run was written into a script. The target capability's tasks have to
+  induce the error the student must recover from, and each needs a known-good recovery so the gate
+  has an outcome to validate against. See [finetune.md](finetune.md) for the collection arithmetic.
 
 ## Prerequisites
 

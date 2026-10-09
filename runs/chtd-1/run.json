@@ -1,0 +1,52 @@
+{
+  "adapter_files": [
+    "README.md",
+    "adapter_config.json",
+    "adapter_model.safetensors",
+    "added_tokens.json",
+    "chat_template.jinja",
+    "merges.txt",
+    "special_tokens_map.json",
+    "tokenizer.json",
+    "tokenizer_config.json",
+    "vocab.json"
+  ],
+  "arm": "chtd",
+  "base_model": "/root/models/models/Qwen--Qwen3-4B-Instruct-2507/snapshots/master",
+  "base_model_revision": null,
+  "dataset_sha256": "a8c373b104ab442c4780c7f3f9914014cafe1243ec5ecfe7123f14211e525f9b",
+  "entries": 1,
+  "epochs": 3,
+  "global_step": 3,
+  "max_sequence_length_used": 8192,
+  "peak_gpu_memory_gb": 17.794,
+  "recipe": {
+    "alpha": 32,
+    "batch_size": 1,
+    "dropout": 0.05,
+    "epochs": 3,
+    "gradient_accumulation": 1,
+    "learning_rate": 0.0002,
+    "max_sequence_length": 8192,
+    "rank": 16,
+    "seed": 0,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj"
+    ],
+    "warmup_ratio": 0.03
+  },
+  "samples_sha256": "5fbda536f5bac0eb5b9a8db1301c3379a9ec17f52bb90fa11b7ce8fcac825b4b",
+  "samples_trained": 1,
+  "teacher_model": "agnes-3.0-flash",
+  "token_lengths": {
+    "max": 6715,
+    "min": 6715
+  },
+  "total_parameters": 2217606656,
+  "track_sha256": "a37b90fe31115418c17c8294622df7eac37511abd9283356ea464828682b39d5",
+  "trainable_parameters": 11796480,
+  "training_loss": 4.121942520141602
+}

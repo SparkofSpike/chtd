@@ -63,7 +63,7 @@ The harness is therefore not merely a container for the experiment; it is the in
 ```
 harness/   The frozen track, its freeze gate, the Profile, and rollout collection
 packages/  The frozen track delivered as a package the harness can install
-distill/   Dataset construction, the signal-quality gate, and LoRA training
+distill/   Dataset construction, the signal-quality gate, SFT sample building, and LoRA training
 eval/      Co-harness evaluation, the arm comparison and distractor analysis
 tests/     The pipeline's tests — real ledgers, no model, no GPU, no network
 docs/      Design, method and experiment plan
@@ -84,8 +84,16 @@ writable ledger, a dataset from two tracks, a comparison of unlike arms, a kept 
 reason — are listed with the reason each is a refusal rather than a warning in
 [docs/pipeline.md](docs/pipeline.md).
 
-No rollout or training run has been performed yet. Those wait on the open questions in the design
-(compute, model sizes, target capability) and, for the training step, on a machine with a GPU.
+**Rollouts and a training run have now happened, at smoke-test scale.** A student and a teacher ran
+the same frozen track against real endpoints, the gate admitted one divergence, and the first LoRA
+fine-tune was carried out on a 48 GB 4090 — the adapter loads, serves behind the harness's student
+route, and runs on the frozen track ([docs/finetune.md](docs/finetune.md), [runs/chtd-1/](runs/chtd-1/)).
+
+**What that is not is evidence for the claim.** One entry, 20 supervised tokens, one effective
+optimizer step: the tuned student's answer is wrong in the same way the untuned one was. The dataset
+is a smoke test, and what would have to happen to get a real one — a task set whose failures are
+legible, tasks with more steps, and throttled collection against a rate limit — is set out with its
+arithmetic in [docs/finetune.md](docs/finetune.md).
 
 ## License
 

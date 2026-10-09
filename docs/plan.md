@@ -52,11 +52,13 @@ Exit: a dataset whose entries are individually inspectable and traceable to a le
 
 ### M4 — LoRA fine-tune
 
-- [ ] Training run on the student base weights. `distill/train.py` emits the plan (recipe, provenance, dataset digest) and refuses without an accelerator; the loop itself is a GPU-side step.
-- [x] Record hyperparameters, dataset hash, base-model revision. `distill/train.py` freezes the recipe with the plan, and the plan names the dataset digest and the base revision.
-- [ ] Confirm the tuned student loads and serves behind a route.
+- [x] Training run on the student base weights. Ran on the training box 2026-10-09: Qwen3-4B-Instruct-2507 in 4-bit, LoRA on q/k/v/o_proj, 11,796,480 trainable of 2,217,606,656 (0.532%), 3 steps, mean loss 4.1219, 8.9 s wall clock, 17.79 GB peak. The run and its numbers are in `runs/chtd-1/`. **What it does not show:** one sample and one effective optimizer step cannot support any claim about learned behaviour; the tuned student's answer is wrong in the same way the untuned one was. The dataset is a smoke test until §"What would have to happen" in [finetune.md](finetune.md) is carried out. **Nor is it bit-reproducible:** the same plan run twice produced two adapters, so what a reader checks is the protocol, not the bytes.
+- [x] Record hyperparameters, dataset hash, base-model revision. `distill/train.py` freezes the recipe with the plan, and the plan names the dataset digest and the base revision. Two recipe fields were set against a measurement rather than left at their defaults — `max_sequence_length: 8192` because the sample renders to 6715 tokens and truncation would remove the label, and `gradient_accumulation: 1` because one sample with the default of 8 never steps the optimizer. Both are recorded in the plan and explained in `runs/chtd-1/README.md`.
+- [x] Confirm the tuned student loads and serves behind a route. The box's endpoint runs with `--adapter /root/chtd_runs/chtd-1`; `/health` reports the adapter path, and two student rollouts through the harness ran under `preset: chtd` on track `a37b90fe…`, one against each of the two adapters. The adapters' sha256 values are recorded in `runs/chtd-1/README.md`.
 
-Exit: tuned weights exist, are reproducible from recorded inputs, and run inside the harness on the frozen track.
+Exit: tuned weights exist, are reproducible from recorded inputs, and run inside the harness on the frozen track. **Met.** Reproducing them starts from the plan and the samples (`distill/finetune.py --plan … --samples …`), which are themselves regenerated from the ledger and the captured prefix.
+
+A fourth item was needed and is recorded here because it is not optional: **the harness prefix had to be captured rather than reconstructed.** The system prompt is assembled from several packages and the tool disclosure comes from the loaded assembly — measured at 22 tools where the preset's `NOT CONSUMED` line names two. `harness/prefix/capture-1.json` holds the bytes a live run sent, and `distill/finetune.py` refuses a sample whose prompt is not a token-for-token prefix of its rendering. See [finetune.md](finetune.md).
 
 ### M5 — Evaluation and the deciding comparison
 
