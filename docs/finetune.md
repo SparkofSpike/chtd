@@ -141,6 +141,59 @@ What is preserved is the property the comparison rests on — one track, both ar
 session's own record. What is lost is that the track is this project's own frozen recipe, and a
 result from a builtin recipe is weaker evidence than one from a track this project froze and defends.
 
+## The third run: a complete LoRA, a gated dataset, and the first correct answers
+
+Run 2 showed the behaviour transferring. This run is what makes the training itself complete, and
+what it found along the way is worth more than the score.
+
+### The recipe is a complete LoRA now
+
+The first two runs adapted `q/k/v/o`. On this base model attention holds 943,718,400 of the weights
+and the feed-forward block 2,689,597,440 — about three times as much — so half a LoRA was asking
+attention to carry a change it was never the part holding. Runs now target all seven projections at
+rank 32: 66,060,288 trainable, 1.6423% of a 4,022,468,096-parameter model.
+
+### The model's parameter count was wrong, twice over
+
+`_logical_parameter_count` assumed `q_proj` was square. It is `4096 x 2560` — the query projects to
+`num_attention_heads * head_dim` — and Qwen3 adds a `q_norm` and a `k_norm` of `head_dim` per layer.
+The function understated the model by 283,133,952 parameters, and every share derived from it with
+them. It now reproduces the checkpoint to the parameter, checked against the safetensors headers
+rather than against arithmetic.
+
+Nothing in the pipeline could have caught this: the number was only ever compared with itself. It
+surfaced because a *different* question — what would a complete LoRA cover — needed the same number
+for its own reasons.
+
+### The gate read the outcome and not the action
+
+The first dataset for this run admitted three teacher actions among twenty-two that named `/` or a
+`/tmp/...` directory. Every one of them passed the outcome check, because the teacher's *run*
+succeeded. The adapter learned the habit: it calls `read({"path": "/answers.py"})` in a workspace
+whose file is `answers.py`, is refused twice, and gives up — a run indistinguishable from a failed
+diagnosis unless one reads the tool calls.
+
+`WorkspaceRelativePaths` refuses an absolute, drive-qualified or UNC path on the tools whose first
+argument is a workspace path. In a co-harness run that is not a style preference: the two arms work
+in different directories, so an absolute path cannot be right for both. It is the same objection
+that rules out a preset injecting its `cwd`, arriving through a label instead of through the input.
+
+Retraining on the nineteen gated rows produced an adapter that reads relative paths and diagnoses
+correctly twice out of five, where the polluted one diagnosed nothing.
+
+### The result, and its size
+
+```
+                     base      chtd-3         chtd-4
+held-out tasks      greeting   ls read ls ✗   ls read read ✓✓✗✗✗
+correct diagnoses   0 / 5      0 / 5          2 / 5
+```
+
+Two of five leaves the failure mode very much present: on `fix-shallow-copy` the model says *"it
+creates a copy of the table"* about a function that mutates the caller's rows — the defect read
+backwards, stated confidently. And the score is a screen rather than a measurement: `fix-single-name`
+is marked wrong by the phrase check while its answer names the defect.
+
 ## The first run, and the size of the problem
 
 One entry, three steps, about nine seconds of training. The loss falls on the third step and the
@@ -210,14 +263,18 @@ and the dataset is a smoke test.
 ## What is not built
 
 - **Multi-round collection.** One DAgger round is implemented; aggregation across rounds is not.
-- **A held-out set big enough to be a rate.** Four tasks give a direction, not a number.
+- **A held-out set big enough to be a rate.** Five tasks give a direction, not a number.
+- **A phrase check that measures rather than screens.** Both failure directions were observed: an
+  answer that said the code was fine passed, and an answer that was right failed because `slice` is
+  not a substring of `slicing`. Run 3 added a third: `fix-single-name` is scored wrong while its
+  answer names the defect. Automating "did it diagnose correctly" needs something better than
+  substring matching, and nothing here has it.
 - **The baseline arm's data.** The deciding comparison needs teacher-from-its-own-trajectory data;
-  only the CHTD arm's dataset exists. The held-out comparison above is base-weights versus tuned,
-  which is a different and weaker question than the two arms the design names.
+  only the CHTD arm's dataset exists. Every comparison above is base-weights versus tuned, which is
+  a different and weaker question than the two arms the design names.
 - **Evaluation numbers.** `eval/` compares arms and assesses a stripping ladder, and nothing yet
   produces a ladder rung — the runner takes a route and a model but no preset and no tool or turn
   limit. That gap is unchanged by this work and is stated in `docs/pipeline.md`.
-- **A phrase check that measures rather than screens.** Both failure directions were observed in one
-afternoon: an answer that said the code was fine passed, and an answer that was right failed because
-`slice` is not a substring of `slicing`. Automating "did it diagnose correctly" needs something
-better than substring matching, and nothing here has it.
+- **A gate that reads more than paths.** `WorkspaceRelativePaths` covers one class of bad label,
+  found by accident. Whether other classes were admitted and never noticed is not known, and the
+  honest answer is that nothing searches for them.
