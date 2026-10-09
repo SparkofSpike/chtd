@@ -150,9 +150,13 @@ def test_extension_events_never_move_the_chain() -> None:
         "x/agnes/whatever/next",
     ):
         assert is_conversation(_event(event_type)) is False, event_type
-    # And the fixed conversation vocabulary is still state.
-    for event_type in ("user/message", "assistant/message", "tool/call", "tool/result"):
+    # And the fixed conversation vocabulary is still state. A message carries text because an
+    # `assistant/message` with no text is deliberately not state — see
+    # `test_an_assistant_message_with_no_text_is_not_state`; a fixture with no payload would be
+    # asserting the opposite of the rule.
+    for event_type in ("user/message", "tool/call", "tool/result"):
         assert is_conversation(_event(event_type)) is True, event_type
+    assert is_conversation(_event("assistant/message", _text_message("hello"))) is True
 
 
 def test_register_rows_never_move_the_chain() -> None:
@@ -185,8 +189,9 @@ def test_the_known_bookkeeping_rows_are_not_state() -> None:
     for event_type in ("session/start", "turn/start", "budget.state", "inbox", "step/start"):
         assert event_type in BOOKKEEPING_TYPES
         assert not is_conversation(_event(event_type))
-    for event_type in ("user/message", "assistant/message", "tool/call", "tool/result"):
+    for event_type in ("user/message", "tool/call", "tool/result"):
         assert is_conversation(_event(event_type))
+    assert is_conversation(_event("assistant/message", _text_message("done")))
 
 
 def test_a_type_nobody_has_seen_counts_as_state() -> None:
@@ -333,6 +338,54 @@ def _event(event_type: str, data: object = None, *, seq: int = 1):
         actor={},
         source_event_seqs=(),
     )
+
+
+def _text_message(text: str) -> dict:
+    """An `assistant/message` the way the harness writes one that says something."""
+    return {"content": [{"type": "text", "text": text}], "stopReason": "end_turn"}
+
+
+def test_an_assistant_message_with_no_text_is_not_state() -> None:
+    """The empty row a tool-calling turn leaves behind is not a state the model was in.
+
+    The harness writes `assistant/message` with `content: []` and `stopReason: "tool_use"`
+    immediately before the `tool/call` the turn decided on. Counting it as state splits two
+    models that were in the same state: one that writes the empty row carries it in every
+    later prefix, one that does not writes nothing, and the two cannot align at their first
+    decision — so the pipeline reports zero divergences for a reason that has nothing to do
+    with the models.
+
+    Measured, not hypothetical: deepseek-v4-pro wrote the empty row before its `read` call
+    and qwen3-4b-instruct did not, on the first real pair of rollouts, and every prefix
+    differed from seq 16 onward while every state row up to seq 15 was identical.
+    """
+    for data in (
+        {"content": [], "stopReason": "tool_use"},
+        {"content": [{"type": "text", "text": "   "}], "stopReason": "tool_use"},
+        {"content": [], "stopReason": "end_turn"},
+        {"text": "", "stopReason": "tool_use"},
+        {},
+    ):
+        assert is_conversation(_event("assistant/message", data)) is False, data
+
+    # A message that says something is state, and it is still a decision.
+    said = _event("assistant/message", _text_message("hello"))
+    assert is_conversation(said) is True
+    assert len(decision_points([said])) == 1
+
+
+def test_an_empty_message_does_not_move_the_prefix_chain() -> None:
+    """The chain must be unaffected by the empty row, which is what makes the alignment hold."""
+    plain = [_event("user/message", seq=1), _event("tool/call", seq=2)]
+    with_empty = [
+        _event("user/message", seq=1),
+        _event("assistant/message", {"content": [], "stopReason": "tool_use"}, seq=2),
+        _event("tool/call", seq=3),
+    ]
+    plain_chain = prefix_chain(plain)
+    empty_chain = prefix_chain(with_empty)
+    # The call sits at a different seq in each list; compare the digest each one was decided in.
+    assert plain_chain[2] == empty_chain[3]
 
 
 def test_reading_a_session_with_no_events_names_the_ledger(tmp_path: Path) -> None:

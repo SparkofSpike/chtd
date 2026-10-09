@@ -125,6 +125,35 @@ BOOKKEEPING_TYPES = frozenset(
 EXTENSION_EVENT_PREFIX = "x/"
 
 
+def _message_text(data: Any) -> str:
+    """The text an ``assistant/message`` carries, or the empty string when it carries none.
+
+    One function because two callers must agree: :func:`_action_of` decides whether such a row is a
+    decision, and :func:`is_conversation` decides whether it is state. When those two disagreed, a
+    row that was not a decision still advanced the prefix chain — and the failure that produced is
+    described on :func:`is_conversation`.
+
+    The payload shapes are read leniently on purpose. Agnes Harness is pre-alpha and has already
+    changed its event vocabulary once; a reader that required an exact key set would stop producing
+    trajectories on an upgrade, and the experiment's own record would be the thing that broke. A
+    empty-but-present ``content`` and a bare ``text`` field are both shapes a message has taken.
+    """
+    if not isinstance(data, dict):
+        return ""
+    blocks = data.get("content")
+    if isinstance(blocks, list):
+        texts = [
+            block["text"]
+            for block in blocks
+            if isinstance(block, dict) and isinstance(block.get("text"), str)
+        ]
+        joined = "\n".join(texts).strip()
+        if joined:
+            return joined
+    text = data.get("text")
+    return text.strip() if isinstance(text, str) else ""
+
+
 def is_conversation(event: Event) -> bool:
     """Whether a row is part of the state the model was in.
 
@@ -138,8 +167,20 @@ def is_conversation(event: Event) -> bool:
     The `x/` prefix is the one place the opposite default applies, because there the set is open by
     construction: a plugin's event name is its own, and a reader that waited to learn it would stop
     aligning the moment somebody installed one.
+
+    **An `assistant/message` that carries no text is not state.** It is the row a turn that ends in
+    a tool call leaves behind — ``content: []``, ``stopReason: "tool_use"`` — and the decision it
+    belongs to is the `tool/call` that follows it, not the empty message. Counting it as state
+    splits two models that were in the same state: one that writes the empty row before its call
+    carries it in every later prefix, one that does not, and neither can align with the other at
+    the very first decision. That is not a hypothetical — it is what `standard`-recorded runs of
+    DeepSeek and Qwen did on the first real pair of rollouts, and the pipeline found zero
+    divergences for a reason that had nothing to do with the models. A message with text is
+    unaffected; this excludes only the rows that say nothing.
     """
     if event.type.startswith(EXTENSION_EVENT_PREFIX):
+        return False
+    if event.type == "assistant/message" and not _message_text(event.data):
         return False
     return event.type not in BOOKKEEPING_TYPES
 
@@ -265,10 +306,7 @@ def _start_event(events: Sequence[Event]) -> Event | None:
 def _action_of(event: Event) -> Action | None:
     """Read one event as a decision, or return ``None`` when it is not one.
 
-    The payload shapes are read leniently on purpose. Agnes Harness is pre-alpha and has already
-    changed its event vocabulary once; a reader that required an exact key set would stop producing
-    trajectories on an upgrade, and the experiment's own record would be the thing that broke. A
-    tool call missing a name is still reported — as a nameless call — because dropping it would
+    A tool call missing a name is still reported — as a nameless call — because dropping it would
     make the two arms disagree about how many decisions a run contained.
     """
     data = event.data if isinstance(event.data, dict) else {}
@@ -277,18 +315,8 @@ def _action_of(event: Event) -> Action | None:
         return Action(kind="tool_call", name=data.get("name"), payload=data.get("args"))
 
     if event.type == "assistant/message":
-        if "content" in data:
-            blocks = data.get("content")
-            texts = []
-            if isinstance(blocks, list):
-                for block in blocks:
-                    if isinstance(block, dict) and isinstance(block.get("text"), str):
-                        texts.append(block["text"])
-            joined = "\n".join(texts).strip()
-            if joined:
-                return Action(kind="message", name=None, payload=joined)
-        text = data.get("text")
-        if isinstance(text, str) and text.strip():
+        text = _message_text(data)
+        if text:
             return Action(kind="message", name=None, payload=text)
 
     return None
