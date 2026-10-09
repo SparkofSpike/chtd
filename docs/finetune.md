@@ -95,6 +95,52 @@ Two consequences of the same reasoning are visible in the recipe:
   task about opening a file. They are kept because the claim under test is that a capability
   transfers *within the harness*, and the harness is what the student meets at inference.
 
+## The second run: twelve samples, and behaviour that moved
+
+The data side was rebuilt as a task set — twelve workspaces each holding one real defect, plus four
+held out — and the pipeline was extended to turn a whole round into one dataset
+(`distill/rounds.py`) and to judge a read-only task by its answer
+(`harness/tasks/check_diagnosis.py`). The run itself is `runs/chtd-2/`.
+
+The headline is that **the behaviour changed, on tasks the model never trained on**:
+
+```
+                    base weights          + the adapter
+all four held-out   greeting, then stop   ls, read, read, answer
+
+diagnosis correct   0 / 4                 1 / 4
+```
+
+Every training sample demonstrated the same opening sequence, and the tuned model runs it in
+directories it has never seen. That is the transfer the method is for. One correct diagnosis out of
+four is not a rate — it is a single data point, and the other three answers describe the code and
+conclude it is fine.
+
+### What this round had to get past, and what it cost
+
+**The track could not be the project's own.** A collection round needs `edit`, `write` and `shell`
+to be usable with nobody at the terminal. `read` declares `requiresApproval: 'never'`; the other
+three are destructive and an empty `command_policy` sends each of them to a human. The frozen track
+therefore grew a pre-approval table — and then could not be loaded at all: a non-builtin package
+loads only through a runtime snapshot, and `package add` refuses here in every state tried
+(`E_PACKAGE_STATE` with an empty blockers list, "violated the disabled/untrusted default", and with
+a genuinely new slot "Package data could not be verified"). Those bytes never reached the harness.
+
+**The first working track produced nothing.** `standard-windows` runs, pre-approves repairs, and
+injects a `[runtime context]` message carrying the session's `cwd`. Two arms necessarily run in two
+directories — the session key is derived from the working directory — so the two sides' first
+decision points hash differently and **no state aligns**: 24 runs, 0 divergences. That is the
+confound CHTD exists to remove, arriving through the track.
+
+**`minimal-rl` is the one that works here.** Builtin, byte-frozen, and the recipe built for training:
+its `prompt_sections` is empty, so nothing about the run enters the conversation and two arms in two
+directories see the same state. Measured: both sides' first decision points hash identically. Its
+approval table is empty, which is why the tasks ask for a diagnosis instead of a repair.
+
+What is preserved is the property the comparison rests on — one track, both arms, verified from each
+session's own record. What is lost is that the track is this project's own frozen recipe, and a
+result from a builtin recipe is weaker evidence than one from a track this project froze and defends.
+
 ## The first run, and the size of the problem
 
 One entry, three steps, about nine seconds of training. The loss falls on the third step and the
@@ -164,8 +210,14 @@ and the dataset is a smoke test.
 ## What is not built
 
 - **Multi-round collection.** One DAgger round is implemented; aggregation across rounds is not.
+- **A held-out set big enough to be a rate.** Four tasks give a direction, not a number.
+- **The baseline arm's data.** The deciding comparison needs teacher-from-its-own-trajectory data;
+  only the CHTD arm's dataset exists. The held-out comparison above is base-weights versus tuned,
+  which is a different and weaker question than the two arms the design names.
 - **Evaluation numbers.** `eval/` compares arms and assesses a stripping ladder, and nothing yet
   produces a ladder rung — the runner takes a route and a model but no preset and no tool or turn
   limit. That gap is unchanged by this work and is stated in `docs/pipeline.md`.
-- **The baseline arm's data.** The deciding comparison needs teacher-from-its-own-trajectory data;
-  only the CHTD arm's dataset exists.
+- **A phrase check that measures rather than screens.** Both failure directions were observed in one
+afternoon: an answer that said the code was fine passed, and an answer that was right failed because
+`slice` is not a substring of `slicing`. Automating "did it diagnose correctly" needs something
+better than substring matching, and nothing here has it.
