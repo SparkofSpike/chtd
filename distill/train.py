@@ -75,6 +75,28 @@ class TrainingPlan:
     def to_json(self) -> str:
         return json.dumps(asdict(self), sort_keys=True, ensure_ascii=False, indent=2)
 
+    @classmethod
+    def from_json(cls, text: str) -> TrainingPlan:
+        """Read back what :meth:`to_json` wrote, with the recipe restored to its own type.
+
+        ``asdict`` flattening the recipe into a mapping is right for a record a reader inspects and
+        wrong for one a program reads back: a plan whose ``recipe`` stayed a dict fails at the first
+        attribute access, so the run starts and then stops for a reason that has nothing to do with
+        the training it was meant to do.
+        """
+        raw = json.loads(text)
+        recipe = dict(raw.get("recipe") or {})
+        target_modules = recipe.get("target_modules")
+        if isinstance(target_modules, list):
+            recipe["target_modules"] = tuple(target_modules)
+        return cls(
+            **{
+                **raw,
+                "recipe": LoraRecipe(**recipe),
+                "notes": tuple(raw.get("notes") or ()),
+            }
+        )
+
 
 def require_accelerator() -> str:
     """Return the accelerator's name, or refuse.

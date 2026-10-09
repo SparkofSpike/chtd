@@ -36,6 +36,7 @@ __all__ = [
     "build_dataset",
     "dataset_digest",
     "mixed_tracks",
+    "read_dataset",
     "write_dataset",
 ]
 
@@ -229,3 +230,51 @@ def write_dataset(dataset: Dataset, directory: str | Path) -> dict[str, Path]:
     manifest_path.write_text(dataset.manifest.to_json() + "\n", encoding="utf-8")
 
     return {"entries": entries_path, "refusals": refusals_path, "manifest": manifest_path}
+
+
+def read_dataset(directory: str | Path) -> Dataset:
+    """Read back what :func:`write_dataset` wrote.
+
+    The manifest is required rather than optional. A dataset whose track is unknown cannot be
+    trained against — :func:`distill.train.build_plan` refuses a track it was not told — so a
+    reader that supplied a default would hide the very gap the manifest exists to close.
+
+    Entries are reconstructed by field name rather than position, so a row written by an older
+    version that gained a field fails loudly here instead of silently shifting a value into the
+    wrong column.
+    """
+    source = Path(directory)
+    entries_path = source / "entries.jsonl"
+    manifest_path = source / "manifest.json"
+    if not entries_path.exists():
+        raise FileNotFoundError(f"no entries.jsonl under {source}")
+    if not manifest_path.exists():
+        raise FileNotFoundError(f"no manifest.json under {source}")
+
+    entries = [
+        DatasetEntry(**json.loads(line))
+        for line in entries_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+
+    refusals: list[DatasetRefusal] = []
+    refusals_path = source / "refusals.jsonl"
+    if refusals_path.exists():
+        refusals = [
+            DatasetRefusal(**json.loads(line))
+            for line in refusals_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+
+    raw = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest = DatasetManifest(
+        track_sha256=raw["track_sha256"],
+        dataset_sha256=raw["dataset_sha256"],
+        entries=raw["entries"],
+        refusals=raw["refusals"],
+        tasks=tuple(raw["tasks"]),
+        arms=tuple(raw["arms"]),
+        created_at=raw["created_at"],
+        version=raw.get("version", 1),
+    )
+    return Dataset(entries=tuple(entries), refusals=tuple(refusals), manifest=manifest)
