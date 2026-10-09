@@ -154,10 +154,11 @@ token and then never terminated.
 Measured throughput: about 19 tokens/s for a 64-token completion, single request,
 no batching.
 
-## Leaked accelerator memory, and why it stops the next training run
+## Stale accelerator accounting, and how it is cleared
 
-Measured 2026-10-09, after three fine-tunes. The card is 47.4 GB and `nvidia-smi` reported 42.86 GB
-of it charged to **pid 519330**, in a container where the highest live pid was 6,641.
+Measured 2026-10-09, after three fine-tunes and one script that loaded the model four times.
+`nvidia-smi` reported 42.86 GB of the 47.4 GB card charged to **pid 519330**, a process that did not
+exist:
 
 ```
 $ nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv
@@ -168,29 +169,57 @@ $ ls -d /proc/519330
 ls: cannot access '/proc/519330': No such file or directory
 ```
 
-`[Not Found]` is `nvidia-smi`'s own word for it: the process is gone and the driver still charges
-its memory. A CUDA context outlived the process that owned it.
+**A first version of this section said the box needed a container restart or a GPU reset on the
+host. That was wrong, and it was written without testing.** What follows is the test.
 
-**HAMi does not reclaim it.** The library names the mechanism — `strings /usr/local/vgpu/libvgpu.so`
-contains `Kick dead proc %d` and `Owner proc dead (%d), try fix` — and it fired once earlier in this
-box's life, for a different pid. It did not fire here, and it did not fire when a request could not
-be satisfied:
+### The test, and what it showed
+
+Stopping our own serving process was enough:
 
 ```
-$ python -c "import torch; torch.empty(20*1024**3//4, device='cuda')"
-HAMI-core ERROR: cuMemoryAllocate failed res=2
-CUDA out of memory. Tried to allocate 20.00 GiB. GPU 0 has a total capacity of
-47.37 GiB of which 5.21 GiB is free. Process 519330 has 41.86 GiB memory in use.
+before    nvidia-smi used: 42789 MiB    compute apps: 519330, 42860 MiB
+kill our server
+          HAMi: Kick dead proc 6348
+          nvidia-smi used:     0 MiB    compute apps: (none)
+restart our server
+          nvidia-smi used:  8875 MiB    compute apps: 535498, 8938 MiB
 ```
 
-The allocation failed rather than triggering a reclaim, and the free figure did not move. `/dev/shm`
-and `/tmp/vgpulock` are both empty, so the accounting lives on the host side and is not reachable
-from inside the container.
+Three things fall out of that.
 
-**What still works and what does not.** Serving does: the endpoint holds its ~12 GB, answers
-`/health`, and runs sessions. Training does not: the last run peaked at 18.3 GB and there are 5.2 GB
-free. **The box needs its container restarted, or the GPU reset on the host, before another
-fine-tune can run** — neither is possible from inside, and both are the operator's call.
+**Killing our GPU process triggers HAMi's sweep, and it clears everything.** HAMi's own string is
+`Kick dead proc %d`; it fired on our process and the whole table went to zero — including the stale
+entry. No host-side access is needed, and none was ever needed: the remedy was in our own container
+all along.
 
-Worth knowing before blaming the next run's failure on the model or the data: the symptom is a
-CUDA out-of-memory error naming a pid that does not exist.
+**The PIDs in `nvidia-smi` are host PIDs, so a PID number says nothing about whose process it is.**
+Our own server, which is pid 6890 inside this container, appears as **535498**. Any argument of the
+form "519330 is far outside our PID range, therefore it is another tenant's" is worthless — the
+ranges are different namespaces.
+
+**It was almost certainly ours.** Everything released when our process died, and the footprint
+matches our own activity rather than a stranger's: `measure_lora_for_real.py` loaded the model four
+times in one process and reported 27.6 GB free at its end, and three fine-tunes had run before it.
+Repeated loading in one process is what accumulates here — `del model` and `empty_cache()` do not
+destroy a CUDA context.
+
+### What to do about it
+
+If `nvidia-smi` charges memory to a `[Not Found]` process and a run cannot allocate, restart the
+container's own GPU process and re-measure. That is the whole remedy, it takes fifteen seconds, and
+it is what cleared 34 GB here.
+
+**Serving is unaffected** — the endpoint kept answering `/health` throughout, and after the restart
+a 20 GB allocation succeeded where it had previously failed:
+
+```
+free 38.3 GB of 47.4 GB
+ALLOCATED 20 GB — free is now 18.3 GB
+after release: free 38.3 GB
+```
+
+**And the honest limit of this section:** it establishes that the accounting is cleared this way and
+that the numbers match our own work. It does not establish that no other container has ever held
+memory on this card. The box is one container on a platform that shares GPUs between them — HAMi
+exists for that — so "the memory is not ours" is a possibility that should be *tested* rather than
+argued from a PID, which is the mistake this section is here to record.
