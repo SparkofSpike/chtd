@@ -80,12 +80,36 @@ unauthenticated request — the failure then degrades to `AUTH status=?`, with n
 HTTP status because no request left the machine.
 
 So a credential is mandatory even for a server that ignores credentials. Declaring
-`credentialRef: secret://student/default` satisfies the check, but the **file**
-store cannot resolve it here: `readWindowsSecret` calls `hasPrivateDaclSync`, which
-comes from the harness's native module, and on this machine that module exports
-only `abiVersion`. Every DACL helper is absent, so the read throws, and because the
-file store reports a *reason* (`private-file`) rather than a plain miss,
-`composeSecrets` will not fall through to its environment store either.
+`credentialRef: secret://student/default` satisfies the check, but the **file** store
+could not resolve it here, and the reason is worth stating precisely because the
+first diagnosis of it was wrong.
+
+`readWindowsSecret` checks the store directory and the namespace directory:
+
+```javascript
+for (const path of [root, join(root, ns)]) {
+  const stat = lstatSync(path)
+  if (!stat.isDirectory() || stat.isSymbolicLink() || !hasPrivateDaclSync(path))
+    throw Object.assign(new Error('unsafe secret directory'), { code: 'EACCES' })
+}
+```
+
+`hasPrivateDaclSync` was reported as missing — that was a mistake, and the correction
+is below — but it does return `false` for a directory that merely *looks* private:
+
+```
+hasPrivateDacl(<home>)              = true
+hasPrivateDacl(<home>/secrets)      = true
+hasPrivateDacl(<home>/secrets/student) = false     <-- the namespace directory
+```
+
+The check requires **`SE_DACL_PROTECTED`** on each directory, not just a short access
+list. `icacls /inheritance:r` sets that flag; `icacls /grant:r` does not. The store
+and its namespace were granted the right principals, but the namespace was left
+inheriting, so the flag was absent and the read was refused. And because the file
+store reports a *reason* (`private-file`) rather than a plain miss,
+`composeSecrets` will not fall through to its environment store either — a refusal is
+deliberately not a miss.
 
 The working configuration sidesteps the file store entirely:
 
@@ -101,19 +125,37 @@ $env:AGNES_SECRET_STUDENT_DEFAULT = "ollama-local-no-auth"
 `env` resolves `secret://student/default` from `AGNES_SECRET_STUDENT_DEFAULT` with
 no filesystem call. The daemon inherits it from the shell that starts it.
 
-### What this means for the native module
+Fixing the file store instead means protecting **every** directory in the chain:
 
-Functions that need it — private file reads, detached spawn, process identity — are
-unavailable until it is rebuilt against a Node header cache:
-
-```sh
-export AGNES_NODE_HEADERS=/path/to/node-headers   # ...\include\node\node_api.h
-pnpm --filter @agnes/system-node build:native
+```powershell
+icacls <dir> /inheritance:r
+icacls <dir> /grant:r "$env:USERNAME:(OI)(CI)F"
 ```
 
-The symptom of a stale build is an export list containing `abiVersion` and nothing
-else: the addon loads and passes its ABI check, so the failure appears late and in
-an unrelated feature.
+for the store and each namespace beneath it — the flag is per-directory and does not
+propagate.
+
+### The native module was never missing anything
+
+A probe once listed `Object.keys()` on `agnes-system.node`, saw only `abiVersion`, and
+concluded the DACL helpers had not been compiled. **They are present but
+non-enumerable.** `typeof native.hasPrivateDacl === 'function'`, and it answered
+correctly for every path it was asked about. The conclusion was wrong; the code was
+never the problem. What the probe should have reported is the `SE_DACL_PROTECTED`
+requirement described above — a fact about the directories, not about the module.
+
+Rebuilding is still worth having, and it needs no Visual Studio project system: the
+script locates `vswhere`, calls `VsDevCmd.bat`, and invokes `cl.exe` with everything
+stated explicitly.
+
+```sh
+export AGNES_NODE_HEADERS=/path/to/node-headers   # include/node/node_api.h + x64/node.lib
+dist/native/agnes-system.node                    # 228864 bytes
+```
+
+On Windows the layout the script wants is exact: `<root>/include/node/node_api.h`
+and `<root>/x64/node.lib`. Both come from nodejs.org for this Node version —
+`node-v<version>-headers.tar.gz` and `win-x64/node.lib`.
 
 ## Two details worth keeping
 
@@ -206,27 +248,109 @@ and the alignment holds anyway. This is also the closest available stand-in for
 CHTD's own frozen track: `minimal-rl` is the shipped baseline whose
 `prompt_sections` is empty for the same stated reason.
 
-## Still open
+## The frozen track loads, and what it took
 
-**The frozen track cannot be loaded.** `@chtd/track` declares a preset, its
-load-time freeze gate works, and it installs and trusts through the normal flow —
-but a trusted, enabled package with no immutable runtime snapshot stops the daemon
-at the `packages` step with `E_EXT_LOAD: trusted package has no immutable runtime
-snapshot`, and every session becomes unrunnable. A snapshot laid down by hand is
-discarded when the daemon next starts.
+`preset: chtd` now runs. The evidence, from the ledger itself:
 
-The consequence is stated rather than hidden: the rollouts above ran under
-`minimal-rl`, so their `resolvedPresetHash` is **not** CHTD's frozen track, and a
-dataset built from them is a demonstration of the pipeline rather than an
-attributable result. Closing this is what makes the numbers mean something.
+```
+student  session=...396121f2   preset=chtd   1 decision
+ teacher  session=...5d6b1a2b   preset=chtd   3 decisions
 
-**The native module is incomplete.** It exports `abiVersion` and nothing else, so
-`hasPrivateDaclSync` and its siblings are missing and the `file` secrets adapter
-cannot work. Rebuilding needs a Node header cache:
+shared state 935ef0d446090af60b5748a48b5cb847fa5440ff945ad705ad0e40f3546b0e1f
+  student: Hello!I'm ready to assist you with your queries.
+  teacher: I'll read the file and check the second line.
 
-```sh
-export AGNES_NODE_HEADERS=/path/to/node-headers   # ...\include\node\node_api.h
-pnpm --filter @agnes/system-node build:native
+1 divergence, 0 agreements, 2 novel   ->   admitted: 1, refused: 0
+track a37b90fe31115418c17c8294622df7eac37511abd9283356ea464828682b39d5
 ```
 
-This is a prerequisite for the track package, not an alternative to fixing it.
+That digest is `packages/chtd/presets/chtd.mjs` — the bytes the package's own gate
+checks at load — not the YAML the repository keeps beside it. The two are different
+files describing one track; `packages/chtd/tools/check-parity.mjs` is what holds them
+together.
+
+Two things were in the way, and one of them was a conclusion of mine that was wrong.
+
+### A hand-written runtime snapshot poisons the store
+
+The snapshot store is created and pinned by the daemon, during activation. An attempt
+to lay one down by hand — computing the hashes, copying the tree, writing the state
+file — appeared to work and then failed in a way that looked like a missing file:
+
+```
+E_EXT_LOAD: trusted package has no immutable runtime snapshot
+```
+
+while the state file plainly listed the snapshot and validated. Enable failed. What
+the hand-written entry also carried was a **guessed `requestHash`**, and
+`pinRuntimeSnapshotStore` compares that field when a pin is re-taken — so the daemon's
+attempt to pin its own snapshot hit `pin-id-reused`, the operation failed, and the
+failure path collected the snapshot back out of the store.
+
+That is why a snapshot laid down by hand kept disappearing at daemon start: it was
+being cleaned up as the residue of a failed operation, and the failure was mine.
+
+The working sequence needs nothing clever:
+
+```
+agh package add file:./packages/chtd     # through a pty, see below
+agh package trust <id> <integrity> <capabilityHash>
+agh package enable <id>                  # the daemon builds and pins the snapshot
+```
+
+`enable completed (100%)` and the state file went from four snapshots to five, with
+`@chtd/track` among them — created by the harness, not by me. **Do not hand-write
+entries in `.agnes-runtime-snapshots.json`; the store is a private implementation and
+the daemon owns it.** The correct answer to "the snapshot is missing" is to make the
+enable succeed.
+
+### The one real limit: `--standalone` cannot load a packaged track
+
+```
+agh -p --standalone ...   ->  E_EXT_LOAD: trusted package has no immutable runtime snapshot
+agh -p ...                ->  runs, preset: chtd
+```
+
+Same profile, same store, same session. The flag runs the host embedded in the CLI
+process, and that path does not consult the runtime-snapshot store, so a
+non-builtin package can never be loaded through it. Drive sessions through the
+daemon. `CliRunner.standalone` therefore defaults to false.
+
+## A session is identified by its working directory
+
+`sha256(cwd)` — that is the whole derivation:
+
+```javascript
+function sessionKey4(profile, actor, cwd) {
+  const scope = createHash('sha256').update(cwd).digest('hex').slice(0, 16)
+  return `agnes:${actor.org || 'local'}:${profile.name}:cli:workspace:${scope}`
+}
+```
+
+Two consequences, and both bit before they were understood.
+
+**Re-running a task in the same directory reuses the session.** The harness finds the
+existing key and appends to it, so the second run produces no new session row —
+observed directly: one workspace accumulated four turns of the same prompt. Clearing
+the directory does not help, because the key is the path and not the contents. A run
+that needs its own trajectory needs its own directory, which is why `collect` names
+workspaces with a timestamp.
+
+**A run that created no session must not be given an older one.** `_newest_session`
+returned the newest row in the ledger; with a reused session that is a *previous*
+run, and one arm's answers get recorded under another's name with nothing to notice
+it by. It now takes the moment the run started and raises if the run created nothing.
+A wrong answer that announces itself is worth more than a plausible one that does
+not.
+
+## Still open
+
+**The observation above is a single task with a single divergence.** The pipeline is
+verified end to end; the *result* is not yet a finding. That needs the real task set
+and enough rollouts for the comparison to say something — which is the next step, not
+a caveat about this one.
+
+**The native module build is not reproducible from the repository.** `build:native`
+works, given headers, but nothing records which headers or when — and this machine is
+now running a locally built artifact whose `.prebuild` sibling is the one the harness
+shipped with. That is a provenance gap worth closing before results depend on it.
