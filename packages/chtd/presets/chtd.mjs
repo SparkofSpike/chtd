@@ -3,7 +3,9 @@
 // This file is the delivered form of the track, and its exact bytes are frozen:
 // `chtd.sha256` records their sha256 and the package refuses to load without a match. The source
 // of the recipe, and the reasoning behind each value, is `harness/presets/chtd.yaml` at the
-// repository root; a repository test asserts the two agree.
+// repository root. Two representations of one track can drift, so `tools/check-parity.mjs`
+// compares them key by key and refuses on the first difference. It is a command to run, not a gate
+// that runs itself: nothing here invokes it, and the freeze below covers these bytes only.
 //
 // Why a JS module rather than the YAML: a non-builtin package is installed without its
 // `node_modules` and loaded through Host's own entry loader, whose virtual module table exposes
@@ -68,7 +70,9 @@ export const CHTD_TRACK = {
   // the policy is identical for teacher and student, and an empty table is identical everywhere.
   approval: { on_unavailable: 'deny', timeout_ms: 60000, command_policy: [] },
   // required: read by the host, which refuses to open a session when the platform cannot provide
-  // L1. on_unavailable: read by core's readPreset. level: NOT CONSUMED.
+  // L1. on_unavailable: read by core's readPreset. level: read by base's sandbox seam
+  // (packages/base/extensions/sandbox/src/policy.ts, readSandboxConfig), which refuses a level
+  // other than L0 or L1 — so this is a live knob, not a comment.
   sandbox: { level: 'L1', required: false, on_unavailable: 'deny' },
   // Read by core's readPreset as the depth limit. 0 means this track spawns no subagents: a
   // subagent would run its own trajectory and put decisions in it that neither teacher nor student
@@ -80,8 +84,10 @@ export const CHTD_TRACK = {
   completion_gate: { enabled: false },
   // NOT CONSUMED. No self-refinement loop reads this yet; `false` is the intent for a baseline.
   harness: { auto_refine: { enabled: false } },
-  // consent: NOT CONSUMED. readPreset reads telemetry.invariants and telemetry.timing, neither of
-  // which is written here, so both take their defaults of false. DISABLED is the stated intent.
+  // consent: read by host's readTelemetryConsent (packages/host/src/session-hooks.ts), which
+  // refuses a value outside DISABLED/LOCAL/ANON/FULL — so this is a live knob too. invariants and
+  // timing are read by core's readPreset; neither is written here, so both take their defaults of
+  // false. DISABLED is the stated intent.
   telemetry: { consent: 'DISABLED' },
   // NOT CONSUMED. Hook subscription comes from the extensions the assembly loads. A hook that
   // fired on one side only would be a harness difference wearing the model's name.

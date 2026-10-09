@@ -132,3 +132,104 @@ def test_a_session_with_no_sessions_row_still_lists_from_events(tmp_path: Path) 
 
     with open_ledger(tmp_path / "sessions.db") as ledger:
         assert ledger.session_keys() == ("orphan",)
+
+
+def test_a_forked_child_composes_its_prefix_at_read_time(tmp_path: Path) -> None:
+    # The harness stores no copy of the parent's rows: `createChild` writes one `sessions` row and
+    # the adapter's `scanRows` recurses into the parent up to the boundary. A reader that required
+    # the rows to be present would find a fork with no history at all — and since the whole
+    # comparison here is between a fork and its parent, every digest would differ and alignment
+    # would silently find nothing.
+    builder = build_ledger(tmp_path / "sessions.db")
+    builder.session("parent").start("parent")
+    builder.user("parent", "the shared prefix")
+    builder.tool_call("parent", "read", {"path": "a"})
+    builder.fork_from("parent", "child", 3, created_at="2026-10-01T00:05:00Z")
+    builder.tool_call("child", "read", {"path": "b"})
+    builder.close()
+
+    with open_ledger(tmp_path / "sessions.db") as ledger:
+        composed = ledger.events("child")
+        own = ledger.own_events("child")
+        child_own_rows = ledger.own_row_count("child")
+        parent_own_rows = ledger.row_count("parent")
+
+    # The child wrote one row; its view carries the parent's three as well.
+    assert [e.seq for e in own] == [4]
+    assert [(e.seq, e.session_key) for e in composed] == [
+        (1, "parent"),
+        (2, "parent"),
+        (3, "parent"),
+        (4, "child"),
+    ]
+    assert child_own_rows == 1
+    assert parent_own_rows == 3
+
+
+def test_the_prefix_stops_at_the_fork_boundary(tmp_path: Path) -> None:
+    # Rows the parent wrote after the fork are not part of the child's state. Including them would
+    # make the parent's own continuation look like shared history, and the two sides would be
+    # compared at states they never shared.
+    builder = build_ledger(tmp_path / "sessions.db")
+    builder.session("parent").start("parent")
+    builder.user("parent", "before")
+    builder.fork_from("parent", "child", 2, created_at="2026-10-01T00:05:00Z")
+    builder.user("parent", "after the fork")
+    builder.tool_call("child", "read", {})
+    builder.close()
+
+    with open_ledger(tmp_path / "sessions.db") as ledger:
+        composed = ledger.events("child")
+    parent_texts = [
+        e.data.get("content", [{}])[0].get("text")
+        for e in composed
+        if e.session_key == "parent" and e.type == "user/message"
+    ]
+    assert parent_texts == ["before"]
+
+
+def test_a_fork_chain_is_walked_to_the_oldest_ancestor(tmp_path: Path) -> None:
+    builder = build_ledger(tmp_path / "sessions.db")
+    builder.session("root").start("root")
+    builder.user("root", "one")
+    builder.fork_from("root", "middle", 2, created_at="2026-10-01T00:02:00Z")
+    builder.user("middle", "two")
+    builder.fork_from("middle", "leaf", 3, created_at="2026-10-01T00:03:00Z")
+    builder.tool_call("leaf", "read", {})
+    builder.close()
+
+    with open_ledger(tmp_path / "sessions.db") as ledger:
+        assert ledger.lineage("leaf") == (("root", None), ("middle", 2), ("leaf", 3))
+        # Two rows from the root, one from the middle, one of its own.
+        assert len(ledger.events("leaf")) == 4
+        assert len(ledger.events("middle")) == 3
+
+
+def test_a_fork_cycle_is_refused_rather_than_walked_forever(tmp_path: Path) -> None:
+    builder = build_ledger(tmp_path / "sessions.db")
+    builder.session("a", created_at="2026-10-01T00:00:00Z", parent_key="b", boundary_seq=1)
+    builder.session("b", created_at="2026-10-01T00:01:00Z", parent_key="a", boundary_seq=1)
+    builder.append("a", "user/message", {"content": [{"type": "text", "text": "x"}]})
+    builder.append("b", "user/message", {"content": [{"type": "text", "text": "y"}]})
+    builder.close()
+
+    with open_ledger(tmp_path / "sessions.db") as ledger:
+        with pytest.raises(LedgerError, match="revisits"):
+            ledger.lineage("a")
+        with pytest.raises(LedgerError, match="revisits"):
+            ledger.events("a")
+
+
+def test_last_seq_falls_back_to_the_fork_boundary(tmp_path: Path) -> None:
+    # Mirrors the harness's own `lastSeq`: a child with no rows of its own *is* its parent's prefix
+    # at that moment, and reporting zero would say it had no history.
+    builder = build_ledger(tmp_path / "sessions.db")
+    builder.session("parent").start("parent")
+    builder.user("parent", "one")
+    builder.tool_call("parent", "read", {})
+    builder.fork_from("parent", "child", 3, created_at="2026-10-01T00:05:00Z")
+    builder.close()
+
+    with open_ledger(tmp_path / "sessions.db") as ledger:
+        assert ledger.last_seq("child") == 3
+        assert ledger.own_row_count("child") == 0

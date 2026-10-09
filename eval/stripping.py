@@ -28,6 +28,7 @@ __all__ = [
     "SCAFFOLD_OVERFIT",
     "SURVIVED",
     "NO_GAIN",
+    "UNDETERMINED",
     "assess",
 ]
 
@@ -43,6 +44,7 @@ RUNG_ORDER = (SAME_TRACK, DIFFERENT_PRESET, NO_TOOLS, SINGLE_TURN)
 SURVIVED = "survived"
 SCAFFOLD_OVERFIT = "scaffold-overfit"
 NO_GAIN = "no-gain"
+UNDETERMINED = "undetermined"
 
 
 @dataclass(frozen=True)
@@ -59,6 +61,17 @@ class RungResult:
     @property
     def tasks(self) -> int:
         return len(self.comparison.decided_pairs)
+
+    @property
+    def measured(self) -> bool:
+        """Whether this rung produced any decided pair at all.
+
+        Separate from ``lift``, which is 0.0 when nothing was measured — a number that looks like a
+        result. A rung whose tasks all went undecided used to be read as "no gain here", so a gain
+        on the training track plus an unmeasured stripped rung was reported as scaffold overfit with
+        a figure the run never produced. "Not measured" is its own answer.
+        """
+        return self.tasks > 0
 
 
 @dataclass(frozen=True)
@@ -109,9 +122,25 @@ def assess(
         raise ValueError(f"unknown rung(s) {sorted(missing)}; the ladder is {list(RUNG_ORDER)}")
     if SAME_TRACK not in rungs:
         raise ValueError("a ladder without the same-track rung has no primary measurement")
+    if not 0.0 < survival_threshold <= 1.0:
+        raise ValueError(
+            f"survival_threshold must be in (0, 1], got {survival_threshold}. At 0 a rung that "
+            "measured nothing would count as surviving; above 1 nothing could ever survive."
+        )
 
     ordered = tuple(RungResult(rung=name, comparison=rungs[name]) for name in RUNG_ORDER if name in rungs)
     primary = next(rung for rung in ordered if rung.rung == SAME_TRACK)
+
+    if not primary.measured:
+        return LadderVerdict(
+            rungs=ordered,
+            survival_threshold=survival_threshold,
+            verdict=UNDETERMINED,
+            reason=(
+                "the same-track rung decided no tasks, so there is no primary measurement. "
+                "0.000 here is an absence of data, not a result."
+            ),
+        )
 
     if primary.lift <= 0:
         return LadderVerdict(
@@ -133,6 +162,21 @@ def assess(
             reason=(
                 f"the gain is {primary.lift:+.3f} on the training track and no stripped rung was "
                 "run, so nothing separates the capability from a fit to this harness"
+            ),
+        )
+
+    unmeasured = [rung.rung for rung in stripped if not rung.measured]
+    if unmeasured:
+        # A rung that decided nothing cannot testify either way, and reading its 0.0 as "no gain"
+        # would turn an unfinished ladder into a positive claim of overfitting.
+        return LadderVerdict(
+            rungs=ordered,
+            survival_threshold=survival_threshold,
+            verdict=UNDETERMINED,
+            reason=(
+                f"the gain is {primary.lift:+.3f} on the training track, but "
+                f"{', '.join(unmeasured)} decided no tasks. Nothing separates the capability from a "
+                "fit to this harness until those rungs are run."
             ),
         )
 
@@ -165,7 +209,6 @@ def describe(verdict: LadderVerdict) -> str:
     """The ladder as a few lines a report can carry."""
     lines = [f"verdict: {verdict.verdict}", f"reason: {verdict.reason}", "rungs:"]
     for rung in verdict.rungs:
-        lines.append(
-            f"  {rung.rung}: lift {rung.lift:+.3f} over {rung.tasks} task(s)"
-        )
+        measured = "" if rung.measured else "  (no tasks decided)"
+        lines.append(f"  {rung.rung}: lift {rung.lift:+.3f} over {rung.tasks} task(s){measured}")
     return "\n".join(lines)

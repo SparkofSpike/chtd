@@ -67,37 +67,35 @@ class LedgerBuilder:
         created_at: str = "2026-10-01T00:01:00Z",
         model_selections: Sequence[dict] | None = None,
     ) -> "LedgerBuilder":
-        """Give the child the parent's prefix, the way the harness's `forkInto` does.
+        """Create a child session, recording only what the harness records.
 
-        The harness copies the parent's rows up to the boundary into the child's ledger and starts
-        the child's own sequence there (storage.createChild). A fixture that gave the child only its
-        own rows would model a session that shared no state with its parent — which is not a fork,
-        and would let a broken prefix digest pass a test named after forks.
+        **The harness does not copy the parent's rows.** `createChild` writes one `sessions` row
+        (`insertChildSession.run(childKey, parentKey, boundarySeq, …)` in
+        `packages/host/src/adapters/storage-sqlite.ts`); the child's view of its own history is
+        composed at read time, by the adapter's `scanRows` recursing into the parent up to the
+        boundary.
+
+        An earlier version of this fixture copied the parent's rows into the child key, which made
+        a reader that never composed the prefix look correct. That is the one failure a test suite
+        cannot catch by itself — the fixture encoded the same wrong assumption as the code — so it
+        is worth stating plainly: if this method ever copies rows again, the fork-alignment test
+        stops testing anything.
 
         ``model_selections`` reproduces the rest of what `forkInto` writes after the boundary: one
         `x/core/model-switch` row per pinned model slot. The harness writes those whenever the
-        preset pins a model id, which is the normal case — the host resolves a preset's `default`
-        sentinel before core ever sees it. A fixture that omitted them would let a reader that
-        mishandles extension rows pass.
+        preset pins a model id, which is the ordinary case — the host resolves a preset's `default`
+        sentinel before core ever sees it.
         """
-        columns = (
-            "seq, ts, id, type, lane, actor, origin, trust, register, ignorable, surface_op,"
-            " source_event_seqs, data, integrity_mode, integrity_prev, integrity_digest"
-        )
-        rows = self._connection.execute(
-            f"SELECT {columns} FROM events WHERE session_key = ? AND seq <= ? ORDER BY seq",
+        parent_rows = self._connection.execute(
+            "SELECT COUNT(*) FROM events WHERE session_key = ? AND seq <= ?",
             (parent_key, boundary_seq),
-        ).fetchall()
-        if not rows:
+        ).fetchone()
+        if not parent_rows or int(parent_rows[0]) == 0:
             raise ValueError(f"{parent_key} has no events up to seq {boundary_seq} to fork from")
-        for row in rows:
-            placeholders = ",".join("?" * (len(row) + 1))
-            self._connection.execute(
-                f"INSERT INTO events (session_key, {columns}) VALUES ({placeholders})",
-                (child_key, *row),
-            )
+        self.session(
+            child_key, created_at=created_at, parent_key=parent_key, boundary_seq=boundary_seq
+        )
         self._seq[child_key] = boundary_seq
-        self.session(child_key, created_at=created_at, parent_key=parent_key, boundary_seq=boundary_seq)
         for selection in model_selections or ():
             self.append(
                 child_key,

@@ -73,6 +73,12 @@ class DatasetEntry:
 
     @classmethod
     def from_divergence(cls, task_id: str, divergence: Divergence) -> "DatasetEntry":
+        """Build one row from a divergence.
+
+        The actions are stored canonically and not as their human-readable rendering: the rendering
+        truncates long messages, so a label built from it would be a different string from what the
+        teacher said, and two long messages sharing a prefix would collapse into one label.
+        """
         return cls(
             task_id=task_id,
             prefix_digest=divergence.prefix_digest,
@@ -80,8 +86,8 @@ class DatasetEntry:
             teacher_session=divergence.teacher_session,
             student_seq=divergence.student.seq,
             teacher_seq=divergence.teacher.seq,
-            student_action=divergence.student.action.describe(),
-            teacher_action=divergence.teacher.action.describe(),
+            student_action=divergence.student.action.canonical(),
+            teacher_action=divergence.teacher.action.canonical(),
             teacher_action_fingerprint=divergence.teacher.action.fingerprint(),
         )
 

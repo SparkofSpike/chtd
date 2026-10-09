@@ -85,6 +85,74 @@ def test_a_gate_with_no_validators_is_refused() -> None:
         SignalGate([])
 
 
+def test_an_empty_iterator_of_validators_is_refused_too() -> None:
+    # `if not self.validators` is True for `[]` and False for `iter([])`, because every iterator is
+    # truthy. A gate built from an empty iterator therefore held nothing and admitted everything.
+    with pytest.raises(ValueError, match="admits everything"):
+        SignalGate(iter([]))
+
+
+def test_a_one_shot_iterator_is_materialised_so_the_gate_keeps_working() -> None:
+    # A generator handed to this gate used to be consumed by the first `assess`; every call after
+    # that admitted with zero verdicts. A gate that stops checking after one use is worse than no
+    # gate, because it reports zero refusals.
+
+    class Refuses:
+        name = "always-refuses"
+
+        def assess(self, divergence: Divergence) -> Verdict:
+            return Verdict(False, "no", self.name)
+
+    gate = SignalGate(validators=iter([Refuses()]))
+    for attempt in range(3):
+        admission = gate.assess(_divergence())
+        assert admission.admitted is False, f"admitted on attempt {attempt}"
+        assert len(admission.verdicts) == 1
+        assert admission.reason == "always-refuses: no"
+
+
+def test_a_table_holding_plain_strings_behaves_like_one_holding_members() -> None:
+    # The validator identified outcomes with `is`, so a table holding plain strings — which is what
+    # a rollout record carries — matched none of the three cases and fell through to the admitting
+    # default. Every divergence was admitted, including the two the validator exists to refuse.
+    for teacher, student, expected in (
+        ("succeeded", "failed", True),
+        ("succeeded", "succeeded", False),
+        ("failed", "failed", False),
+    ):
+        table = OutcomeTable({("teacher", _STATE): teacher, ("student", _STATE): student})
+        assert OutcomeValidator(table).assess(_divergence()).admitted is expected, (
+            f"teacher={teacher} student={student}"
+        )
+
+
+def test_a_table_refuses_an_outcome_outside_the_vocabulary() -> None:
+    # "SUCCESS" is a mis-spelling, not a fourth state. Folding it into UNKNOWN would send the reader
+    # looking for a missing row instead of a wrong word.
+    with pytest.raises(ValueError, match="is not an outcome"):
+        OutcomeTable({("teacher", _STATE): "SUCCESS"})
+    with pytest.raises(ValueError, match="is not an outcome"):
+        OutcomeTable.from_records(
+            [{"session_key": "t", "prefix_digest": _STATE, "outcome": "nonsense"}]
+        )
+
+
+def test_recording_coerces_so_a_later_write_cannot_reintroduce_a_string() -> None:
+    table = OutcomeTable({})
+    table.record("teacher", _STATE, "succeeded")  # type: ignore[arg-type]
+    assert table.get("teacher", _STATE) is Outcome.SUCCEEDED
+
+
+def test_a_non_boolean_verdict_is_refused() -> None:
+    # `from_path` always checked this; the dataclass did not, so a hand-built instance holding the
+    # string "false" admitted what it was meant to refuse — truthiness is not a verdict.
+    for bad in ("false", "", 0, 1, None):
+        with pytest.raises(ValueError, match="not a boolean"):
+            RecordedVerdicts({_STATE: bad})  # type: ignore[dict-item]
+    assert RecordedVerdicts({_STATE: False}).assess(_divergence()).admitted is False
+    assert RecordedVerdicts({_STATE: True}).assess(_divergence()).admitted is True
+
+
 def test_every_validator_must_admit() -> None:
     class Refuses:
         name = "always-refuses"

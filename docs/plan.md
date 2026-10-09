@@ -63,7 +63,8 @@ Exit: tuned weights exist, are reproducible from recorded inputs, and run inside
 - [ ] Same track, same tasks, before vs after, on held-out tasks.
 - [x] **Baseline arm**: teacher data from the teacher's own trajectory (off-policy). Same track, tasks, budget and LoRA recipe. `eval/arms.py` refuses a comparison whose arms differ on any of those four.
 - [x] **CHTD arm**: teacher data from the student's states (on-policy). `distill/divergence.py` pairs on state, so this is what the pairing means.
-- [x] Harness-stripping tests: different preset, no tools, single turn (§3.5 of the design). `eval/stripping.py`; a gain that does not survive is reported as `scaffold-overfit`, and a ladder with no stripped rung is refused rather than called survived.
+- [x] Harness-stripping **assessment**: a ladder that does not survive stripping is reported as `scaffold-overfit`, and a ladder with no stripped rung is refused rather than called survived. `eval/stripping.py`.
+- [ ] Harness-stripping **execution**: run the same tasks under a different preset, then with no tools, then in a single turn. Nothing yet produces a rung — `harness/rollout.py`'s runner takes a route and a model but no preset and no tool or turn limit — so `eval/stripping.py` currently assesses a ladder somebody else's run would supply. This is the gap between the two bullets, and it is a gap. See `docs/pipeline.md`.
 
 Exit: a result that either supports or refutes the claim, with the arm comparison and the stripping ladder attached. The machinery is built and tested; the numbers wait on real runs.
 

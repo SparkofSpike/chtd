@@ -86,8 +86,10 @@ def test_the_chain_runs_from_ledgers_to_a_written_dataset(tmp_path: Path) -> Non
     assert dataset.manifest is not None
     assert dataset.manifest.entries == 1
     assert dataset.manifest.track_sha256 == TRACK
-    assert dataset.entries[0].student_action.startswith("shell")
-    assert "pytest -x --lf" in dataset.entries[0].teacher_action
+    student_action = json.loads(dataset.entries[0].student_action)
+    teacher_action = json.loads(dataset.entries[0].teacher_action)
+    assert student_action == {"kind": "tool_call", "name": "shell", "payload": {"cmd": "pytest"}}
+    assert teacher_action["payload"] == {"cmd": "pytest -x --lf"}
 
 
 def test_a_fork_that_agrees_is_an_agreement_and_not_signal(tmp_path: Path) -> None:

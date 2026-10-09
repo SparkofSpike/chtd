@@ -174,8 +174,19 @@ class Action:
             return _canonical({"tool": self.name, "args": self.payload})
         return _canonical({"message": self.payload})
 
+    def canonical(self) -> str:
+        """The whole action, losslessly, for anything that has to store or label it.
+
+        :meth:`describe` truncates because it is for a reader's eye; a dataset row built from it is
+        a label with the end cut off, so two different teacher messages sharing a long prefix would
+        be stored as the same label. This is the form to persist.
+        """
+        return _canonical(
+            {"kind": self.kind, "name": self.name, "payload": self.payload}
+        )
+
     def describe(self) -> str:
-        """A short human-readable form, for a report or a dataset row."""
+        """A short human-readable form, for a report or a log line. Never a stored label."""
         if self.kind == "tool_call":
             return f"{self.name}({_canonical(self.payload)})"
         text = self.payload if isinstance(self.payload, str) else _canonical(self.payload)

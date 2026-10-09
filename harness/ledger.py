@@ -174,12 +174,125 @@ class Ledger:
         to_seq: int | None = None,
         types: Sequence[str] | None = None,
         lane: str | None = None,
+        include_parent: bool = True,
     ) -> tuple[Event, ...]:
-        """Events for one session, ordered by seq.
+        """Events for one session, ordered by seq, with its fork prefix when it has one.
 
-        The filters mirror the harness's own scan, so a caller can ask the same question of the
-        ledger that the harness asks of itself.
+        **A forked child's history is composed at read time, not stored.** The harness's
+        ``createChild`` writes one ``sessions`` row and nothing else; the storage adapter's scan
+        recurses into the parent up to the boundary and prepends what it finds
+        (``packages/host/src/adapters/storage-sqlite.ts``, ``scanRows``). Reading only the child's
+        own rows would therefore give a fork a shorter history than the harness gives it — and
+        since the whole comparison here is between a fork and its parent, every prefix digest would
+        differ and nothing would ever align. That failure is silent: it looks like a student that
+        agreed with its teacher everywhere.
+
+        ``include_parent=False`` reads the session's own rows only. It exists for inspecting what a
+        fork actually recorded, not for trajectories.
         """
+        own = self._scan_own(
+            session_key, from_seq=from_seq, to_seq=to_seq, types=types, lane=lane
+        )
+        if not include_parent:
+            return own
+
+        # The harness composes a scan as `rows(parent, min(to, boundary)) ++ own(to)`, recursively
+        # (`packages/host/src/adapters/storage-sqlite.ts`, `scanRows`). So each ancestor's rows are
+        # capped by the smallest boundary between it and this session, and the chronological order
+        # runs from the oldest ancestor down. Both facts come out of the walk below: the cap
+        # accumulates downward from here, and the reversal puts the ancestors in time order.
+        walked: list[tuple[str, int]] = []
+        cap = to_seq
+        for ancestor, boundary in self._chain_below(session_key):
+            cap = boundary if cap is None else min(cap, boundary)
+            walked.append((ancestor, cap))
+
+        parts: list[tuple[Event, ...]] = []
+        for ancestor, ancestor_cap in reversed(walked):
+            if ancestor_cap < 1:
+                continue
+            parts.append(
+                self._scan_own(
+                    ancestor,
+                    from_seq=from_seq,
+                    to_seq=ancestor_cap,
+                    types=types,
+                    lane=lane,
+                )
+            )
+        return (*[event for part in parts for event in part], *own)
+
+    def own_events(self, session_key: str, **kwargs: Any) -> tuple[Event, ...]:
+        """This session's own rows, without the fork prefix it inherits."""
+        kwargs.pop("include_parent", None)
+        return self.events(session_key, include_parent=False, **kwargs)
+
+    def lineage(self, session_key: str) -> tuple[tuple[str, int | None], ...]:
+        """The fork chain from the oldest ancestor down to this session.
+
+        ``((root, None), (child, boundary), ...)``. Exposed because a reader that had to
+        reconstruct it from ``sessions`` rows would be re-deriving the same thing, and a cycle in it
+        would otherwise be discovered by a stack overflow.
+
+        Raises if an ancestor repeats. A cycle cannot come from the harness — `createChild` refuses
+        a boundary beyond the parent and a key that already exists — but a corrupted or hand-edited
+        ledger could carry one, and walking it forever is a worse answer than refusing.
+        """
+        chain: list[tuple[str, int | None]] = []
+        seen: set[str] = set()
+        current: str | None = session_key
+        while current is not None:
+            if current in seen:
+                raise LedgerError(
+                    f"fork chain from {session_key} revisits {current}; refusing to walk it"
+                )
+            seen.add(current)
+            parent = self._parent_of(current)
+            chain.append((current, parent[1] if parent else None))
+            current = parent[0] if parent else None
+        chain.reverse()
+        return tuple(chain)
+
+    def _chain_below(self, session_key: str) -> tuple[tuple[str, int], ...]:
+        """The ancestors of ``session_key``, nearest first, each with the boundary it contributes.
+
+        Cycle-guarded, because this is what `events` walks: without the guard a ledger that named
+        two sessions as each other's parent would recurse until the interpreter stopped it, and a
+        refusal is a better answer than a stack trace from inside a read.
+        """
+        ancestors: list[tuple[str, int]] = []
+        seen = {session_key}
+        current = session_key
+        while True:
+            parent = self._parent_of(current)
+            if parent is None:
+                return tuple(ancestors)
+            parent_key, boundary = parent
+            if parent_key in seen:
+                raise LedgerError(
+                    f"fork chain from {session_key} revisits {parent_key}; refusing to walk it"
+                )
+            seen.add(parent_key)
+            ancestors.append((parent_key, boundary))
+            current = parent_key
+
+    def _parent_of(self, session_key: str) -> tuple[str, int] | None:
+        row = self._connection.execute(
+            "SELECT parent_key, boundary_seq FROM sessions WHERE session_key = ?", (session_key,)
+        ).fetchone()
+        if row is None or row[0] is None or row[1] is None:
+            return None
+        return (row[0], int(row[1]))
+
+    def _scan_own(
+        self,
+        session_key: str,
+        *,
+        from_seq: int | None,
+        to_seq: int | None,
+        types: Sequence[str] | None,
+        lane: str | None,
+    ) -> tuple[Event, ...]:
         sql = [
             "SELECT session_key, seq, ts, id, type, lane, origin, trust, register, data, actor,"
             " source_event_seqs FROM events WHERE session_key = ?"
@@ -218,10 +331,27 @@ class Ledger:
         return int(row[0])
 
     def last_seq(self, session_key: str) -> int:
+        """The highest sequence in this session's composed view.
+
+        Mirrors the harness's own ``lastSeq``, which falls back to the fork boundary when a child
+        has no rows of its own: the child's view at that moment *is* its parent's prefix, and
+        reporting zero would say it had no history when it had all of its parent's.
+        """
         row = self._connection.execute(
             "SELECT MAX(seq) FROM events WHERE session_key = ?", (session_key,)
         ).fetchone()
-        return int(row[0]) if row and row[0] is not None else 0
+        own = int(row[0]) if row and row[0] is not None else 0
+        if own > 0:
+            return own
+        parent = self._parent_of(session_key)
+        return parent[1] if parent else 0
+
+    def own_row_count(self, session_key: str) -> int:
+        """Rows this session wrote itself, excluding the prefix it inherits."""
+        row = self._connection.execute(
+            "SELECT COUNT(*) FROM events WHERE session_key = ?", (session_key,)
+        ).fetchone()
+        return int(row[0])
 
     def has_table(self, name: str) -> bool:
         row = self._connection.execute(

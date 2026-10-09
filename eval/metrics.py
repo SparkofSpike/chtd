@@ -16,7 +16,17 @@ from dataclasses import dataclass, field
 
 from harness.trajectory import Trajectory
 
-__all__ = ["MeasureReport", "RunMetrics", "UNKNOWN_OUTCOME", "measure", "measure_all"]
+__all__ = [
+    "FAILED",
+    "MeasureReport",
+    "OUTCOME_VOCABULARY",
+    "RunMetrics",
+    "SUCCEEDED",
+    "UNKNOWN_OUTCOME",
+    "check_outcome",
+    "measure",
+    "measure_all",
+]
 
 #: A run whose success nobody judged. Kept distinct from a failure for the same reason the gate
 #: keeps `Outcome.UNKNOWN`: an unjudged run and a failed run are different facts, and averaging them
@@ -25,6 +35,22 @@ UNKNOWN_OUTCOME = "unknown"
 
 SUCCEEDED = "succeeded"
 FAILED = "failed"
+
+#: Every outcome a run may carry. The values arrive from outside this code — a judge, a harness, a
+#: CSV somebody edited — so an unrecognised one is refused rather than treated as a failure: a judge
+#: writing "SUCCESS" would otherwise make every run in both arms a loss, and the comparison would
+#: report a lift of zero as if the student had got worse.
+OUTCOME_VOCABULARY = frozenset({SUCCEEDED, FAILED, UNKNOWN_OUTCOME})
+
+
+def check_outcome(value: str) -> str:
+    """Refuse an outcome outside the vocabulary, naming what was expected."""
+    if value not in OUTCOME_VOCABULARY:
+        raise ValueError(
+            f"{value!r} is not an outcome; expected one of "
+            f"{', '.join(sorted(OUTCOME_VOCABULARY))}"
+        )
+    return value
 
 
 @dataclass(frozen=True)
@@ -73,6 +99,7 @@ def measure(
     a call and its result has a point with ``errored is None``, which is not a failure — it is
     missing information, and counting it as one would make a truncated run look like a bad one.
     """
+    check_outcome(outcome)
     tool_calls = [point for point in trajectory.points if point.action.kind == "tool_call"]
     messages = [point for point in trajectory.points if point.action.kind == "message"]
     return RunMetrics(

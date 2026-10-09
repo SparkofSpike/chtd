@@ -48,10 +48,20 @@ def build_from_ledgers(
     alignment = align(student, teachers[0]) if len(teachers) == 1 else align_all(student, teachers)
 
     validators: list[Validator] = []
-    outcomes = _read_outcomes(outcomes_path) if outcomes_path else {}
-    if outcomes:
+    outcomes_given = outcomes_path is not None
+    verdicts_given = verdicts_path is not None
+    if outcomes_given:
+        outcomes = _read_outcomes(outcomes_path)
+        if not outcomes:
+            # Given but empty is not the same as absent. Folding it into "not requested" would drop
+            # the outcome gate silently, and the refusal below would then tell the caller to pass
+            # the flag they already passed.
+            raise SystemExit(
+                f"{outcomes_path} has no outcome records; a branch outcome is what validates a "
+                "divergence, so an empty file is an unfinished export, not a choice to skip it"
+            )
         validators.append(OutcomeValidator(OutcomeTable.from_records(outcomes)))
-    if verdicts_path:
+    if verdicts_given:
         validators.append(RecordedVerdicts.from_path(verdicts_path))
     if not validators:
         # A gate with no validators admits everything, which is the behaviour it exists to prevent,

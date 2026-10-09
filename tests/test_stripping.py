@@ -32,6 +32,11 @@ def _conditions(arm: str) -> ArmConditions:
 
 
 def _comparison(baseline_successes: int, chtd_successes: int, tasks: tuple[str, ...] = TASKS) -> ComparisonResult:
+    """Two arms over ``tasks``.
+
+    A zero on either side is ambiguous on its own, so the two callers below say which they mean: an
+    arm can fail every task, or be undecided on every task. ``_undecided_comparison`` is the second.
+    """
     return compare(
         tuple(
             run(task, BASELINE, outcome=SUCCEEDED if index < baseline_successes else FAILED)
@@ -41,6 +46,16 @@ def _comparison(baseline_successes: int, chtd_successes: int, tasks: tuple[str, 
             run(task, CHTD, outcome=SUCCEEDED if index < chtd_successes else FAILED)
             for index, task in enumerate(tasks)
         ),
+        baseline_conditions=_conditions(BASELINE),
+        chtd_conditions=_conditions(CHTD),
+    )
+
+
+def _undecided_comparison(tasks: tuple[str, ...] = TASKS) -> ComparisonResult:
+    """Both arms unjudged: no decided pair, so no lift to report at all."""
+    return compare(
+        tuple(run(task, BASELINE) for task in tasks),
+        tuple(run(task, CHTD) for task in tasks),
         baseline_conditions=_conditions(BASELINE),
         chtd_conditions=_conditions(CHTD),
     )
@@ -134,7 +149,7 @@ def test_the_weakest_rung_is_what_the_verdict_turns_on() -> None:
 
 
 def test_a_rung_can_be_looked_up_by_name() -> None:
-    verdict = assess({SAME_TRACK: _comparison(0, 4), NO_TOOLS: _comparison(0, 0)})
+    verdict = assess({SAME_TRACK: _comparison(0, 4), NO_TOOLS: _undecided_comparison()})
     assert verdict.rung(NO_TOOLS).lift == 0.0
     with pytest.raises(KeyError):
         verdict.rung(SINGLE_TURN)
@@ -145,6 +160,39 @@ def test_describe_lists_every_rung() -> None:
     assert SCAFFOLD_OVERFIT in text
     assert SAME_TRACK in text
     assert NO_TOOLS in text
+
+
+def test_a_rung_that_decided_nothing_is_not_a_measurement() -> None:
+    # A rung whose tasks all went undecided has lift 0.0 — a number that looks like a result. Read
+    # as "no gain here", it turned an unfinished ladder into a positive claim of overfitting.
+    from eval.stripping import UNDETERMINED
+
+    no_data = _undecided_comparison()
+    verdict = assess({SAME_TRACK: _comparison(0, 4), NO_TOOLS: no_data})
+    assert verdict.verdict == UNDETERMINED
+    assert "decided no tasks" in verdict.reason
+    assert not verdict.rung(NO_TOOLS).measured
+    assert verdict.rung(SAME_TRACK).measured
+
+
+def test_a_primary_rung_with_no_data_is_undetermined_not_no_gain() -> None:
+    from eval.stripping import UNDETERMINED
+
+    verdict = assess({SAME_TRACK: _undecided_comparison()})
+    assert verdict.verdict == UNDETERMINED
+    assert "absence of data" in verdict.reason
+
+
+def test_the_survival_threshold_must_be_a_fraction() -> None:
+    # At 0 a rung that measured nothing would count as surviving; above 1 nothing could ever.
+    for bad in (0.0, -0.5, 1.5, 2.0):
+        with pytest.raises(ValueError, match="survival_threshold must be in"):
+            assess({SAME_TRACK: _comparison(0, 4), NO_TOOLS: _comparison(0, 1)}, survival_threshold=bad)
+
+
+def test_describe_says_when_a_rung_decided_nothing() -> None:
+    text = describe(assess({SAME_TRACK: _comparison(0, 4), NO_TOOLS: _undecided_comparison()}))
+    assert "(no tasks decided)" in text
 
 
 def test_a_rung_result_carries_its_task_count() -> None:

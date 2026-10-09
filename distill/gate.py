@@ -41,6 +41,25 @@ class Outcome(str, Enum):
     UNKNOWN = "unknown"
 
 
+def _as_outcome(value: object) -> Outcome:
+    """Coerce a stored outcome, refusing anything outside the vocabulary.
+
+    A value that is not one of the three is an error and not a fourth state. Treating it as
+    ``UNKNOWN`` would be fail-closed and still wrong: an unrecognised word usually means the judge
+    and the gate disagree about spelling, and folding it into "no recorded outcome" would send the
+    reader to look for a missing row instead of a mis-spelled one.
+    """
+    if isinstance(value, Outcome):
+        return value
+    try:
+        return Outcome(value)
+    except ValueError as error:
+        raise ValueError(
+            f"{value!r} is not an outcome; expected one of "
+            f"{', '.join(repr(o.value) for o in Outcome)}"
+        ) from error
+
+
 @dataclass(frozen=True)
 class Verdict:
     admitted: bool
@@ -79,9 +98,21 @@ class OutcomeTable:
 
     A key is ``(session_key, prefix_digest)`` and not the state alone: the same state reached in two
     runs is two branches, and the student's branch failing says nothing about the teacher's.
+
+    Values are coerced to :class:`Outcome` on the way in. They used to be stored as handed over,
+    and the validator identified them with ``is`` — so a table holding plain strings (which is what
+    a rollout record carries, and what this module's own ``Outcome.SUCCEEDED.value`` produces)
+    matched none of the three cases and fell through to the admitting default. Every divergence was
+    admitted, including the two the validator exists to refuse.
     """
 
     outcomes: Mapping[tuple[str, str], Outcome] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        self.outcomes = {
+            (session_key, prefix_digest): _as_outcome(value)
+            for (session_key, prefix_digest), value in self.outcomes.items()
+        }
 
     def get(self, session_key: str, prefix_digest: str) -> Outcome:
         return self.outcomes.get((session_key, prefix_digest), Outcome.UNKNOWN)
@@ -89,7 +120,7 @@ class OutcomeTable:
     def record(self, session_key: str, prefix_digest: str, outcome: Outcome) -> None:
         if not isinstance(self.outcomes, dict):
             raise TypeError("this table was built from a read-only mapping")
-        self.outcomes[(session_key, prefix_digest)] = outcome  # type: ignore[index]
+        self.outcomes[(session_key, prefix_digest)] = _as_outcome(outcome)  # type: ignore[index]
 
     @classmethod
     def from_records(cls, records: Iterable[Mapping[str, object]]) -> "OutcomeTable":
@@ -101,7 +132,7 @@ class OutcomeTable:
             outcome = record.get("outcome")
             if not isinstance(session_key, str) or not isinstance(prefix_digest, str):
                 raise ValueError("an outcome record needs session_key and prefix_digest as strings")
-            table[(session_key, prefix_digest)] = Outcome(str(outcome))
+            table[(session_key, prefix_digest)] = _as_outcome(outcome)
         return cls(table)
 
 
@@ -158,15 +189,27 @@ class RecordedVerdicts:
     different questions: the outcome asks whether the choice worked, and a reader or a verifier can
     admit a divergence whose outcome was never measured. A row with no recorded judgement is
     refused, so adding this validator can only ever narrow the set.
+
+    Values must be booleans. ``from_path`` has always checked that; the dataclass did not, so a
+    hand-built instance holding the string ``"false"`` admitted what it was meant to refuse —
+    truthiness is not a verdict.
     """
 
     verdicts: Mapping[str, bool]
     name: str = "recorded"
 
+    def __post_init__(self) -> None:
+        for digest, admitted in self.verdicts.items():
+            if not isinstance(admitted, bool):
+                raise ValueError(
+                    f"verdict for {digest[:12]} is {admitted!r}, not a boolean; "
+                    "a truthy string is not an admission"
+                )
+
     def assess(self, divergence: Divergence) -> Verdict:
         if divergence.prefix_digest not in self.verdicts:
             return Verdict(False, "no recorded judgement for this state", self.name)
-        if self.verdicts[divergence.prefix_digest]:
+        if self.verdicts[divergence.prefix_digest] is True:
             return Verdict(True, "a reader or verifier admitted this pair", self.name)
         return Verdict(False, "a reader or verifier refused this pair", self.name)
 
@@ -200,16 +243,25 @@ class SignalGate:
 
     Conjunction rather than a first-that-decides chain: a set of checks that could override each
     other would make the pipeline's behaviour depend on the order they happened to be listed in.
+
+    The validators are materialised in ``__post_init__``. They used to be kept as handed over, and
+    the emptiness check was a truthiness test — so an iterator was always truthy, an empty one was
+    accepted, and a one-shot iterator was consumed by the first ``assess``, after which every later
+    call admitted with no verdicts at all. A gate that stops checking after one use is worse than no
+    gate, because it reports zero refusals.
     """
 
     validators: Sequence[Validator]
 
     def __post_init__(self) -> None:
-        if not self.validators:
+        # `object.__setattr__` because the dataclass is frozen; the alternative is a mutable gate.
+        materialised = tuple(self.validators)
+        if not materialised:
             raise ValueError(
                 "a gate with no validators admits everything, which is the behaviour it exists to "
                 "prevent; pass at least one"
             )
+        object.__setattr__(self, "validators", materialised)
 
     def assess(self, divergence: Divergence) -> Admission:
         verdicts = tuple(validator.assess(divergence) for validator in self.validators)

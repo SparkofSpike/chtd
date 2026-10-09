@@ -117,9 +117,25 @@ def test_a_co_mover_kept_with_a_reason_reads_as_kept() -> None:
     # The reason has to be visible, or the exception is invisible and the rule is pointless.
     assert "Kept as evidence, with the reason it is causal:" in text
     assert "**decisions** — why it is causal" in text
-    # And it must not also be listed among the stripped ones.
-    stripped_line = next(line for line in text.splitlines() if line.startswith("Stripped from"))
-    assert "decisions" not in stripped_line
+    # And it must not also be listed among the stripped ones. With `decisions` kept there may be no
+    # stripped line at all, and a line that is absent cannot be contradicted.
+    stripped_lines = [line for line in text.splitlines() if line.startswith("Stripped from")]
+    for line in stripped_lines:
+        assert "decisions" not in line
+
+
+def test_an_undetermined_metric_is_not_reported_as_a_stripped_co_mover() -> None:
+    # "Could not be judged" is not "was found wanting". Printing it under the stripping sentence
+    # claims a finding the analysis never reached.
+    findings = analyse(_comparison(), candidates=("decisions", "tokens_spent"))
+    text = _report(distractors=findings).render()
+    stripped_lines = [line for line in text.splitlines() if line.startswith("Stripped from")]
+    for line in stripped_lines:
+        assert "tokens_spent" not in line
+    assert "Not determined by this data" in text
+    assert "tokens_spent" in next(
+        line for line in text.splitlines() if line.startswith("Not determined")
+    )
 
 
 def test_the_standing_limitations_are_always_there() -> None:

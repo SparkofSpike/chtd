@@ -186,5 +186,14 @@ def kept_metrics(findings: Sequence[DistractorFinding]) -> tuple[str, ...]:
 
 
 def stripped_metrics(findings: Sequence[DistractorFinding]) -> tuple[str, ...]:
-    """The candidates the report must not cite, and the count is a result in its own right."""
-    return tuple(finding.metric for finding in findings if not finding.kept)
+    """The co-movers the report must not cite: measured as co-movers, and not kept.
+
+    Only findings actually assessed as co-movers *and* left unkept. Two earlier versions were wrong
+    in opposite directions: one swept in every metric the analysis could not judge at all ("no such
+    column", "did not vary"), so the report asserted a finding it never reached; this one kept the
+    co-movers a caller had deliberately retained, so the same metric appeared under both "stripped"
+    and "kept", which is a contradiction in the reader's hands.
+    """
+    return tuple(
+        finding.metric for finding in findings if finding.verdict == CO_MOVER and not finding.kept
+    )

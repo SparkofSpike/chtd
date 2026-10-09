@@ -17,7 +17,7 @@ from typing import Sequence
 
 from distill.dataset import DatasetManifest
 from eval.arms import ArmConditions, ComparisonResult, summarise
-from eval.distractors import DistractorFinding, stripped_metrics
+from eval.distractors import CO_MOVER, DistractorFinding, stripped_metrics
 from eval.stripping import LadderVerdict
 
 __all__ = ["Report", "build", "write"]
@@ -120,6 +120,17 @@ class Report:
                     f"Stripped from the evidence: {', '.join(stripped)}. A number that moved with "
                     "the capability is not evidence for it unless it was caused by it."
                 )
+            undetermined = [f.metric for f in self.distractors if f.verdict == "undetermined"]
+            if undetermined:
+                # Listed apart from the stripped ones on purpose. A metric this data cannot judge
+                # is not a metric that was found wanting, and printing it under the stripping
+                # sentence would claim a finding the analysis did not reach.
+                lines.append("")
+                lines.append(
+                    f"Not determined by this data: {', '.join(undetermined)}. These either had no "
+                    "'column at all or never varied across tasks, so nothing here separates them "
+                    "from the capability in either direction."
+                )
             kept = [finding for finding in self.distractors if finding.kept]
             if kept:
                 # The reason is the whole point of requiring one: a report that listed a kept
@@ -149,7 +160,10 @@ class Report:
 
         lines.append("## Reproducing this")
         lines.append("")
-        lines.append("1. Build the dataset: `python -m distill.dataset` over the collected rollouts.")
+        lines.append(
+            "1. Build the dataset: `python -m distill.pipeline dataset` over the collected "
+            "rollouts (see `docs/pipeline.md` for the arguments)."
+        )
         lines.append("2. Train each arm from its own plan under the same recipe.")
         lines.append("3. Re-run every rung of the ladder and rebuild this report.")
         lines.append("")
