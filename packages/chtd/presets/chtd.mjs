@@ -63,12 +63,41 @@ export const CHTD_TRACK = {
   budget: { preflight: 'estimate', per_request_cap: null, on_exceed: 'quote', max_steps: 60, attribution: 'own' },
   // on_unavailable and timeout_ms: read by core's readPreset, and on_unavailable again by base's
   // approval seam. command_policy: validated by the host when a session opens and evaluated by
-  // base's approval seam. Empty means nothing is pre-approved, so every destructive call reaches a
-  // human.
-  // CHTD keeps it empty deliberately: a rule table here would have to name absolute paths, which
-  // differ per machine and would defeat the byte freeze. What matters for the experiment is that
-  // the policy is identical for teacher and student, and an empty table is identical everywhere.
-  approval: { on_unavailable: 'deny', timeout_ms: 60000, command_policy: [] },
+  // base's approval seam.
+  //
+  // WHY THIS TABLE IS NO LONGER EMPTY, AND WHAT IT COST.
+  //
+  // It was empty, on the reasoning that "a rule table here would have to name absolute paths,
+  // which differ per machine and would defeat the byte freeze" — correct about the paths, and
+  // incomplete about the consequence. `read` declares `requiresApproval: 'never'`, so a task that
+  // only reads runs fine; `edit`, `write` and `shell` are all destructive, so an empty table sends
+  // every repair and every check to a human. A collection round has no human. Measured on the first
+  // error-recovery round: the teacher's opening `shell pwd && ls -la` came back
+  // `approval/decided verdict=rejected reason=user_rejected`, and the run was dead at step 1. Both
+  // arms failed every task — not because of the models, which is what it would have looked like in
+  // the data.
+  //
+  // So the table pre-approves the three tools a repair needs. The patterns are `.*` because the
+  // mechanism leaves no narrower choice: `normalizeArgv` reduces a path tool's argv to the
+  // *absolute, containment-checked* path, so any rule naming a path names one machine. Containment
+  // is therefore enforced by the harness — a path outside the workspace is refused before a rule is
+  // consulted — and not by this table. For `shell` the argv is the normalised command line and `.*`
+  // admits any of them; that is the widest thing this change does, and it is stated rather than
+  // implied.
+  //
+  // What is preserved is the property the experiment rests on: there is one track, and both arms
+  // run it byte for byte. What is given up is that a destructive call reaches a human. A round is
+  // unattended by design, so "reaches a human" meant "is refused", and a track that refuses every
+  // repair cannot measure error recovery.
+  approval: {
+    on_unavailable: 'deny',
+    timeout_ms: 60000,
+    command_policy: [
+      { tool: 'shell', argv: '.*', action: 'allow' },
+      { tool: 'edit', argv: '.*', action: 'allow' },
+      { tool: 'write', argv: '.*', action: 'allow' },
+    ],
+  },
   // required: read by the host, which refuses to open a session when the platform cannot provide
   // L1. on_unavailable: read by core's readPreset. level: read by base's sandbox seam
   // (packages/base/extensions/sandbox/src/policy.ts, readSandboxConfig), which refuses a level
