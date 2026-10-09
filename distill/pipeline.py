@@ -1,9 +1,15 @@
 """The pipeline as a command, so the reproduction steps in a report are something a reader can run.
 
     python -m distill.pipeline dataset \\
-        --student-ledger data/rollouts/student/t1/sessions.db --student-session <key> \\
-        --teacher-ledger data/rollouts/teacher/t1/sessions.db --teacher-session <key> \\
-        --task t1 --track <track-sha256> --out data/datasets/round1
+        --student-ledger data/rollouts/student/t1/sessions.db \\
+        --student-session <key> \\
+        --teacher data/rollouts/teacher/t1/sessions.db:<key> \\
+        --task t1 --track <track-sha256> --out data/datasets/round1 \\
+        --outcomes data/outcomes.jsonl
+
+``--teacher`` takes ``LEDGER:SESSION`` and may repeat — one fork per state. The ledger path
+must be a file that exists, because a session key contains ':' of its own and that is what
+tells the two apart; see :func:`_split_ledger_and_session`.
 
 It reads ledgers, aligns the teacher's forks against the student's run, applies the gate, and writes
 the dataset with its manifest. Everything it needs is a file, so a reader can rerun it on the
@@ -116,6 +122,28 @@ def _read_outcomes(path: str | Path) -> list[dict]:
     return rows
 
 
+def _split_ledger_and_session(spec: str) -> tuple[str, str] | None:
+    """Split ``LEDGER:SESSION`` at the colon that actually separates them.
+
+    Not ``rpartition(":")``. An Agnes session key carries colons of its own
+    (``agnes:local:<profile>:<surface>:<kind>:<hash>``), so the *last* colon sits inside the
+    key and the ledger path absorbs the rest of it — which then fails as
+    ``no ledger at <path>:agnes:local:...``, a message that points at the ledger when the
+    fault is in the argument format.
+
+    The separator is the rightmost colon whose left side names an existing file. A ledger has
+    to exist for the command to have anything to read, and no prefix of a session key is ever
+    a file on disk, so the two cases cannot be confused.
+    """
+    for index in range(len(spec) - 1, -1, -1):
+        if spec[index] != ":":
+            continue
+        left, right = spec[:index], spec[index + 1:]
+        if left and right and Path(left).is_file():
+            return left, right
+    return None
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="distill.pipeline", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -142,10 +170,14 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     teacher_pairs: list[tuple[str, str]] = []
     for spec in args.teacher:
-        ledger_path, sep, session_key = spec.rpartition(":")
-        if not sep or not ledger_path or not session_key:
-            parser.error(f"--teacher needs LEDGER:SESSION, got {spec!r}")
-        teacher_pairs.append((ledger_path, session_key))
+        pair = _split_ledger_and_session(spec)
+        if pair is None:
+            parser.error(
+                "--teacher needs LEDGER:SESSION where LEDGER is a path that exists; a "
+                f"session key contains ':' of its own, so the boundary cannot be guessed. "
+                f"Got {spec!r}"
+            )
+        teacher_pairs.append(pair)
 
     dataset_result, alignment, student = build_from_ledgers(
         student_ledger=args.student_ledger,

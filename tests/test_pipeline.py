@@ -235,3 +235,28 @@ def test_a_malformed_teacher_spec_is_refused(tmp_path: Path) -> None:
                 str(tmp_path / "out"),
             ]
         )
+
+
+def test_a_teacher_spec_survives_a_session_key_that_contains_colons(tmp_path: Path) -> None:
+    """An Agnes session key is full of colons, and the split must not land inside it.
+
+    `rpartition(":")` did exactly that: the ledger path absorbed
+    `:agnes:local:local-dev:cli:workspace` and the command failed with "no ledger at
+    <path>:agnes:local:...", naming the ledger when the argument format was at fault.
+    The separator is found by requiring the left side to be a file, which a session key's
+    prefix never is.
+    """
+    from distill.pipeline import _split_ledger_and_session
+
+    ledger = tmp_path / "sessions.db"
+    ledger.write_bytes(b"")
+    key = "agnes:local:local-dev:cli:workspace:8ad1758e07cde6e0"
+
+    assert _split_ledger_and_session(f"{ledger}:{key}") == (str(ledger), key)
+    # A key without colons still splits, so the older form keeps working.
+    assert _split_ledger_and_session(f"{ledger}:plain-key") == (str(ledger), "plain-key")
+    # Nothing to split when the ledger is not there to find.
+    assert _split_ledger_and_session(f"{tmp_path / 'missing.db'}:{key}") is None
+    assert _split_ledger_and_session("no-colon-here") is None
+    # A path with a drive letter and a colon of its own is not mistaken for a separator.
+    assert _split_ledger_and_session(f"{ledger}:a:b:c") == (str(ledger), "a:b:c")
