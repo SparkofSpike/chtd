@@ -1,8 +1,14 @@
 # CHTD's Profile: one deployment, two routes, one frozen track.
 #
-# Deploy by copying this to `<home>/profiles/chtd/profile.yaml` (see the harness's configuration
-# reference for the layer paths). Nothing here modifies the harness; the track arrives as a
-# package and is named below under `presets`.
+# **Name it `local-dev` or `enterprise`.** A profile name is not free: the resolver passes it
+# straight through as the builtin template name and the loader refuses anything else with
+# `E_DEP_MISSING: no builtin template <name>` (`packages/host/src/profile/inputs.ts`,
+# `packages/host/src/profile/templates.ts`). A deployment customises a template by placing its own
+# `profile.yaml` under that template's name — the user layer is merged over the builtin one — so this
+# file belongs at `<home>/profiles/local-dev/profile.yaml`, not at a directory named `chtd`.
+#
+# Nothing here modifies the harness; the track arrives as a package and is named below under
+# `presets`.
 #
 # WHY ONE PROFILE AND NOT TWO
 #
@@ -57,12 +63,20 @@ provider:
     - route: teacher
       api: openai-completions
       baseUrl: "https://<M0: the teacher endpoint>/v1"
+      # Every model repeats `route` and `baseUrl`, which the route above already states. That is not
+      # redundancy the schema tolerates — both fields are in `ModelRecord`'s required list, and the
+      # assembled registry matches a slot on the pair read off the *record*. A model that inherits
+      # them from its enclosing route is refused with `E_PRESET_UNRESOLVED: model-unserved: the
+      # sealed registry does not offer <route>/<id>` — verified against a real host, not inferred.
       models:
         - # M0: the teacher's model record. `id` is what the route is asked to run; `cost`,
           # `contextWindow` and `maxTokens` are read by the provider layer, and `toolCallFormats`
           # decides how the model's tool calls are parsed.
           id: "<M0: teacher model id>"
           name: "<M0: teacher model id>"
+          api: openai-completions
+          route: teacher
+          baseUrl: "https://<M0: the teacher endpoint>/v1"
           reasoning: false
           input: ["text"]
           cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
@@ -77,6 +91,9 @@ provider:
       models:
         - id: "<M0: student model id>"
           name: "<M0: student model id>"
+          api: openai-completions
+          route: student
+          baseUrl: "http://127.0.0.1:8000/v1"
           reasoning: false
           input: ["text"]
           cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }

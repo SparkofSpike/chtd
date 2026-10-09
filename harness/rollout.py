@@ -10,11 +10,18 @@ own CLI, and `ReplayRunner` serves a prepared ledger so that everything downstre
 be tested without a model account, a GPU, or a network. A pipeline that could only be exercised
 against a live endpoint would be a pipeline nobody could check.
 
-**Untested path, stated plainly.** `CliRunner` has not been run: building the harness on this
-machine fails in its own native step (`packages/system-node/scripts/build-native.mjs` wants Node
-headers that are not installed), so the command it builds is written from the CLI's documented
-arguments and verified only by construction. Everything it feeds — ledger reading, trajectory
-extraction, divergence, gating — is tested against real ledgers.
+**Untested path, stated plainly.** `CliRunner` has not driven a rollout against a live model. The
+harness does build here — `pnpm --filter @agnes/cli build:local` succeeds once `AGNES_NODE_HEADERS`
+points at a Node header cache, and `packages/cli/dist/local/agnes.mjs` runs — and its exact argv was
+checked against that binary. Two things came out of doing so: the model slot is `primary` and not
+`main` (a lane is where rows land, a slot is which model answers), and `--standalone` is required
+because the daemon does not come up on this machine.
+
+With both fixed, a real session was created and its ledger written; `harness/ledger.py` read it
+back and classified every row. The turn itself ended in `AUTH route=...` because the probe pointed
+at a closed port — but by then the session, its `session/start`, its user message and its full turn
+lifecycle were already durable, which is what the reader consumes. Everything downstream of the
+runner is tested against ledgers like that one.
 """
 
 from __future__ import annotations
@@ -190,14 +197,35 @@ def read_records(path: str | Path) -> tuple[RolloutRecord, ...]:
 class CliRunner:
     """Drive the harness's own CLI, one session per task.
 
-    The command is ``agnes -p --model main=<route>/<model> <prompt>`` against an isolated
-    ``AGH_HOME``, with the profile named by ``AGNES_PROFILE``. Every part of that is the documented
-    interface; none of it is exercised here (see the module docstring).
+    The command is ``agnes -p --model <slot>=<route>/<model> <prompt>`` against an isolated
+    ``AGH_HOME``, with the profile named by ``AGNES_PROFILE``. Confirmed against the built binary's
+    own ``--help``: an unrecognised option exits 2 and prints the usage block.
+
+    **The slot is `primary`, not `main`.** An earlier version of this wrote `main=`, which the CLI
+    refuses: the accepted slots are `primary`, `escalation`, `fast`, `compaction`, `verifier`,
+    `image` and `video`. `main` is the name of a *lane* in the ledger, which is where the confusion
+    came from; a lane is where rows land, a slot is which model answers. Writing the wrong one
+    produced `--model slot must be one of primary, ...` and exit 2, with no ledger written.
+
+    **`--standalone` is not optional here.** Without it the CLI starts a daemon first, and on this
+    machine that fails with `local daemon startup failed: daemon child exited before readiness (1)`
+    before any session exists. With it, a real session was created and its ledger written — verified
+    against the built binary, reading the result back with `harness/ledger.py`.
+
+    Not yet run against a live endpoint: the probe used a closed port, so the turn ended in
+    `AUTH route=...` after the session and its rows were already durable. Which models to point at
+    is the M0 decision.
     """
 
     entry: str
-    profile: str = "chtd"
+    profile: str = "local-dev"
     timeout_seconds: int = 900
+    #: Which model slot the session runs on. A field so a deployment can point a different slot
+    #: without rewriting the command.
+    slot: str = "primary"
+    #: Run without a daemon. `--standalone` keeps each rollout self-contained, which is what a
+    #: batch of one-session runs wants anyway.
+    standalone: bool = True
 
     def run(self, task: Task, *, arm: str, model: str, route: str, home: str) -> RunResult:
         home_path = Path(home)
@@ -205,15 +233,17 @@ class CliRunner:
         cwd = Path(task.cwd) if task.cwd else home_path / "work"
         cwd.mkdir(parents=True, exist_ok=True)
 
+        argv = [
+            "node",
+            self.entry,
+            "-p",
+            *(["--standalone"] if self.standalone else []),
+            "--model",
+            f"{self.slot}={route}/{model}",
+            task.prompt,
+        ]
         completed = subprocess.run(
-            [
-                "node",
-                self.entry,
-                "-p",
-                "--model",
-                f"main={route}/{model}",
-                task.prompt,
-            ],
+            argv,
             cwd=str(cwd),
             env={
                 "PATH": _path_of_environment(),

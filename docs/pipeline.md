@@ -95,13 +95,57 @@ fail.
 
 - **The training loop.** `distill/train.py` produces the plan — recipe, provenance, dataset digest —
   and refuses without an accelerator. It does not run PEFT; that is a GPU-side step.
-- **The runner has not been exercised.** Building Agnes Harness on the machine this was written on
-  fails in its own native step (`packages/system-node/scripts/build-native.mjs` wants Node headers
-  that are not installed), so `CliRunner` is written from the CLI's documented arguments and
-  verified only by construction. Everything it produces — ledger reading, trajectory extraction,
-  divergence, gating — is tested against real ledgers.
+- **The runner has not driven a rollout against a live model.** The harness builds, its CLI runs,
+  and its exact argv was checked against the real binary — which is how two mistakes were found: the
+  slot is `primary` rather than `main`, and `--standalone` is needed because the daemon does not come
+  up here. With both fixed a real session was created, written to a real ledger, and read back by
+  `harness/ledger.py`. What remains is an endpoint: the probe pointed at a closed port, so the turn
+  ended in an auth error *after* its rows were durable. Choosing the models is the M0 decision.
+  Everything the runner produces — ledger reading, trajectory extraction, divergence, gating — is
+  exercised against real ledgers.
+
+  Building needs `AGNES_NODE_HEADERS` pointed at a Node header cache (see *Prerequisites* below);
+  without it the build stops in its own native step.
 - **One DAgger round.** `distill/pipeline.py` collects one round. Aggregation across rounds is
   future work, and the limitation is carried in every report.
+
+## Prerequisites
+
+Building the harness needs a C++ toolchain, the Windows SDK, and **the Node headers**. The first two
+this machine had (MSVC 14.41 at `D:\VS\IDE`, SDK 10.0.22621.0); the headers it did not, and the
+build stops with `Node headers/library missing`.
+
+`packages/system-node/scripts/build-native.mjs` looks in exactly two places on Windows:
+`AGNES_NODE_HEADERS`, or `%LOCALAPPDATA%\node-gyp\Cache\<node version>\`. Both want the node-gyp
+layout — `<root>\include\node\node_api.h` and `<root>\<arch>\node.lib` — and neither exists until
+something downloads them. A checkout with no `node_modules` has nothing to trigger that download,
+which is why a fresh machine hits this.
+
+```sh
+# fetch once, then point the build at it
+export AGNES_NODE_HEADERS=/path/to/node-headers   # ...\include\node\node_api.h lives here
+pnpm --filter @agnes/cli build:local
+```
+
+The two files come from `https://nodejs.org/download/release/v<version>/`:
+`node-v<version>-headers.tar.gz` (the `include/node` tree) and `win-x64/node.lib`.
+
+## Running a session
+
+Three things about the harness's own CLI are worth knowing before pointing a runner at it, all of
+them found by running it rather than by reading it:
+
+- **A profile name must be `local-dev` or `enterprise`.** The resolver passes the name through as
+  the builtin template and refuses anything else (`E_DEP_MISSING: no builtin template <name>`). A
+  deployment customises a template by putting its own `profile.yaml` under that template's name —
+  the user layer merges over the builtin one — so `harness/profile/chtd.yaml` belongs at
+  `<home>/profiles/local-dev/profile.yaml`.
+- **`--standalone` is needed here**, because the daemon does not come up on this machine
+  (`local daemon startup failed: daemon child exited before readiness (1)`). With it, a session
+  opens and writes its ledger.
+- **Every `ModelRecord` repeats its `route` and `baseUrl`.** Both are required fields on the record,
+  and the assembled registry matches a slot on the pair read off the record rather than off its
+  enclosing route: a model that inherits them is refused with `model-unserved`.
 
 ## Tests
 
