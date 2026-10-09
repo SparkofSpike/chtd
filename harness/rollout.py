@@ -27,9 +27,12 @@ runner is tested against ledgers like that one.
 from __future__ import annotations
 
 import json
+import os
 import shutil
+import sqlite3
 import subprocess
 from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Protocol, Sequence
 
@@ -113,7 +116,8 @@ class RunResult:
 class Runner(Protocol):
     """The model seam. Everything downstream of this is model-independent."""
 
-    def run(self, task: Task, *, arm: str, model: str, route: str, home: str) -> RunResult: ...
+    def run(self, task: Task, *, arm: str, model: str, route: str, home: str,
+            cwd: str | None = None) -> RunResult: ...
 
 
 @dataclass(frozen=True)
@@ -197,24 +201,33 @@ def read_records(path: str | Path) -> tuple[RolloutRecord, ...]:
 class CliRunner:
     """Drive the harness's own CLI, one session per task.
 
-    The command is ``agnes -p --model <slot>=<route>/<model> <prompt>`` against an isolated
-    ``AGH_HOME``, with the profile named by ``AGNES_PROFILE``. Confirmed against the built binary's
-    own ``--help``: an unrecognised option exits 2 and prints the usage block.
+    The command is ``agnez -p --cwd <workspace> --model <slot>=<route>/<model> <prompt>``
+    against a shared ``AGH_HOME``, with the profile named by ``AGNES_PROFILE``.
 
-    **The slot is `primary`, not `main`.** An earlier version of this wrote `main=`, which the CLI
-    refuses: the accepted slots are `primary`, `escalation`, `fast`, `compaction`, `verifier`,
-    `image` and `video`. `main` is the name of a *lane* in the ledger, which is where the confusion
-    came from; a lane is where rows land, a slot is which model answers. Writing the wrong one
-    produced `--model slot must be one of primary, ...` and exit 2, with no ledger written.
+    **Where the session key comes from.** A key is
+    ``agnes:local:<profile>:<surface>:workspace:<hash of the working directory>``, so two
+    runs are told apart by *where they ran*, not by which home they used. Giving each run
+    its own workspace therefore separates them on one shared ledger — which is the shape
+    the design asks for: *rollouts land on one shared, append-only ledger, so a teacher
+    step and a student step are directly comparable.* One home per run would instead
+    require a copy of the installed packages and the lockfile for every task, because a
+    non-builtin package is resolved through the lockfile and nothing else.
 
-    **`--standalone` is not optional here.** Without it the CLI starts a daemon first, and on this
-    machine that fails with `local daemon startup failed: daemon child exited before readiness (1)`
-    before any session exists. With it, a real session was created and its ledger written — verified
-    against the built binary, reading the result back with `harness/ledger.py`.
+    **`--standalone` is not used, and that is a finding rather than a preference.** The
+    flag runs the host embedded in the CLI process, and that path does not consult the
+    runtime-snapshot store, so a profile naming a non-builtin package fails with
+    ``E_EXT_LOAD: trusted package has no immutable runtime snapshot`` no matter how
+    healthy the store is. Driven through the daemon, the same profile and the same track
+    load. Measured both ways on this machine; see ``docs/harness-integration.md``.
 
-    Not yet run against a live endpoint: the probe used a closed port, so the turn ended in
-    `AUTH route=...` after the session and its rows were already durable. Which models to point at
-    is the M0 decision.
+    The model slot is `primary`, not `main`: the accepted slots are `primary`,
+    `escalation`, `fast`, `compaction`, `verifier`, `image` and `video`. `main` is the name
+    of a *lane* in the ledger, which is where the confusion came from; a lane is where rows
+    land, a slot is which model answers.
+
+    ``env`` carries whatever the deployment's routes need — a credential for a hosted
+    teacher, for instance. It is merged over the ambient environment rather than replacing
+    it, and it is what keeps a route's API key out of the profile and the lockfile.
     """
 
     entry: str
@@ -223,33 +236,46 @@ class CliRunner:
     #: Which model slot the session runs on. A field so a deployment can point a different slot
     #: without rewriting the command.
     slot: str = "primary"
-    #: Run without a daemon. `--standalone` keeps each rollout self-contained, which is what a
-    #: batch of one-session runs wants anyway.
-    standalone: bool = True
+    #: Extra environment for the run — credentials, chiefly. Merged over `os.environ`.
+    env: Mapping[str, str] | None = None
+    #: Run through the daemon (the default) rather than embedded. See the class docstring for why
+    #: the embedded path cannot carry a packaged track.
+    standalone: bool = False
 
-    def run(self, task: Task, *, arm: str, model: str, route: str, home: str) -> RunResult:
+    def run(self, task: Task, *, arm: str, model: str, route: str, home: str,
+            cwd: str | None = None) -> RunResult:
         home_path = Path(home)
         home_path.mkdir(parents=True, exist_ok=True)
-        cwd = Path(task.cwd) if task.cwd else home_path / "work"
-        cwd.mkdir(parents=True, exist_ok=True)
+        workspace = Path(cwd or task.cwd or (home_path / "work"))
+        workspace.mkdir(parents=True, exist_ok=True)
+        started = datetime.now(timezone.utc)
 
         argv = [
             "node",
             self.entry,
             "-p",
             *(["--standalone"] if self.standalone else []),
+            "--cwd",
+            str(workspace),
             "--model",
             f"{self.slot}={route}/{model}",
             task.prompt,
         ]
+        # Inherited, not replaced. An environment holding only PATH and AGH_HOME is missing
+        # SystemRoot, TEMP and whatever else the platform needs — and a route's credential lives in
+        # the environment too, so throwing it away would drop the very thing being configured.
+        child_env = dict(os.environ)
+        child_env.update({
+            "AGH_HOME": str(home_path),
+            "AGNES_PROFILE": self.profile,
+        })
+        if self.env:
+            child_env.update(self.env)
+
         completed = subprocess.run(
             argv,
-            cwd=str(cwd),
-            env={
-                "PATH": _path_of_environment(),
-                "AGH_HOME": str(home_path),
-                "AGNES_PROFILE": self.profile,
-            },
+            cwd=str(workspace),
+            env=child_env,
             capture_output=True,
             text=True,
             timeout=self.timeout_seconds,
@@ -261,23 +287,28 @@ class CliRunner:
             )
 
         ledger = home_path / "data" / "sessions.db"
-        session_key = _newest_session(ledger)
+        # Bounded to this run. A workspace that already held a session produces no new one —
+        # the harness reuses it — and reading whatever is newest would then hand back another
+        # run's trajectory as if it were this one's.
+        session_key = _newest_session(ledger, since=started)
         return RunResult(session_key=session_key, ledger_path=str(ledger))
 
 
-def _path_of_environment() -> str:
-    import os
-
-    return os.environ.get("PATH", "")
-
-
-def _newest_session(ledger_path: Path) -> str:
+def _newest_session(ledger_path: Path, *, since: datetime | None = None) -> str:
     """The session the run just created.
 
     Ordered by the session's own `created_at` and not by its highest sequence number. Sequence would
     be wrong wherever a fork is present: a fork's child starts at its parent's boundary, so a child
     that ran on can hold a lower last sequence than the parent it forked from, and picking the
     larger number would then name the parent.
+
+    ``since`` bounds the search to sessions created at or after the run started, and a run that
+    created none is a **failure** rather than a lookup that falls through to an older row. That
+    fall-through is not hypothetical: the harness derives a session key from the working directory,
+    so re-running a task in the same workspace reuses the existing session instead of creating one,
+    and the caller would then be handed a previous run's trajectory — one arm's answers recorded
+    under another's name, with nothing to notice it by. Asking for a session the run did not create
+    is an error the caller can fix (a fresh workspace); a silent substitution is not.
 
     The sequence-based ordering is kept as the fallback for a ledger whose `sessions` table is empty
     — a fixture, or a ledger written before that table existed. There it cannot be wrong, because
@@ -286,12 +317,76 @@ def _newest_session(ledger_path: Path) -> str:
     with open_ledger(ledger_path) as ledger:
         rows = ledger.sessions()
         if rows:
-            newest = max(rows, key=lambda row: (row.created_at, row.session_key))
+            if since is not None:
+                fresh = [row for row in rows if not _predates(row.created_at, since)]
+                if not fresh:
+                    raise RuntimeError(
+                        f"no session was created in {ledger_path} after {since.isoformat()}. The "
+                        "harness reuses a session when the working directory already has one, so "
+                        "this run's rows went into a previous session — give each run its own "
+                        "workspace rather than reading a session that was not created here."
+                    )
+                newest = max(fresh, key=lambda row: (row.created_at, row.session_key))
+            else:
+                newest = max(rows, key=lambda row: (row.created_at, row.session_key))
             return newest.session_key
         keys = ledger.session_keys()
         if not keys:
             raise RuntimeError(f"the run wrote no session to {ledger_path}")
         return max(keys, key=lambda key: (ledger.last_seq(key), key))
+
+
+def _predates(created_at: str, since: datetime) -> bool:
+    """Whether an ISO timestamp is older than ``since``, tolerating an unparseable one.
+
+    A timestamp that cannot be read is treated as NOT older, so an odd format errs toward
+    accepting the row rather than rejecting every row and reporting a missing session.
+    """
+    try:
+        stamp = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    if stamp.tzinfo is None:
+        stamp = stamp.replace(tzinfo=timezone.utc)
+    return stamp < since
+
+
+def _merge_ledger(source: Path, target: Path) -> list[str]:
+    """Copy every session and event from one ledger into another, returning the new keys.
+
+    Runs share one home, so a second task that replaced the file would erase the first
+    task's session — and the rollout record already written would name a file that no
+    longer held what it described. The keys added are returned so the caller names the
+    run by what it actually contributed rather than by whatever is newest by timestamp.
+    """
+    before = set(_session_keys(target))
+    con = sqlite3.connect(str(target))
+    try:
+        con.execute('ATTACH DATABASE ? AS incoming', (str(source),))
+        for table in ('sessions', 'events'):
+            columns = [row[1] for row in con.execute(f'PRAGMA incoming.table_info({table})')]
+            if not columns:
+                continue
+            listing = ', '.join(f'"{c}"' for c in columns)
+            con.execute(
+                f'INSERT OR REPLACE INTO main."{table}" ({listing}) '
+                f'SELECT {listing} FROM incoming."{table}"'
+            )
+        con.commit()
+        con.execute('DETACH DATABASE incoming')
+    finally:
+        con.close()
+    return sorted(set(_session_keys(target)) - before)
+
+
+def _session_keys(ledger_path: Path) -> list[str]:
+    con = sqlite3.connect(str(ledger_path))
+    try:
+        return [row[0] for row in con.execute('SELECT session_key FROM sessions')]
+    except sqlite3.Error:
+        return []
+    finally:
+        con.close()
 
 
 @dataclass
@@ -301,11 +396,15 @@ class ReplayRunner:
     Maps a task id to a directory holding a ``sessions.db``. This is what lets the dataset and
     evaluation code be tested end to end — through real ledgers, real trajectories and real
     divergence extraction — without a model endpoint.
+
+    The prepared ledger is **merged** into the home's own rather than written over it, because
+    runs share a home; see :func:`_merge_ledger`.
     """
 
     sources: dict[str, str]
 
-    def run(self, task: Task, *, arm: str, model: str, route: str, home: str) -> RunResult:
+    def run(self, task: Task, *, arm: str, model: str, route: str, home: str,
+            cwd: str | None = None) -> RunResult:
         source = self.sources.get(task.id)
         if source is None:
             raise KeyError(f"no prepared ledger for task {task.id}")
@@ -313,8 +412,15 @@ class ReplayRunner:
         data = home_path / "data"
         data.mkdir(parents=True, exist_ok=True)
         target = data / "sessions.db"
-        shutil.copyfile(Path(source) / "sessions.db", target)
-        session_key = _newest_session(target)
+        incoming = Path(source) / "sessions.db"
+        # Which session this run *is*: the prepared ledger's own newest, decided before the
+        # merge. After it, the target holds every replayed run's sessions and "newest" there
+        # would depend on how the fixtures happened to stamp their clocks.
+        session_key = _newest_session(incoming)
+        if not target.exists():
+            shutil.copyfile(incoming, target)
+        else:
+            _merge_ledger(incoming, target)
         return RunResult(session_key=session_key, ledger_path=str(target))
 
 
@@ -336,18 +442,34 @@ def collect(
 ) -> CollectionOutcome:
     """Run every task once and record what happened.
 
-    Every run gets its own home. Sharing one would put two sessions in one ledger, and the ledger is
-    how this pipeline tells runs apart.
+    Every run gets its own **workspace**, and they share one home. The workspace is what
+    makes a run identifiable — a session key is derived from the working directory — and
+    sharing the home is what lets a packaged track be installed once rather than copied
+    per task. The design asks for exactly this: one shared, append-only ledger, so a
+    teacher step and a student step are directly comparable.
     """
     home_root_path = Path(home_root)
+    home_root_path.mkdir(parents=True, exist_ok=True)
     records: list[RolloutRecord] = []
     trajectories: dict[str, Trajectory] = {}
 
     for task in tasks:
-        home = home_root_path / f"{arm}-{task.id}"
-        if home.exists():
-            shutil.rmtree(home)
-        result = runner.run(task, arm=arm, model=model, route=route, home=str(home))
+        # A task that brings its own workspace keeps it. Clearing the directory here would
+        # delete the very files the task is about — the fixtures it was written to work on —
+        # and the run would then fail for a reason that looks like the model's fault. Only a
+        # directory this function invents is this function's to clear.
+        if task.cwd:
+            workspace = Path(task.cwd)
+            workspace.mkdir(parents=True, exist_ok=True)
+        else:
+            # The name carries the start time because a session key is derived from the working
+            # directory: two runs in the same directory are one session to the harness, so the
+            # second would append to the first rather than produce a trajectory of its own.
+            stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S')
+            workspace = home_root_path / f"{arm}-{task.id}-{stamp}"
+            workspace.mkdir(parents=True, exist_ok=True)
+        result = runner.run(task, arm=arm, model=model, route=route,
+                            home=str(home_root_path), cwd=str(workspace))
 
         with open_ledger(result.ledger_path) as ledger:
             trajectory = read_trajectory(ledger, result.session_key)

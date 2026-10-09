@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from harness.ledger import open_ledger
 from harness.rollout import (
     ReplayRunner,
     RolloutRecord,
@@ -70,11 +71,13 @@ def test_a_task_without_a_prompt_is_refused(tmp_path: Path) -> None:
         load_tasks(path)
 
 
-def test_collect_records_a_row_per_task_and_keeps_the_ledgers_apart(tmp_path: Path) -> None:
+def test_collect_records_a_row_per_task_and_keeps_the_runs_apart(tmp_path: Path) -> None:
     tasks = (Task(id="t1", prompt="a"), Task(id="t2", prompt="b"))
+    # Distinct session keys, the way two real runs get distinct ones: the key is derived
+    # from the working directory, so no two workspaces produce the same key.
     sources = {
-        "t1": str(_prepared_ledger(tmp_path / "src-t1")),
-        "t2": str(_prepared_ledger(tmp_path / "src-t2")),
+        "t1": str(_prepared_ledger(tmp_path / "src-t1", session="run-t1")),
+        "t2": str(_prepared_ledger(tmp_path / "src-t2", session="run-t2")),
     }
     outcome = collect(
         tasks,
@@ -89,9 +92,35 @@ def test_collect_records_a_row_per_task_and_keeps_the_ledgers_apart(tmp_path: Pa
     assert all(record.track_sha256 == TRACK for record in outcome.records)
     assert all(record.arm == "student" for record in outcome.records)
     assert outcome.records[0].decisions == 2
-    # Each run got its own home, so its ledger is its own record.
-    assert outcome.records[0].ledger_path != outcome.records[1].ledger_path
+    # Runs are told apart by their session keys. They deliberately share one ledger —
+    # the design calls for a single append-only record — so demanding distinct paths
+    # would be demanding that the workspace-derived key, which is what actually
+    # distinguishes a teacher run from a student one, not be the thing under test.
+    assert outcome.records[0].session_key != outcome.records[1].session_key
     assert set(outcome.trajectories) == {"student/t1", "student/t2"}
+
+
+def test_replaying_a_second_task_does_not_erase_the_first(tmp_path: Path) -> None:
+    """The shared ledger accumulates; it is not overwritten per task."""
+    tasks = (Task(id="t1", prompt="a"), Task(id="t2", prompt="b"))
+    sources = {
+        "t1": str(_prepared_ledger(tmp_path / "src-t1", session="run-t1")),
+        "t2": str(_prepared_ledger(tmp_path / "src-t2", session="run-t2")),
+    }
+    outcome = collect(
+        tasks,
+        ReplayRunner(sources),
+        arm="student",
+        model="qwen-small",
+        route="student",
+        home_root=tmp_path / "homes",
+        track_sha256=TRACK,
+    )
+    ledger = Path(outcome.records[0].ledger_path)
+    with open_ledger(ledger) as opened:
+        keys = {row.session_key for row in opened.sessions()}
+    # Both runs' sessions survive in the one file.
+    assert {record.session_key for record in outcome.records} <= keys
 
 
 def test_collect_refuses_a_task_with_no_prepared_run(tmp_path: Path) -> None:
@@ -123,6 +152,33 @@ def test_the_newest_session_is_chosen_by_creation_not_by_sequence(tmp_path: Path
     builder.close()
 
     assert _newest_session(tmp_path / "sessions.db") == "child"
+
+
+def test_a_run_that_created_no_session_is_refused(tmp_path: Path) -> None:
+    """A bounded lookup must fail rather than substitute an older run's session.
+
+    The harness derives a session key from the working directory, so re-running a task in the
+    same workspace appends to the existing session instead of creating another. An unbounded
+    "newest session" lookup would then return a previous run, and one arm's answers would be
+    recorded under another's name with nothing to notice it by.
+    """
+    from datetime import datetime, timezone
+
+    from harness.rollout import _newest_session
+
+    builder = build_ledger(tmp_path / "sessions.db")
+    builder.session("existing", created_at="2026-10-01T00:00:00Z").start("existing")
+    builder.tool_call("existing", "read", {"path": "a"})
+    builder.close()
+
+    # Bounded after the only session that exists: the run created nothing.
+    later = datetime(2026, 10, 2, tzinfo=timezone.utc)
+    with pytest.raises(RuntimeError, match="no session was created"):
+        _newest_session(tmp_path / "sessions.db", since=later)
+
+    # Bounded before it: the session counts, so the run is identified.
+    earlier = datetime(2026, 9, 30, tzinfo=timezone.utc)
+    assert _newest_session(tmp_path / "sessions.db", since=earlier) == "existing"
 
 
 def test_a_ledger_with_no_sessions_rows_falls_back_to_sequence(tmp_path: Path) -> None:
