@@ -153,3 +153,44 @@ token and then never terminated.
 
 Measured throughput: about 19 tokens/s for a 64-token completion, single request,
 no batching.
+
+## Leaked accelerator memory, and why it stops the next training run
+
+Measured 2026-10-09, after three fine-tunes. The card is 47.4 GB and `nvidia-smi` reported 42.86 GB
+of it charged to **pid 519330**, in a container where the highest live pid was 6,641.
+
+```
+$ nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv
+pid, process_name, used_gpu_memory [MiB]
+519330, [Not Found], 42860 MiB
+
+$ ls -d /proc/519330
+ls: cannot access '/proc/519330': No such file or directory
+```
+
+`[Not Found]` is `nvidia-smi`'s own word for it: the process is gone and the driver still charges
+its memory. A CUDA context outlived the process that owned it.
+
+**HAMi does not reclaim it.** The library names the mechanism — `strings /usr/local/vgpu/libvgpu.so`
+contains `Kick dead proc %d` and `Owner proc dead (%d), try fix` — and it fired once earlier in this
+box's life, for a different pid. It did not fire here, and it did not fire when a request could not
+be satisfied:
+
+```
+$ python -c "import torch; torch.empty(20*1024**3//4, device='cuda')"
+HAMI-core ERROR: cuMemoryAllocate failed res=2
+CUDA out of memory. Tried to allocate 20.00 GiB. GPU 0 has a total capacity of
+47.37 GiB of which 5.21 GiB is free. Process 519330 has 41.86 GiB memory in use.
+```
+
+The allocation failed rather than triggering a reclaim, and the free figure did not move. `/dev/shm`
+and `/tmp/vgpulock` are both empty, so the accounting lives on the host side and is not reachable
+from inside the container.
+
+**What still works and what does not.** Serving does: the endpoint holds its ~12 GB, answers
+`/health`, and runs sessions. Training does not: the last run peaked at 18.3 GB and there are 5.2 GB
+free. **The box needs its container restarted, or the GPU reset on the host, before another
+fine-tune can run** — neither is possible from inside, and both are the operator's call.
+
+Worth knowing before blaming the next run's failure on the model or the data: the symptom is a
+CUDA out-of-memory error naming a pid that does not exist.
