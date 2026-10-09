@@ -1,118 +1,156 @@
 # Running against Agnes
 
-The hackathon's technical commitment is that the models are Agnes ones, so the teacher
-route points at the Agnes hub. This records what that took and what it costs.
+The hackathon's models are Agnes ones, so the teacher route points at Agnes. This records
+the arrangement that works, the two mistakes made getting there, and what the models can
+do.
 
-Status: **an Agnes teacher drives the frozen track end to end.** Two sessions in one
-ledger, both `preset: chtd`, one shared state, one divergence, one admitted entry.
-
-## The shape
+Status: **an Agnes teacher drives the frozen track end to end, with the key the
+organisers issued.**
 
 ```
-teacher   agnes-2.5-pro            https://apihub.agnes-ai.com/v1   (hosted)
+teacher   agnes-3.0-flash          https://api.agnes-ai.cn/v1        (the issued key)
 student   qwen3-4b-instruct-2507   http://100.113.249.5:8000/v1      (the training box)
 ```
 
 The student is local because it is the side that gets LoRA trained, and a hosted API has
-no weights to train. That split is a compliance question, not a technical one — see
-*The open question* below.
+no weights to train. The competition's rules permit this explicitly — see *Compliance*
+below.
 
-Generate the profile with `make_agnes_profile.py`; it refuses to write a file that
-contains a credential. Keys reach the daemon as `AGNES_SECRET_TEACHER_DEFAULT` and
-`AGNES_SECRET_STUDENT_DEFAULT`, through the profile's `secrets: { kind: env }` adapter.
+## The key was fine; the reading and the endpoint were not
 
-## The two keys are not interchangeable
+Two errors, and both had to be fixed before anything worked.
 
-The hackathon issued a key and the CodeWhale config already held one. Measured, same
-endpoint, same request:
-
-```
-hackathon key   sk-sNw6...Tue7   HTTP 401  {"error":{"message":"Invalid token ..."}}
-config key      sk-Adt...r5uM    HTTP 200  '\n\nOK'
-```
-
-Both are 51 characters in the same format. **`/models` is not evidence that a key
-works** — with a browser-like User-Agent it answers 200 with the full catalogue and no
-credential at all. Only a completion proves anything, which is why
-`agnes_credentials.py` probes with one and caches the result.
-
-If the issued key is still refused, that is a question for the organisers (entry U240)
-rather than something to work around.
-
-## How the harness names a preset on the command line does not work
+**The endpoint was wrong.** The CodeWhale config carries an Agnes credential at
+`apihub.agnes-ai.com/v1`, and that is the host every early attempt was aimed at. The
+documentation names a different one:
 
 ```
-agh -p --model primary=teacher/agnes-2.5-pro "..."        rc=0   preset: chtd
-agh -p --preset chtd --model primary=teacher/agnes-2.5-pro "..."   rc=1
-    PRESET_SWITCH_REJECTED: the requested preset or model is not available in this profile
+https://api.agnes-ai.cn/v1/chat/completions
 ```
 
-The same profile, the same preset, the same model. Omitting `--preset` runs under
-`presets.default`, which *is* `cthd`, and the ledger records `preset: chtd` — so the
-track loads and the failure belongs to the argument path.
+They are separate platforms with separate key registries. A key valid on one answers 401
+on the other, which reads exactly like a dead key.
 
-The real error is unrecoverable from the CLI: `mapCore` re-raises any core error whose
-code is in
+**One character was misread.** At index 32 the glyph is uppercase `I`:
 
-```javascript
-REJECT_CODES = new Set(['E_PRESET_UNSUPPORTED', 'E_PRESET_UNRESOLVED',
-                        'E_MODEL_UNSUPPORTED', 'E_MODEL_UNKNOWN'])
+```
+as first transcribed   ...oG57lBDtK4...   401 无效的令牌
+as it actually is      ...oG57IBDtK4...   403 该令牌无权访问模型
 ```
 
-as `PRESET_SWITCH_REJECTED`, and the display layer renders a fixed sentence that drops
-the `reason`. `--mode json` and `--meta` do not surface it either. So the working
-procedure is: **do not pass `--preset`; verify the preset from the ledger**, where
-`session/start` states it plainly.
+`I`, `l` and `1` are near-identical in the font the email renders in, and this was caught
+by reading the key back rather than by anything clever.
 
-`--preset standard` is refused too, and correctly so — it is not in
-`presets.allowed`.
+**A test flaw hid both.** The first exhaustive attempt tried every combination of the
+ambiguous characters — 144 readings — and reported all of them refused. That was wrong.
+The script tested `if status == 200` and treated everything else as a refusal, so the
+**403 that said the key was valid** was filed in the same bucket as 401s. A correct answer
+was produced and discarded by the classification.
 
-## Rate limits shape the run
+## 401 and 403 mean different things
 
-A burst of requests returns 429. Paced at one request every six seconds, ten of ten
-succeeded. A rollout therefore needs throttling and retry rather than parallelism: an
-agent turn is several model calls, and a 429 in the middle of one is a failed run, not a
-slow one.
+This distinction is worth stating on its own, because conflating them is what cost the
+time:
 
-## What the models can do
+| status | message | meaning |
+| --- | --- | --- |
+| 401 | `无效的令牌` / `Invalid token` | the token is not known here |
+| 401 | `未提供令牌` / `Token not provided` | no credential was sent |
+| **403** | **`该令牌无权访问模型 X`** | **the token is valid and X is not granted to it** |
+| 503 | `model_not_found` | the model name does not exist at all |
 
-All six text models call tools and — more discriminating — refrain when no tool is
-needed (`2 + 2` answers `4` without calling anything), which is the behaviour a
-distillation target depends on.
+A credential probe must separate these. `agnes_credentials.py` returns one of
+`allowed` / `scoped` / `rejected`, where `scoped` means "endpoint and key are right, the
+model is wrong" — the state that looks like failure and is not.
 
-| model | tool call | refrains | notes |
-| --- | --- | --- | --- |
-| `agnes-3.0-flash` | yes | yes | fastest of the strong ones |
-| `agnes-2.5-pro` | yes | yes | reasoning field present; used here |
-| `agnes-2.5-pro-alpha` | yes | yes | |
-| `agnes-2.5-pro-beta` | yes | yes | |
-| `agnes-2.5-flash` | yes | yes | |
-| `agnes-2.0-flash` | yes | — | called `read_file` twice for one request |
+## The issued key is scoped to one model
 
-`agnes-2.5-pro` replies carry a separate `reasoning` field, so its `thinkingReplay` is
-`drop` — the harness would otherwise replay reasoning as if the model had said it.
+```
+agnes-3.0-flash      200  allowed
+agnes-2.5-flash      403  not granted
+agnes-2.5-pro        403  not granted
+agnes-3.0-pro        403  not granted
+(and ten other spellings, all 403)
+```
 
-## The open question
+So the endpoint and the model travel together with the key, and nothing may hardcode
+either. `agnes_credentials.py` resolves the triple; `make_agnes_profile.py` reads it from
+there rather than from constants.
 
-**The hackathon requires Agnes models and the student is a Qwen.** These cannot both
-hold literally: a weight-level fine-tune needs weights, and the Agnes models are
-reachable only through an API.
+## What the model can do
 
-What is true today:
+`agnes-3.0-flash`, measured through the issued key:
 
-- the **teacher** is an Agnes model, so the supervision comes from the platform the
-  competition names;
-- the **student** is `Qwen3-4B-Instruct-2507` on the training box, and it is the side
-  that receives the LoRA;
-- the two are deliberately **not** the same family, which CHTD's design asks for in
-  order to rule out tokenizer and pretraining differences.
+| capability | result |
+| --- | --- |
+| tool call when one is the obvious move | `read_file({"path": "config.json"})` |
+| refrains when no tool is needed | `2 + 2` answers `4`, no call |
+| streaming | 17 chunks, assembled correctly |
+| usage accounting | present |
+| latency | 1.8–5.8 s for a short turn |
 
-That last point is smaller here than the design implies. The teacher is consulted over
-HTTP, so it reads the student's state as text and answers as text — there is no
-logit-level comparison anywhere in the pipeline, and a shared tokenizer would buy
-nothing at this interface. What remains unfalsified is the ordinary claim that a
-stronger model's choices teach a weaker one; what is *not* available is the design's
-control for family.
+## The run
 
-The boundary is a question for the organisers, and it is worth asking before the result
-is written up rather than after.
+```
+student  session=...6c5e4864   preset=chtd   1 decision
+teacher  session=...1339cb90   preset=chtd   2 decisions
+
+shared state 935ef0d446090af60b5748a48b5cb847fa5440ff945ad705ad0e40f3546b0e1f
+  student: Hello! I'm ready to assist you. How can I help you today?
+  teacher: read({"path":"notes.txt"})
+
+teacher answer 'The word on the second line of notes.txt is **bravo**.'  correct
+student answer 'Hello! I'm ready to assist you.'                          incorrect
+
+1 divergence, 0 agreements, 1 novel  ->  admitted: 1, refused: 0
+dataset digest a8c373b104ab442c4780c7f3f9914014cafe1243ec5ecfe7123f14211e525f9b
+```
+
+## Compliance
+
+The registration carries a technical commitment that models are limited to Agnes, and the
+project's student is a Qwen. The competition's own rules resolve this, in 3.2:
+
+> 报名成功后，请加入官方赛事群，赛事组委会将统一向参赛团队提供 **Agnes 自研模型调用 Key** …
+> 如参赛团队使用其他开源模型或第三方商业模型，所需的**账号、API Key、调用额度及相关费用由参赛团队自行解决并承担**。
+
+So third-party and open models are permitted, at the team's own cost, provided the
+submission states each model's name, version, where it is used and how it is called. The
+teacher is an Agnes model — the one the organisers issued — so the core task runs on the
+platform the competition names, and the student's use is declared.
+
+What is *not* available is the design's control for model family: CHTD asks the teacher
+and student to share a tokenizer, to rule out tokenizer and pretraining differences. That
+control is absent here. It is smaller than it sounds — the teacher is reached over HTTP,
+so it reads the student's state as text and answers as text, and no logit-level comparison
+happens anywhere — but the control is genuinely missing and belongs in the write-up.
+
+## Submission details
+
+From the same source, for reference:
+
+- artifact naming: **组别-参赛编号-队伍名称-队长姓名** (this team: `本科生组-U240-Mojito`)
+- required evidence: AGH 执行记录, ≥1 条工具调用链, Agnes 模型参与核心任务证据,
+  测试样例 (正常/边界/失败三类)
+- demo video 3–5 minutes, **link only**, not uploaded
+- review 10-16…10-18; final 10-20
+- top 100 per group receive 3 months of Agnes Pro Token Plan from 10-23
+- the 20 winning teams open-source their repositories within 5 working days
+- excluded: 纯概念 / PPT / 界面原型 / 纯聊天
+
+## Operational notes
+
+**`--preset` on the command line does not work, and the track still does.** Naming the
+preset is rejected with `PRESET_SWITCH_REJECTED`; omitting it runs under
+`presets.default`, which is the same `cthd`, and the ledger records `preset: chtd`. The
+real error is unrecoverable — `mapCore` re-raises any of four preset/model codes as one
+RPC error and the display layer drops the reason. Do not pass the flag; read the preset
+from the ledger.
+
+**A rate limit shapes the run.** A burst returns 429; one request every six seconds
+succeeded ten times out of ten. A rollout needs throttling and retry, not parallelism.
+
+**Keys never enter the repository.** They live in `D:\CodeWhaleData\secrets` and reach the
+daemon as `AGNES_SECRET_TEACHER_DEFAULT` / `AGNES_SECRET_STUDENT_DEFAULT`, through the
+profile's `secrets: { kind: env }` adapter. `make_agnes_profile.py` refuses to write a
+profile containing anything that looks like a credential.
