@@ -20,6 +20,9 @@ states may differ.
 - The model endpoint reports that it has loaded `chtd-4`.
 - The box has CHTD SFT sample files with 1, 12, and 19 rows. No baseline SFT
   samples or baseline adapter were found there.
+- On 2026-10-10, the 12-row and 19-row files each held only one distinct
+  decision prefix. Every row had three messages and no tool result before the
+  label. They supervise an initial decision, not recovery after a student error.
 - The committed five-task holdout file had checker commands pointing at the machine
   that generated it. `harness.round.load_round_tasks` now resolves those checks to
   this checkout and verifies that the expected phrases have not changed.
@@ -32,6 +35,12 @@ teacher-own-trajectory versus CHTD control. The original AGH session ledgers,
 per-run outcomes, and the teacher-own-trajectory dataset were not found in this
 checkout or the inspected training-box directories. The five-task phrase checker has known false
 negatives, so its score needs manual review with the full responses.
+
+The current `harness.round.run_round` starts student and teacher separately from
+identical initial workspaces. It does not fork the teacher at each later student
+decision. `distill.rounds.build_round_dataset` aligns those independent runs by
+shared prefix, so it cannot produce teacher answers after their paths diverge.
+A strict on-policy arm needs actual same-prefix forks and branch outcomes.
 
 No new model-performance lift should be reported until both adapters have been
 trained and evaluated from those records under matched conditions. The test suite
