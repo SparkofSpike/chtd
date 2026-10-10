@@ -12,11 +12,45 @@ import json
 import os
 import subprocess
 import sys
+from collections.abc import Iterable
 from pathlib import Path
+from typing import Any
 
 from harness.digest import canonical_bytes, text_sha256
 from harness.round import Arm, load_round_tasks, run_round
 from harness.rollout import CliRunner
+
+
+def observed_tracks(run: Path, task_ids: list[str]) -> set[str]:
+    """The distinct track digests a run's task records name."""
+    tracks: set[str] = set()
+    for task_id in task_ids:
+        row = json.loads((run / "tasks" / f"{task_id}.json").read_text(encoding="utf-8"))
+        value = (row.get("record") or {}).get("track_sha256")
+        if isinstance(value, str) and value:
+            tracks.add(value)
+    return tracks
+
+
+def expected_track(manifest: dict[str, Any], observed: Iterable[str]) -> str:
+    """The track a collection ran on.
+
+    The manifest's own record is preferred. A collection made before
+    ``--expected-track`` was introduced carries the same digest only inside its
+    per-task records, so those are accepted as a fallback — provided they name
+    exactly one track. Anything else refuses: records that disagree about the
+    track did not come from one run.
+    """
+    recorded = manifest.get("expected_track_sha256")
+    if isinstance(recorded, str) and recorded:
+        return recorded
+    tracks = {value for value in observed if isinstance(value, str) and value}
+    if len(tracks) != 1:
+        raise ValueError(
+            "the collection names no expected track and its task records name "
+            f"{len(tracks)} distinct tracks"
+        )
+    return tracks.pop()
 
 
 def _fixture_sha(path: Path) -> str:

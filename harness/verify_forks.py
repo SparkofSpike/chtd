@@ -8,6 +8,7 @@ import sqlite3
 from pathlib import Path
 
 from distill.divergence import align
+from harness.collect_baseline import expected_track, observed_tracks
 from harness.collect_forks import FOLLOWUP, _events, _score, _text
 from harness.ledger import open_ledger
 from harness.tasks.build_workspaces import EXPECT
@@ -19,6 +20,7 @@ def verify(student_run: Path, fork_run: Path, agh_home: Path, *, allow_partial: 
     task_ids = manifest["task_ids"]
     if set(task_ids) & set(manifest["holdout_ids"]):
         raise ValueError("training and holdout tasks overlap")
+    track = expected_track(manifest, observed_tracks(student_run, task_ids))
     db = agh_home / "data" / "sessions.db"
     rows = []
     with sqlite3.connect(db) as connection, open_ledger(db) as ledger:
@@ -32,7 +34,7 @@ def verify(student_run: Path, fork_run: Path, agh_home: Path, *, allow_partial: 
             task = json.loads(student_file.read_text(encoding="utf-8"))
             fork = json.loads(fork_file.read_text(encoding="utf-8"))
             parent, child, boundary = fork["parent_key"], fork["child_key"], fork["boundary_seq"]
-            if task["session_key"] != parent or task["record"]["track_sha256"] != manifest["expected_track_sha256"]:
+            if task["session_key"] != parent or task["record"]["track_sha256"] != track:
                 raise ValueError(f"{task_id}: session or track mismatch")
             ancestry = connection.execute(
                 "SELECT parent_key, boundary_seq FROM sessions WHERE session_key=?", (child,)
@@ -72,7 +74,7 @@ def verify(student_run: Path, fork_run: Path, agh_home: Path, *, allow_partial: 
                          "student_new_tools": [data.get("name") for _, kind, data
                                                in new_events["student"] if kind == "tool/call"]})
     return {"expected_tasks": len(task_ids), "verified_tasks": len(rows),
-            "track_sha256": manifest["expected_track_sha256"], "tasks": rows}
+            "track_sha256": track, "tasks": rows}
 
 
 def main() -> int:

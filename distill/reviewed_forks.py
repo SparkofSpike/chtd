@@ -12,6 +12,7 @@ from distill.gate import (
     Outcome, OutcomeTable, OutcomeValidator, RecordedVerdicts, SignalGate, WorkspaceRelativePaths,
 )
 from distill.sft import HarnessPrefix, build_samples, sample_rows, samples_digest, write_samples
+from harness.collect_baseline import expected_track, observed_tracks
 from harness.digest import raw_sha256, text_sha256
 from harness.ledger import open_ledger
 from harness.rollout import RolloutRecord
@@ -28,7 +29,7 @@ def build(student_run: Path, fork_run: Path, review_file: Path, ledger_file: Pat
         raise ValueError("manual review must cover every training task")
     if set(task_ids) & set(manifest["holdout_ids"]):
         raise ValueError("training and holdout tasks overlap")
-    track = manifest["expected_track_sha256"]
+    track = expected_track(manifest, observed_tracks(student_run, task_ids))
     prefix = HarnessPrefix.load(prefix_file)
     if prefix.provenance.get("preset") != "minimal-rl":
         raise ValueError("training prefix is not the frozen minimal-rl preset")

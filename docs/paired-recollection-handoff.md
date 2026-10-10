@@ -15,10 +15,16 @@ used another profile and prefix and is not part of this comparison.
 | Captured student prefix | `harness/prefix/paired-20261010.json`, digest `dbaddc7e2d8ffcfcde19c38f1fc62f6bc96a45336922357d3907b007d0b6edcd` |
 | Base model | `Qwen/Qwen3-4B-Instruct-2507`; config, tokenizer and all three weight hashes in `runs/baseline-20261010-a/preflight.json` |
 
+Collect the CHTD arm with `--expected-track d403e1e1…` so the new manifest states the
+track outright. The control manifest predates that flag and carries the digest only inside
+its task records; the readers accept that fallback, but a manifest that names the track is
+the form the protocol asks for.
+
 The student route in that profile is `http://100.89.65.49:8000/v1`. The server
 is `serve_openai.py` on the training node: Qwen3 in NF4 4-bit, deterministic
-generation with a 1024-new-token cap, `distill.finetune.render_chat`, and whole
-SSE tool-call chunks. The AGH smoke session from the local Windows deployment
+generation capped at 512 new tokens (commit `94960db`; AGH's first-token
+deadline is why the endpoint clamps any larger request), `distill.finetune.render_chat`,
+and whole SSE tool-call chunks. The AGH smoke session from the local Windows deployment
 resolved to the same observed track digest as the control collection. A direct
 tool-call probe returned `read({"path":"config.json"})` as an OpenAI tool call.
 The canonical cloud copies are under `/mnt/proj/chtd-experiments/`: the control
