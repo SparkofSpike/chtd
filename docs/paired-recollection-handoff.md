@@ -24,6 +24,9 @@ tool-call probe returned `read({"path":"config.json"})` as an OpenAI tool call.
 The canonical cloud copies are under `/mnt/proj/chtd-experiments/`: the control
 run is `baseline-20261010-a/`, the base weights are
 `models/Qwen3-4B-Instruct-2507/`, and the frozen source is `source-1e08d66/`.
+Save the new CHTD-arm ledger, task results, samples, manifest, adapter and logs
+under a separate run directory within `/mnt/proj/chtd-experiments/`; do not
+write the only copy to the instance's `/root` filesystem.
 
 Collect student states from fresh copies of the 24 train fixtures. Fork the
 teacher at selected student decision prefixes, including at least one state
