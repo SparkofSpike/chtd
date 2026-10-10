@@ -31,6 +31,12 @@ The 253 MiB adapter is stored on the training node at
 The adapter was loaded into `serve_openai.py` and answered a fresh, unrelated
 single-word probe with `READY`. This verifies loading and inference only.
 
+The canonical saved run, including this adapter, is at
+`/mnt/proj/chtd-experiments/baseline-20261010-a/`. The base model is at
+`/mnt/proj/chtd-experiments/models/Qwen3-4B-Instruct-2507/`. Their copied
+weight files were checked by SHA256. See `docs/cloud-storage.md` for the full
+layout.
+
 A second copy of the complete run directory is on the account-mounted
 `/mnt/user/chtd-control-backup/baseline-20261010-a/`. The copied adapter's
 SHA256 was checked against the original value above. This copy is on the

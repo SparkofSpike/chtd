@@ -21,6 +21,9 @@ generation with a 1024-new-token cap, `distill.finetune.render_chat`, and whole
 SSE tool-call chunks. The AGH smoke session from the local Windows deployment
 resolved to the same observed track digest as the control collection. A direct
 tool-call probe returned `read({"path":"config.json"})` as an OpenAI tool call.
+The canonical cloud copies are under `/mnt/proj/chtd-experiments/`: the control
+run is `baseline-20261010-a/`, the base weights are
+`models/Qwen3-4B-Instruct-2507/`, and the frozen source is `source-1e08d66/`.
 
 Collect student states from fresh copies of the 24 train fixtures. Fork the
 teacher at selected student decision prefixes, including at least one state
