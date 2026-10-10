@@ -130,7 +130,10 @@ def serve(model_path: str, model_id: str, host: str, port: int,
                 encoded = tokenizer(prompt, return_tensors="pt", add_special_tokens=False)
                 encoded = {key: value.to("cuda") for key, value in encoded.items()}
                 max_new = request.get("max_tokens") or 1024
-                max_new = min(max(1, int(max_new)), 1024)
+                # AGH's first-token deadline is 120 seconds. This endpoint
+                # emits a completed turn as one SSE chunk so tool calls stay
+                # intact; a 1024-token Qwen generation can exceed that deadline.
+                max_new = min(max(1, int(max_new)), 512)
                 with inference_lock, torch.inference_mode():
                     output = model.generate(
                         **encoded, max_new_tokens=max_new, do_sample=False,
