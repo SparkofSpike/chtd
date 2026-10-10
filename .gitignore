@@ -18,6 +18,8 @@ checkpoints/
 *.bin
 *.pt
 *.pth
+*.db-shm
+*.db-wal
 wandb/
 runs/*
 !runs/*/

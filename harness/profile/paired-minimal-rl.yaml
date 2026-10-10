@@ -1,0 +1,48 @@
+# Both collection arms use this same profile and the builtin minimal-rl track.
+# Secrets are supplied through AGNES_SECRET_TEACHER_DEFAULT and
+# AGNES_SECRET_STUDENT_DEFAULT in the process environment, never this file.
+name: local-dev
+schemaVersion: 1
+provider:
+  package: "@agnes/ai"
+  adapters: ["@agnes/ai"]
+  routes:
+    - route: teacher
+      api: openai-completions
+      baseUrl: "https://api.agnes-ai.cn/v1"
+      credentialRef: "secret://teacher/default"
+      models:
+        - id: "agnes-3.0-flash"
+          name: "agnes-3.0-flash"
+          api: openai-completions
+          route: teacher
+          baseUrl: "https://api.agnes-ai.cn/v1"
+          reasoning: false
+          input: ["text"]
+          cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
+          contextWindow: 32768
+          maxTokens: 8192
+          toolCallFormats: ["native"]
+          thinkingReplay: "native"
+          contract_id: null
+    - route: student
+      api: openai-completions
+      baseUrl: "http://100.89.65.49:8000/v1"
+      credentialRef: "secret://student/default"
+      models:
+        - id: "qwen3-4b-instruct-2507"
+          name: "qwen3-4b-instruct-2507"
+          api: openai-completions
+          route: student
+          baseUrl: "http://100.89.65.49:8000/v1"
+          reasoning: false
+          input: ["text"]
+          cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
+          contextWindow: 32768
+          maxTokens: 8192
+          toolCallFormats: ["native"]
+          thinkingReplay: "native"
+          contract_id: null
+adapters:
+  secrets: { kind: env }
+presets: { default: minimal-rl, allowed: [minimal-rl] }

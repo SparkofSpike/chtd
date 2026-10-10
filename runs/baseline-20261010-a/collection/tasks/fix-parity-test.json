@@ -1,0 +1,22 @@
+{
+  "arm": "teacher",
+  "check_output": "answer names every expected phrase: ['odd', 'even']",
+  "ledger_path": "sessions.db",
+  "passed": true,
+  "record": {
+    "arm": "teacher",
+    "decisions": 5,
+    "ledger_path": "sessions.db",
+    "model": "agnes-3.0-flash",
+    "notes": "",
+    "outcome": "unknown",
+    "preset": "minimal-rl",
+    "route": "teacher",
+    "session_key": "agnes:local:local-dev:cli:workspace:c836744a41592d47",
+    "task_id": "fix-parity-test",
+    "track_sha256": "d403e1e12186a4021cc9d20bbc2c8770cf8366e9fccfc67621a64fde307967ba"
+  },
+  "session_key": "agnes:local:local-dev:cli:workspace:c836744a41592d47",
+  "task_id": "fix-parity-test",
+  "workspace": "workspaces/fix-parity-test/teacher"
+}

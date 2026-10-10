@@ -278,6 +278,8 @@ class CliRunner:
             env=child_env,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=self.timeout_seconds,
             check=False,
         )

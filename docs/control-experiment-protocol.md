@@ -79,3 +79,19 @@ The two-arm training gate is therefore closed. Reusing the 19 first-decision
 rows as if they were recovery states, or fabricating baseline rows from them,
 would answer a different question. The next executable step is to recover the
 original ledgers/configuration or recollect both arms with the fork protocol.
+
+## Recollection update (2026-10-10)
+
+The old training box could not be recovered, so the two arms are being
+recollected. The control arm's complete 24-task teacher collection and manual
+review are under `runs/baseline-20261010-a/`: 18 tasks and 76 decisions are
+candidate labels. The five holdout tasks remain untouched. A new live AGH
+capture found an 11-tool disclosure rather than the previous box's 22-tool
+disclosure; the new captured prefix is pinned with this collection.
+
+The experimental arm has not run yet. The control candidates have not been
+selected to a common task/sample/token budget, and no comparable baseline
+adapter or held-out score exists. The next gate is to compare the experimental
+arm's observed task coverage, track digest, profile, prefix and admitted labels
+against this collection, then freeze selection and train both adapters from
+identical base weights and recipe.

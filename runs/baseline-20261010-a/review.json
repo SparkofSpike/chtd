@@ -1,0 +1,32 @@
+{
+  "collection_manifest_sha256": "cdcf2a0fc742830bb73182bef8c4c7e8d93983f5cd6b239412d97095139fb6ef",
+  "method": "Read every teacher answer against its fixture and task check; reject a correct keyword match with materially wrong diagnosis or unsupported workspace claims.",
+  "accepted_task_ids": [
+    "fix-assertion",
+    "fix-import-name",
+    "fix-off-by-one",
+    "fix-config-key",
+    "fix-cli-flag",
+    "fix-type-error",
+    "fix-json-trailing-comma",
+    "fix-wrong-operator",
+    "fix-silent-truncation",
+    "fix-argument-order",
+    "fix-empty-input",
+    "fix-slice-direction",
+    "fix-integer-division",
+    "fix-shadowed-total",
+    "fix-missing-dict-default",
+    "fix-parity-test",
+    "fix-loop-continue",
+    "fix-min-max-clamp"
+  ],
+  "rejected": {
+    "fix-path": "Teacher did not inspect the fixture or diagnose the .txt/.csv path mismatch.",
+    "fix-regex": "Teacher claimed a fabricated workspace-access failure before its diagnosis; reject the whole trajectory as a label source.",
+    "fix-iteration-mutation": "Keyword check passed, but teacher predicted skipped keys; Python instead raises RuntimeError when the dictionary changes size during iteration.",
+    "fix-missing-prefix": "AGH run exited 4; no completed teacher trajectory.",
+    "fix-default-mutable": "Keyword check passed, but teacher said the first assertion passes; the first list is mutated by the second call, so the first assertion fails.",
+    "fix-missing-return": "AGH run exited 4; no completed teacher trajectory."
+  }
+}

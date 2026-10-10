@@ -1,0 +1,9 @@
+{
+  "accepted_task_count": 18,
+  "candidate_count": 76,
+  "collection_manifest_sha256": "cdcf2a0fc742830bb73182bef8c4c7e8d93983f5cd6b239412d97095139fb6ef",
+  "ledger_sha256": "e0d70e0ecf4b5ba73779cfc4ffa696d867bedca02fb622f5d1c20ca781d45ef6",
+  "raw_task_count": 24,
+  "samples_sha256": "e4cb0036d4b6afa00afb01d30d3e2c9cc173b1cfc9346bc6ee4d5f92638de4ff",
+  "training_status": "unmatched; no adapter was trained from this snapshot"
+}

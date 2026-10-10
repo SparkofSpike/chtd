@@ -1,0 +1,11 @@
+{"prefix_digest": "1dcb1b56ecd257c249d0b9108994488a151eaa19063627922ba166fc35b272ba", "reason": "non-portable absolute path", "task_id": "fix-import-name"}
+{"reason": "manual review: Teacher did not inspect the fixture or diagnose the .txt/.csv path mismatch.", "task_id": "fix-path"}
+{"reason": "manual review: Teacher claimed a fabricated workspace-access failure before its diagnosis; reject the whole trajectory as a label source.", "task_id": "fix-regex"}
+{"reason": "manual review: Keyword check passed, but teacher predicted skipped keys; Python instead raises RuntimeError when the dictionary changes size during iteration.", "task_id": "fix-iteration-mutation"}
+{"prefix_digest": "1dcb1b56ecd257c249d0b9108994488a151eaa19063627922ba166fc35b272ba", "reason": "non-portable absolute path", "task_id": "fix-wrong-operator"}
+{"prefix_digest": "1dcb1b56ecd257c249d0b9108994488a151eaa19063627922ba166fc35b272ba", "reason": "non-portable absolute path", "task_id": "fix-empty-input"}
+{"reason": "manual review: AGH run exited 4; no completed teacher trajectory.", "task_id": "fix-missing-prefix"}
+{"reason": "manual review: Keyword check passed, but teacher said the first assertion passes; the first list is mutated by the second call, so the first assertion fails.", "task_id": "fix-default-mutable"}
+{"prefix_digest": "1dcb1b56ecd257c249d0b9108994488a151eaa19063627922ba166fc35b272ba", "reason": "non-portable absolute path", "task_id": "fix-parity-test"}
+{"prefix_digest": "1dcb1b56ecd257c249d0b9108994488a151eaa19063627922ba166fc35b272ba", "reason": "non-portable absolute path", "task_id": "fix-loop-continue"}
+{"reason": "manual review: AGH run exited 4; no completed teacher trajectory.", "task_id": "fix-missing-return"}

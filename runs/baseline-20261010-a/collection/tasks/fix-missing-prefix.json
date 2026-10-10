@@ -1,0 +1,10 @@
+{
+  "arm": "teacher",
+  "check_output": "run failed: RuntimeError",
+  "ledger_path": "",
+  "passed": false,
+  "record": null,
+  "session_key": "",
+  "task_id": "fix-missing-prefix",
+  "workspace": "workspaces/fix-missing-prefix/teacher"
+}

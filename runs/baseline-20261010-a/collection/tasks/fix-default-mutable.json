@@ -1,0 +1,22 @@
+{
+  "arm": "teacher",
+  "check_output": "answer names every expected phrase: ['mutable']",
+  "ledger_path": "sessions.db",
+  "passed": true,
+  "record": {
+    "arm": "teacher",
+    "decisions": 4,
+    "ledger_path": "sessions.db",
+    "model": "agnes-3.0-flash",
+    "notes": "",
+    "outcome": "unknown",
+    "preset": "minimal-rl",
+    "route": "teacher",
+    "session_key": "agnes:local:local-dev:cli:workspace:2e410840f09c9f87",
+    "task_id": "fix-default-mutable",
+    "track_sha256": "d403e1e12186a4021cc9d20bbc2c8770cf8366e9fccfc67621a64fde307967ba"
+  },
+  "session_key": "agnes:local:local-dev:cli:workspace:2e410840f09c9f87",
+  "task_id": "fix-default-mutable",
+  "workspace": "workspaces/fix-default-mutable/teacher"
+}
