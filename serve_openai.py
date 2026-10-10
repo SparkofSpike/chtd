@@ -68,7 +68,8 @@ def stream_payload(response: dict[str, Any]) -> bytes:
             "data: [DONE]\n\n").encode("utf-8")
 
 
-def serve(model_path: str, model_id: str, host: str, port: int) -> None:
+def serve(model_path: str, model_id: str, host: str, port: int,
+          adapter_path: str | None = None) -> None:
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
@@ -84,6 +85,9 @@ def serve(model_path: str, model_id: str, host: str, port: int) -> None:
         device_map={"": 0},
         torch_dtype=torch.bfloat16,
     )
+    if adapter_path:
+        from peft import PeftModel
+        model = PeftModel.from_pretrained(model, adapter_path)
     model.eval()
     inference_lock = threading.Lock()
 
@@ -99,7 +103,8 @@ def serve(model_path: str, model_id: str, host: str, port: int) -> None:
         def do_GET(self) -> None:
             if self.path == "/health":
                 free, total = torch.cuda.mem_get_info()
-                self._send(200, {"model": model_id, "gpu_free_gb": round(free / 1024**3, 2),
+                self._send(200, {"model": model_id, "adapter": adapter_path,
+                                 "gpu_free_gb": round(free / 1024**3, 2),
                                  "gpu_total_gb": round(total / 1024**3, 2)})
             elif self.path == "/v1/models":
                 self._send(200, {"object": "list", "data": [{"id": model_id, "object": "model"}]})
@@ -166,10 +171,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model-path", required=True)
     parser.add_argument("--model-id", default="qwen3-4b-instruct-2507")
+    parser.add_argument("--adapter-path", default=None,
+                        help="optional PEFT LoRA adapter; omit for the unadapted base")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)
     args = parser.parse_args()
-    serve(args.model_path, args.model_id, args.host, args.port)
+    serve(args.model_path, args.model_id, args.host, args.port, args.adapter_path)
 
 
 if __name__ == "__main__":

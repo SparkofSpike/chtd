@@ -1,0 +1,54 @@
+[HAMI-core Msg(2097:130180468897600:libvgpu.c:856)]: Initializing.....
+[HAMI-core Warn(2097:130180468897600:multiprocess_memory_limit.c:548)]: Kick dead proc 1953
+[HAMI-core Msg(2097:130180468897600:libvgpu.c:878)]: Initialized
+`torch_dtype` is deprecated! Use `dtype` instead!
+plan : arm=baseline base=Qwen/Qwen3-4B-Instruct-2507 entries=76
+rows : 76  digest=e4cb0036d4b6afa00afb01d3
+gpu free=47.0GB total=47.4GB
+tokenizer loaded, vocab=151643
+rendered 76 samples: 2414-3071 tokens (prefix drift check passed)
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards:  33%|███▎      | 1/3 [00:02<00:05,  2.66s/it]Loading checkpoint shards:  67%|██████▋   | 2/3 [00:05<00:02,  2.96s/it]Loading checkpoint shards: 100%|██████████| 3/3 [00:05<00:00,  1.97s/it]
+[HAMI-core Msg(2165:134600339097408:multiprocess_memory_limit.c:455)]: Calling exit handler 2165
+base model loaded in 4-bit
+lora injected: trainable=66,060,288 / logical=4,022,468,096 (1.6423%)  [4-bit packed count=2,271,870,464]
+training
+  0%|          | 0/30 [00:00<?, ?it/s]`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+/root/miniconda3/envs/myenv/lib/python3.12/site-packages/torch/utils/checkpoint.py:295: FutureWarning: `torch.cpu.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cpu', args...)` instead.
+  with torch.enable_grad(), device_autocast_ctx, torch.cpu.amp.autocast(**ctx.cpu_autocast_kwargs):  # type: ignore[attr-defined]
+  3%|▎         | 1/30 [00:09<04:45,  9.86s/it]                                                3%|▎         | 1/30 [00:09<04:45,  9.86s/it]  7%|▋         | 2/30 [00:20<04:45, 10.21s/it]                                                7%|▋         | 2/30 [00:20<04:45, 10.21s/it] 10%|█         | 3/30 [00:30<04:30, 10.04s/it]                                               10%|█         | 3/30 [00:30<04:30, 10.04s/it] 13%|█▎        | 4/30 [00:39<04:17,  9.92s/it]                                               13%|█▎        | 4/30 [00:39<04:17,  9.92s/it][HAMI-core ERROR (pid:2097 thread=130168348919552 allocator.c:121)]: cuMemoryAllocate failed res=2
+ 17%|█▋        | 5/30 [00:49<04:09,  9.97s/it]                                               17%|█▋        | 5/30 [00:49<04:09,  9.97s/it] 20%|██        | 6/30 [00:59<03:55,  9.83s/it]                                               20%|██        | 6/30 [00:59<03:55,  9.83s/it] 23%|██▎       | 7/30 [01:09<03:44,  9.77s/it]                                               23%|██▎       | 7/30 [01:09<03:44,  9.77s/it] 27%|██▋       | 8/30 [01:19<03:35,  9.82s/it]                                               27%|██▋       | 8/30 [01:19<03:35,  9.82s/it] 30%|███       | 9/30 [01:28<03:24,  9.75s/it]                                               30%|███       | 9/30 [01:28<03:24,  9.75s/it] 33%|███▎      | 10/30 [01:33<02:45,  8.27s/it]                                                33%|███▎      | 10/30 [01:33<02:45,  8.27s/it] 37%|███▋      | 11/30 [01:43<02:48,  8.85s/it]                                                37%|███▋      | 11/30 [01:43<02:48,  8.85s/it] 40%|████      | 12/30 [01:53<02:43,  9.07s/it]                                                40%|████      | 12/30 [01:53<02:43,  9.07s/it] 43%|████▎     | 13/30 [02:02<02:36,  9.20s/it]                                                43%|████▎     | 13/30 [02:02<02:36,  9.20s/it] 47%|████▋     | 14/30 [02:13<02:32,  9.51s/it]                                                47%|████▋     | 14/30 [02:13<02:32,  9.51s/it] 50%|█████     | 15/30 [02:22<02:23,  9.58s/it]                                                50%|█████     | 15/30 [02:22<02:23,  9.58s/it] 53%|█████▎    | 16/30 [02:32<02:15,  9.66s/it]                                                53%|█████▎    | 16/30 [02:32<02:15,  9.66s/it] 57%|█████▋    | 17/30 [02:42<02:05,  9.63s/it]                                                57%|█████▋    | 17/30 [02:42<02:05,  9.63s/it] 60%|██████    | 18/30 [02:51<01:55,  9.64s/it]                                                60%|██████    | 18/30 [02:51<01:55,  9.64s/it] 63%|██████▎   | 19/30 [03:01<01:46,  9.72s/it]                                                63%|██████▎   | 19/30 [03:01<01:46,  9.72s/it] 67%|██████▋   | 20/30 [03:06<01:23,  8.33s/it]                                                67%|██████▋   | 20/30 [03:06<01:23,  8.33s/it] 70%|███████   | 21/30 [03:16<01:18,  8.72s/it]                                                70%|███████   | 21/30 [03:16<01:18,  8.72s/it] 73%|███████▎  | 22/30 [03:26<01:12,  9.07s/it]                                                73%|███████▎  | 22/30 [03:26<01:12,  9.07s/it] 77%|███████▋  | 23/30 [03:36<01:04,  9.27s/it]                                                77%|███████▋  | 23/30 [03:36<01:04,  9.27s/it] 80%|████████  | 24/30 [03:46<00:58,  9.70s/it]                                                80%|████████  | 24/30 [03:46<00:58,  9.70s/it] 83%|████████▎ | 25/30 [03:56<00:48,  9.66s/it]                                                83%|████████▎ | 25/30 [03:56<00:48,  9.66s/it] 87%|████████▋ | 26/30 [04:05<00:38,  9.59s/it]                                                87%|████████▋ | 26/30 [04:05<00:38,  9.59s/it] 90%|█████████ | 27/30 [04:15<00:28,  9.66s/it]                                                90%|█████████ | 27/30 [04:15<00:28,  9.66s/it] 93%|█████████▎| 28/30 [04:25<00:19,  9.75s/it]                                                93%|█████████▎| 28/30 [04:25<00:19,  9.75s/it] 97%|█████████▋| 29/30 [04:35<00:09,  9.80s/it]                                                97%|█████████▋| 29/30 [04:35<00:09,  9.80s/it]100%|██████████| 30/30 [04:40<00:00,  8.30s/it]                                               100%|██████████| 30/30 [04:40<00:00,  8.30s/it]                                               100%|██████████| 30/30 [04:40<00:00,  8.30s/it]100%|██████████| 30/30 [04:40<00:00,  9.34s/it]
+{'loss': 1.8663, 'grad_norm': 6.304325580596924, 'learning_rate': 0.0, 'epoch': 0.11}
+{'loss': 1.7144, 'grad_norm': 2.906373977661133, 'learning_rate': 0.0002, 'epoch': 0.21}
+{'loss': 1.1805, 'grad_norm': 1.660360336303711, 'learning_rate': 0.0001931034482758621, 'epoch': 0.32}
+{'loss': 0.9971, 'grad_norm': 1.3907983303070068, 'learning_rate': 0.00018620689655172415, 'epoch': 0.42}
+{'loss': 1.0154, 'grad_norm': 1.7099534273147583, 'learning_rate': 0.0001793103448275862, 'epoch': 0.53}
+{'loss': 0.9028, 'grad_norm': 1.3016213178634644, 'learning_rate': 0.00017241379310344826, 'epoch': 0.63}
+{'loss': 1.0187, 'grad_norm': 1.0729597806930542, 'learning_rate': 0.00016551724137931035, 'epoch': 0.74}
+{'loss': 1.0798, 'grad_norm': 0.8526767492294312, 'learning_rate': 0.00015862068965517243, 'epoch': 0.84}
+{'loss': 0.7192, 'grad_norm': 1.073114037513733, 'learning_rate': 0.00015172413793103449, 'epoch': 0.95}
+{'loss': 0.9822, 'grad_norm': 1.586256504058838, 'learning_rate': 0.00014482758620689657, 'epoch': 1.0}
+{'loss': 0.8435, 'grad_norm': 0.8426249623298645, 'learning_rate': 0.00013793103448275863, 'epoch': 1.11}
+{'loss': 0.5949, 'grad_norm': 1.3921016454696655, 'learning_rate': 0.00013103448275862068, 'epoch': 1.21}
+{'loss': 0.5609, 'grad_norm': 1.1388769149780273, 'learning_rate': 0.00012413793103448277, 'epoch': 1.32}
+{'loss': 0.7369, 'grad_norm': 0.8375247716903687, 'learning_rate': 0.00011724137931034482, 'epoch': 1.42}
+{'loss': 0.6152, 'grad_norm': 1.1778525114059448, 'learning_rate': 0.0001103448275862069, 'epoch': 1.53}
+{'loss': 0.6933, 'grad_norm': 0.8763086199760437, 'learning_rate': 0.00010344827586206898, 'epoch': 1.63}
+{'loss': 0.3789, 'grad_norm': 0.9049797654151917, 'learning_rate': 9.655172413793105e-05, 'epoch': 1.74}
+{'loss': 0.704, 'grad_norm': 1.3172446489334106, 'learning_rate': 8.96551724137931e-05, 'epoch': 1.84}
+{'loss': 0.6024, 'grad_norm': 1.0835307836532593, 'learning_rate': 8.275862068965517e-05, 'epoch': 1.95}
+{'loss': 0.8995, 'grad_norm': 1.1953153610229492, 'learning_rate': 7.586206896551724e-05, 'epoch': 2.0}
+{'loss': 0.6497, 'grad_norm': 1.2041130065917969, 'learning_rate': 6.896551724137931e-05, 'epoch': 2.11}
+{'loss': 0.3695, 'grad_norm': 0.8638097047805786, 'learning_rate': 6.206896551724138e-05, 'epoch': 2.21}
+{'loss': 0.3363, 'grad_norm': 0.9169713258743286, 'learning_rate': 5.517241379310345e-05, 'epoch': 2.32}
+{'loss': 0.6088, 'grad_norm': 0.687060534954071, 'learning_rate': 4.827586206896552e-05, 'epoch': 2.42}
+{'loss': 0.3825, 'grad_norm': 1.3490619659423828, 'learning_rate': 4.1379310344827587e-05, 'epoch': 2.53}
+{'loss': 0.0254, 'grad_norm': 0.3611193597316742, 'learning_rate': 3.4482758620689657e-05, 'epoch': 2.63}
+{'loss': 0.4226, 'grad_norm': 0.8935908675193787, 'learning_rate': 2.7586206896551727e-05, 'epoch': 2.74}
+{'loss': 0.5562, 'grad_norm': 0.9134547114372253, 'learning_rate': 2.0689655172413793e-05, 'epoch': 2.84}
+{'loss': 0.4421, 'grad_norm': 0.9688776135444641, 'learning_rate': 1.3793103448275863e-05, 'epoch': 2.95}
+{'loss': 0.3613, 'grad_norm': 1.1992563009262085, 'learning_rate': 6.896551724137932e-06, 'epoch': 3.0}
+{'train_runtime': 280.353, 'train_samples_per_second': 0.813, 'train_steps_per_second': 0.107, 'train_loss': 0.7420051853482922, 'epoch': 3.0}
+training done: loss=0.7420 over 30 steps
+saved adapter: ['README.md', 'adapter_config.json', 'adapter_model.safetensors', 'added_tokens.json', 'chat_template.jinja', 'merges.txt', 'special_tokens_map.json', 'tokenizer.json', 'tokenizer_config.json', 'vocab.json']
+wrote runs/baseline-20261010-a/pilot-adapter/run.json
+[HAMI-core Msg(2097:130180468897600:multiprocess_memory_limit.c:455)]: Calling exit handler 2097

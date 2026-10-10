@@ -95,3 +95,10 @@ adapter or held-out score exists. The next gate is to compare the experimental
 arm's observed task coverage, track digest, profile, prefix and admitted labels
 against this collection, then freeze selection and train both adapters from
 identical base weights and recipe.
+
+An exploratory baseline LoRA was subsequently trained on all 76 candidates to
+check the GPU training and serving path. It completed 30 optimizer steps and
+the adapter loaded for an inference probe. Its plan, record and log are under
+`runs/baseline-20261010-a/pilot/` and `runs/baseline-20261010-a/pilot-plan.json`.
+Because the CHTD arm was not paired before this run, the adapter is not the
+strict control for a comparative result. The holdout remains unopened.
