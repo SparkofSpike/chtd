@@ -31,6 +31,11 @@ The 253 MiB adapter is stored on the training node at
 The adapter was loaded into `serve_openai.py` and answered a fresh, unrelated
 single-word probe with `READY`. This verifies loading and inference only.
 
+A second copy of the complete run directory is on the account-mounted
+`/mnt/user/chtd-control-backup/baseline-20261010-a/`. The copied adapter's
+SHA256 was checked against the original value above. This copy is on the
+account mount; its long-term retention still depends on the cloud provider.
+
 Once the CHTD arm has been reviewed, select common tasks and a common sample
 and optimizer budget; then train both adapters from the same base checkpoint.
 Do not substitute this pilot adapter for that matched baseline run.
