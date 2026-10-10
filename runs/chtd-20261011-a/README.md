@@ -102,6 +102,45 @@ demonstrated is that both arms are displaced identically, so an arm-to-arm compa
 `PrefixDrift` still passes on all 19 rows — every prompt renders as a strict prefix of its full
 conversation — so training and serving agree with each other here, which is what that check covers.
 
+## The held-out comparison, and the serving path it caught
+
+The adapter was then run against the five held-out tasks, beside the unadapted base, on the
+same track and the same prompt. **Four sweeps were needed, not two**, because the first pair
+measured the serving path instead of the adapter.
+
+```
+                     base                 adapter
+bf16 serving         2/5                  2/5
+                     sort-key,            sort-key,
+                     ordinal-index        ordinal-index
+4-bit serving        3/5                  0/5   (two runs never terminated)
+```
+
+**On the path both were trained for, the adapter changes nothing measurable.** Both arms pass
+the same two tasks and fail the same three. Five tasks is a screen rather than a rate — one task
+is twenty points — so this says the adapter did not *break* anything on bf16, not that it could
+not have helped.
+
+**The 4-bit column is a defect in the serving path, and it is worth more than the score.**
+Behind 4-bit NF4 the *same adapter* scores 0/5 and two of its five runs never finish: one spends
+89 tool calls in a `web_fetch` loop against a URL that does not exist, the other 18 messages
+ending in a `<tool_call>` the loop never accepts. Behind bf16 the same tasks finish in 11–23 s.
+The base model is unharmed by the same 4-bit path (3/5). So the quantised path degrades the
+*adapter* specifically, which is the opposite of what one would expect of a QLoRA-trained
+adapter served under the same `BitsAndBytesConfig` it was trained with.
+
+That is recorded as a measurement and not as an explanation: the settings do match the trainer's,
+and why this happens has not been established here. Anyone serving this adapter should use bf16
+until it is.
+
+**And the base's own score moved**, which is the part that limits what can be claimed. `runs/chtd-4`
+records the base answering "Hello! How can I help you today?" and stopping, on all five tasks —
+0/5. Here the base walks `ls`, `read`, `read` and diagnoses, on every serving path tried. Same
+weights, same tasks, different behaviour, so the evaluation conditions are not the ones `chtd-4`
+was measured under, and **the 2/5-versus-0/5 comparison in that record cannot be reproduced or
+extended from here**. What can be said is what this sweep shows on its own: no gain on bf16, a
+harmful interaction on 4-bit.
+
 ## What this run does not establish
 
 - **It is not a comparison.** No baseline arm was trained against these 19 rows, and no held-out
@@ -114,8 +153,10 @@ conversation — so training and serving agree with each other here, which is wh
   (0.2022), and with a differently-tokenised prompt (the +39 above) plus a different sampling path,
   the difference is expected rather than diagnostic. The adapter hash differs too, for the same
   reason.
-- **The evaluation still needs doing.** The next step is the held-out comparison this adapter was
-  rebuilt for.
+- **It does not show the method working.** The comparison above has the adapter matching the base
+  and no more. `runs/chtd-4` reports the one positive result this project has; nothing here
+  reproduces it, and the base's changed behaviour says the setup that produced it is not the setup
+  available now.
 
 ## Reproducing it
 
@@ -130,3 +171,24 @@ python -m distill.finetune \
 The environment is archived beside the run (`env/chtd-control-venv.tar.gz`) because `/root` — where it
 was built — does not survive a reset either, and a recipe without its pinned packages is a recipe
 that drifts.
+
+## Reproducing the sweep
+
+The held-out comparison is driven by `eval/holdout_sweep.py`, checked in with this run. It starts
+nothing: the arms have to be serving already, one port each, and it points the student route at
+them.
+
+```sh
+# on the box, one endpoint per arm (bf16 is the path that works; see the 4-bit note above)
+cd /mnt/proj/chtd-experiments/chtd-20261011-a/source-48101c4
+python serve_openai_bf16.py --model-path /mnt/proj/chtd-experiments/models/Qwen3-4B-Instruct-2507 \
+  --adapter-path /mnt/proj/chtd-experiments/chtd-20261011-a/adapter --host 0.0.0.0 --port 8002
+python serve_openai_bf16.py --model-path /mnt/proj/chtd-experiments/models/Qwen3-4B-Instruct-2507 \
+  --host 0.0.0.0 --port 8003
+
+# on the machine with node and agnes-harness
+CHTD_ARMS=adapter:8002,base:8003 python eval/holdout_sweep.py chtd-20261011-a-bf16
+```
+
+Scoring calls `harness/tasks/check_diagnosis.py`, the same reader the training gate uses, so a
+pass means here what it means there. `CHTD_EVAL_HOST` overrides the box's address.
