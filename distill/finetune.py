@@ -349,6 +349,7 @@ def train(
         BitsAndBytesConfig,
         Trainer,
         TrainingArguments,
+        set_seed,
     )
 
     recipe: LoraRecipe = plan.recipe
@@ -356,6 +357,10 @@ def train(
     target = Path(output_dir)
     target.mkdir(parents=True, exist_ok=True)
     rows = [json.loads(line) for line in row_lines]
+
+    # Trainer seeds its own loop only after the model has been constructed. Seed
+    # here as well so both arms start from the same LoRA initialization.
+    set_seed(recipe.seed)
 
     free, total = torch.cuda.mem_get_info()
     log(f"gpu free={free / 1024**3:.1f}GB total={total / 1024**3:.1f}GB")
