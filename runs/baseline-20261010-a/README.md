@@ -15,6 +15,9 @@ CHTD experiment. It is **not a trained adapter or a model-performance result**.
 - `sft/manifest.json` names the exact candidate sample digest. The selection
   remains unmatched until the experimental arm provides its task coverage and
   admitted sample budget.
+- `preflight.json` records a candidate-set tokenizer check on the shared
+  Qwen3-4B-Instruct-2507 base: all 76 samples rendered, 2414–3071 tokens each,
+  with no template error or row over 4096 tokens. It is not a training result.
 
 `collection/sessions.db` is an SQLite backup of the append-only AGH ledger. It
 also contains two earlier pilot sessions; the 24 task records in
