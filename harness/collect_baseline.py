@@ -1,0 +1,210 @@
+"""Collect own-trajectory records for either arm, one durable task at a time.
+
+This only collects evidence. It does not turn a failed run into a training label,
+and it never reads the held-out task set as work to execute.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import subprocess
+import sys
+from collections.abc import Iterable
+from pathlib import Path
+from typing import Any
+
+from harness.digest import canonical_bytes, text_sha256
+from harness.round import Arm, load_round_tasks, run_round
+from harness.rollout import CliRunner
+
+
+def observed_tracks(run: Path, task_ids: list[str]) -> set[str]:
+    """The distinct track digests a run's task records name."""
+    tracks: set[str] = set()
+    for task_id in task_ids:
+        row = json.loads((run / "tasks" / f"{task_id}.json").read_text(encoding="utf-8"))
+        value = (row.get("record") or {}).get("track_sha256")
+        if isinstance(value, str) and value:
+            tracks.add(value)
+    return tracks
+
+
+def expected_track(manifest: dict[str, Any], observed: Iterable[str]) -> str:
+    """The track a collection ran on.
+
+    The manifest's own record is preferred. A collection made before
+    ``--expected-track`` was introduced carries the same digest only inside its
+    per-task records, so those are accepted as a fallback — provided they name
+    exactly one track. Anything else refuses: records that disagree about the
+    track did not come from one run.
+    """
+    recorded = manifest.get("expected_track_sha256")
+    if isinstance(recorded, str) and recorded:
+        return recorded
+    tracks = {value for value in observed if isinstance(value, str) and value}
+    if len(tracks) != 1:
+        raise ValueError(
+            "the collection names no expected track and its task records name "
+            f"{len(tracks)} distinct tracks"
+        )
+    return tracks.pop()
+
+
+def _fixture_sha(path: Path) -> str:
+    digest = hashlib.sha256()
+    for file in sorted(item for item in path.rglob("*") if item.is_file()):
+        digest.update(file.relative_to(path).as_posix().encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(canonical_bytes(file))
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def _revision(path: Path) -> str:
+    return subprocess.check_output(
+        ["git", "-C", str(path), "rev-parse", "HEAD"], text=True
+    ).strip()
+
+
+def _write_json(path: Path, value: object) -> None:
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+                         encoding="utf-8", newline="\n")
+    temporary.replace(path)
+
+
+def _write_lines(path: Path, lines: list[str]) -> None:
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text("".join(line + "\n" for line in lines), encoding="utf-8", newline="\n")
+    temporary.replace(path)
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--tasks", type=Path, required=True)
+    parser.add_argument("--holdout", type=Path, required=True)
+    parser.add_argument("--profile-file", type=Path, required=True)
+    parser.add_argument("--agh-source", type=Path, required=True)
+    parser.add_argument("--agh-home", type=Path, required=True)
+    parser.add_argument("--agh-entry", type=Path, required=True)
+    parser.add_argument("--key-file", type=Path, required=True)
+    parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--arm", choices=("teacher", "student"), default="teacher")
+    parser.add_argument("--expected-track", default=None)
+    parser.add_argument("--throttle-seconds", type=float, default=6.0)
+    args = parser.parse_args(argv)
+    args.agh_home = args.agh_home.resolve()
+    args.agh_entry = args.agh_entry.resolve()
+    args.out = args.out.resolve()
+
+    tasks = load_round_tasks(args.tasks)
+    holdout_tasks = load_round_tasks(args.holdout)
+    holdout_ids = {task.id for task in holdout_tasks}
+    overlap = {task.id for task in tasks} & holdout_ids
+    if overlap:
+        raise ValueError(f"train/holdout task overlap: {sorted(overlap)}")
+    key = args.key_file.read_text(encoding="utf-8-sig").strip()
+    if not key.startswith("sk-"):
+        raise ValueError("the key file does not contain an Agnes sk- credential")
+
+    is_student = args.arm == "student"
+    model = "qwen3-4b-instruct-2507" if is_student else "agnes-3.0-flash"
+    manifest = {
+        "arm": "student" if is_student else "baseline",
+        "definition": ("student decisions on the base student's own trajectory" if is_student
+                       else "teacher decisions on the teacher's own trajectory"),
+        "task_set_sha256": text_sha256(args.tasks),
+        "holdout_sha256": text_sha256(args.holdout),
+        "profile_file_sha256": text_sha256(args.profile_file),
+        "collector_sha256": text_sha256(Path(__file__)),
+        "agh_preset_sha256": (args.agh_source / "packages/code/presets/minimal-rl.sha256")
+        .read_text(encoding="utf-8").strip(),
+        "train_fixture_sha256": {task.id: _fixture_sha(Path(task.fixture)) for task in tasks},
+        "holdout_fixture_sha256": {task.id: _fixture_sha(Path(task.fixture))
+                                   for task in holdout_tasks},
+        "agh_commit": _revision(args.agh_source),
+        "chtd_commit": _revision(Path(__file__).resolve().parent.parent),
+        "model": model,
+        "preset": "minimal-rl",
+        "task_ids": [task.id for task in tasks],
+        "holdout_ids": sorted(holdout_ids),
+    }
+    if args.expected_track:
+        manifest["expected_track_sha256"] = args.expected_track
+    args.out.mkdir(parents=True, exist_ok=True)
+    manifest_path = args.out / "collection-manifest.json"
+    if manifest_path.exists():
+        old = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if old != manifest:
+            raise ValueError("collection inputs changed; use a new output directory")
+    else:
+        _write_json(manifest_path, manifest)
+
+    task_dir = args.out / "tasks"
+    task_dir.mkdir(exist_ok=True)
+    runner = CliRunner(
+        entry=str(args.agh_entry),
+        profile="local-dev",
+        standalone=True,
+        env={
+            "AGNES_SECRET_TEACHER_DEFAULT": key,
+            "AGNES_SECRET_STUDENT_DEFAULT": "local-no-auth",
+        },
+    )
+    arm = Arm(name=args.arm, route=args.arm, model=model)
+    for index, task in enumerate(tasks, 1):
+        result_path = task_dir / f"{task.id}.json"
+        if result_path.exists():
+            print(f"[{index}/{len(tasks)}] {task.id}: recorded", flush=True)
+            continue
+        print(f"[{index}/{len(tasks)}] {task.id}: running", flush=True)
+        outcomes = run_round(
+            tasks=[task],
+            arms=[arm],
+            runner=runner,
+            home_root=args.agh_home,
+            out_dir=args.out / "workspaces",
+            throttle_seconds=args.throttle_seconds,
+            expected_track=args.expected_track,
+            log=lambda message: print(message.replace(key, "[REDACTED]"), flush=True),
+        )
+        outcome = outcomes[0]
+        _write_json(
+            result_path,
+            {
+                "task_id": task.id,
+                "arm": args.arm,
+                "passed": outcome.check_passed,
+                "check_output": outcome.check_output.replace(key, "[REDACTED]")[:2000],
+                "workspace": outcome.workspace,
+                "session_key": outcome.session_key,
+                "ledger_path": outcome.ledger_path,
+                "record": json.loads(outcome.record.to_json()) if outcome.record else None,
+            },
+        )
+
+        rows = [json.loads((task_dir / f"{t.id}.json").read_text(encoding="utf-8"))
+                for t in tasks if (task_dir / f"{t.id}.json").exists()]
+        _write_lines(args.out / "records.jsonl", [json.dumps(r["record"], sort_keys=True)
+                                                  for r in rows if r["record"]])
+        _write_lines(args.out / "checks.jsonl", [json.dumps({k: r[k] for k in
+                ("task_id", "arm", "passed", "check_output", "workspace")}, ensure_ascii=False)
+                for r in rows])
+        _write_lines(args.out / "outcomes.jsonl", [json.dumps({k: r[k] for k in
+                ("task_id", "arm", "passed", "session_key")})
+                for r in rows if r["session_key"]])
+
+    rows = [json.loads((task_dir / f"{t.id}.json").read_text(encoding="utf-8")) for t in tasks]
+    tracks = {r["record"]["track_sha256"] for r in rows if r["record"]}
+    passed = sum(bool(r["passed"] and r["record"]) for r in rows)
+    print(f"{args.arm} collected: {len(rows)} tasks, {passed} passed, tracks={sorted(tracks)}", flush=True)
+    # Failed student task checks are valid observations; the later teacher
+    # fork gate decides whether those states yield usable labels.
+    return 0 if len(tracks) == 1 and (is_student or passed) else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

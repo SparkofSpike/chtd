@@ -87,14 +87,28 @@ def render_chat(
 ) -> str:
     """Apply the model's chat template the way the serving path does.
 
-    Kept byte-for-byte compatible with `serve_openai.py`'s ``render``. Two details are load-bearing
-    and neither is obvious: a ``null`` content becomes the empty string, because that is what the
-    endpoint sends; and ``tools`` is passed into the template, because a model that is not told
-    which tools it has cannot be taught to call one.
+    Shared by training and `serve_openai.py`. AGH sends text as OpenAI content
+    blocks; Qwen3's text tokenizer silently drops those blocks when passed
+    directly to its template. Flatten text blocks before rendering. Reject
+    non-text blocks because this route has no image input capability.
     """
+    def text_content(value: Any) -> str:
+        if value is None:
+            return ""
+        if isinstance(value, str):
+            return value
+        if not isinstance(value, list):
+            raise ValueError("unsupported message content")
+        parts = []
+        for block in value:
+            if not isinstance(block, dict) or block.get("type") != "text" or not isinstance(block.get("text"), str):
+                raise ValueError("this model route accepts text content blocks only")
+            parts.append(block["text"])
+        return "\n".join(parts)
+
     clean = []
     for message in messages:
-        entry: dict[str, Any] = {"role": message["role"], "content": message.get("content") or ""}
+        entry: dict[str, Any] = {"role": message["role"], "content": text_content(message.get("content"))}
         if message.get("tool_call_id"):
             entry["tool_call_id"] = message["tool_call_id"]
         if message.get("tool_calls"):
@@ -335,6 +349,7 @@ def train(
         BitsAndBytesConfig,
         Trainer,
         TrainingArguments,
+        set_seed,
     )
 
     recipe: LoraRecipe = plan.recipe
@@ -342,6 +357,10 @@ def train(
     target = Path(output_dir)
     target.mkdir(parents=True, exist_ok=True)
     rows = [json.loads(line) for line in row_lines]
+
+    # Trainer seeds its own loop only after the model has been constructed. Seed
+    # here as well so both arms start from the same LoRA initialization.
+    set_seed(recipe.seed)
 
     free, total = torch.cuda.mem_get_info()
     log(f"gpu free={free / 1024**3:.1f}GB total={total / 1024**3:.1f}GB")

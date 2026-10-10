@@ -119,7 +119,9 @@ def test_the_prompt_ends_where_the_model_started_answering() -> None:
 
     state = sample["messages"][:-1]
     prompt_only = tokenizer.apply_chat_template(
-        state, tokenize=False, add_generation_prompt=True, tools=sample["tools"]
+        [{**m, "content": "Read notes.txt" if m["role"] == "user" else m.get("content") or ""}
+         for m in state],
+        tokenize=False, add_generation_prompt=True, tools=sample["tools"]
     )
     expected_full = prompt_only + "<|end|>"
 
@@ -175,6 +177,23 @@ def test_render_passes_the_tools_into_the_template() -> None:
     tools = [{"name": "read"}]
     render_chat(tokenizer, _sample()["messages"], tools, add_generation_prompt=True)
     assert tokenizer.seen_tools == tools
+
+
+def test_render_flattens_openai_text_blocks_for_qwen() -> None:
+    rendered = render_chat(
+        FakeTokenizer(),
+        [{"role": "user", "content": [{"type": "text", "text": "Read notes.txt"}]}],
+        None,
+        add_generation_prompt=True,
+    )
+    assert rendered == "<|user|>Read notes.txt<|assistant|>"
+
+
+def test_render_rejects_image_blocks_on_text_only_route() -> None:
+    with pytest.raises(ValueError, match="text content blocks only"):
+        render_chat(FakeTokenizer(),
+                    [{"role": "user", "content": [{"type": "image_url", "image_url": {"url": "x"}}]}],
+                    None, add_generation_prompt=True)
 
 
 def test_render_turns_null_content_into_the_empty_string() -> None:

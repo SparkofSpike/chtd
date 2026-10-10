@@ -1,0 +1,66 @@
+{
+  "adapter_files": [
+    "README.md",
+    "adapter_config.json",
+    "adapter_model.safetensors",
+    "added_tokens.json",
+    "chat_template.jinja",
+    "merges.txt",
+    "special_tokens_map.json",
+    "tokenizer.json",
+    "tokenizer_config.json",
+    "vocab.json"
+  ],
+  "arm": "baseline",
+  "base_model": "Qwen/Qwen3-4B-Instruct-2507",
+  "base_model_revision": null,
+  "base_weights_fingerprint": {
+    "digest": "c790f354771f62febbebd13f4024ed8f88527756447ed9e3c2d07bdd29895be0",
+    "files": {
+      "config.json": "5beea1a4a34c62782bfb2f911c606741a3bab8f92d80a118fa053c28af12e8ba",
+      "generation_config.json": "835fffe355c9438e7a25be099b3fccaa98350b83451f9fd2d99512e74f1ade48",
+      "tokenizer_config.json": "a62ff0a2472a0fa1b8eaabcb57c59b58afa42a22831dc141400b6e0cf2b65ce3"
+    }
+  },
+  "dataset_sha256": "e4cb0036d4b6afa00afb01d30d3e2c9cc173b1cfc9346bc6ee4d5f92638de4ff",
+  "entries": 76,
+  "epochs": 3,
+  "global_step": 30,
+  "logical_parameters": 4022468096,
+  "max_sequence_length_used": 4096,
+  "packed_parameters_4bit": 2271870464,
+  "peak_gpu_memory_gb": 10.818,
+  "recipe": {
+    "alpha": 64,
+    "batch_size": 1,
+    "dropout": 0.05,
+    "epochs": 3,
+    "gradient_accumulation": 8,
+    "learning_rate": 0.0002,
+    "max_sequence_length": 4096,
+    "rank": 32,
+    "seed": 0,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ],
+    "warmup_ratio": 0.03
+  },
+  "samples_sha256": "e4cb0036d4b6afa00afb01d30d3e2c9cc173b1cfc9346bc6ee4d5f92638de4ff",
+  "samples_trained": 76,
+  "teacher_model": "agnes-3.0-flash",
+  "token_lengths": {
+    "max": 3071,
+    "min": 2414
+  },
+  "track_sha256": "d403e1e12186a4021cc9d20bbc2c8770cf8366e9fccfc67621a64fde307967ba",
+  "trainable_parameters": 66060288,
+  "trainable_share_of_logical_pct": 1.6423,
+  "training_loss": 0.7420051853482922,
+  "wall_clock_seconds": 292.6
+}

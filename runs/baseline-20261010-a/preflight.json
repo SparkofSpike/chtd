@@ -1,0 +1,21 @@
+{
+  "base_model": "Qwen/Qwen3-4B-Instruct-2507",
+  "config_sha256": "5beea1a4a34c62782bfb2f911c606741a3bab8f92d80a118fa053c28af12e8ba",
+  "tokenizer_config_sha256": "a62ff0a2472a0fa1b8eaabcb57c59b58afa42a22831dc141400b6e0cf2b65ce3",
+  "tokenizer_sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+  "weight_files_sha256": {
+    "model-00001-of-00003.safetensors": "75311d91bb08cf0b882913da464a1e722a31fb44db35208663487efb7a3d8ed6",
+    "model-00002-of-00003.safetensors": "0b48adbb1f60e901153d91907ba11ce63bd4b8b584482e730f48808d055dfba1",
+    "model-00003-of-00003.safetensors": "7dd39ccca5e4de123c74c14af44c9bf2eb75df33b4614382af0134528e060d5d"
+  },
+  "samples_sha256": "e4cb0036d4b6afa00afb01d30d3e2c9cc173b1cfc9346bc6ee4d5f92638de4ff",
+  "rendered_samples": 76,
+  "distinct_training_tasks": 18,
+  "render_errors": 0,
+  "sequence_tokens_min": 2414,
+  "sequence_tokens_max": 3071,
+  "supervised_tokens_min": 16,
+  "supervised_tokens_max": 479,
+  "over_4096_tokens": 0,
+  "scope": "Candidate-set tokenizer preflight only; train/serve request parity and paired selection remain open."
+}

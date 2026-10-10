@@ -21,6 +21,7 @@ from harness.round import (
     write_outcomes,
 )
 from harness.rollout import ReplayRunner
+from harness.tasks.build_workspaces import CHECK_SCRIPT
 from tests.ledger_fixture import build_ledger
 
 SESSION = "agnes:local:local-dev:cli:workspace:" + "c" * 16
@@ -56,6 +57,14 @@ def test_a_task_set_round_trips(tmp_path) -> None:
     tasks = load_round_tasks(path)
     assert [t.id for t in tasks] == ["a", "b"]
     assert tasks[0].check == "python check.py"
+
+
+def test_committed_holdout_checks_use_this_checkout() -> None:
+    task_set = Path(__file__).resolve().parent.parent / "harness" / "tasks" / "final-holdout.jsonl"
+    tasks = load_round_tasks(task_set)
+    assert len(tasks) == 5
+    assert CHECK_SCRIPT.is_file()
+    assert all(str(CHECK_SCRIPT) in task.check for task in tasks)
 
 
 def test_comments_and_blank_lines_are_skipped(tmp_path) -> None:

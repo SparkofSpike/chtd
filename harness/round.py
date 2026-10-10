@@ -96,6 +96,18 @@ def load_round_tasks(path: str | Path) -> tuple[RoundTask, ...]:
         for field_name in ("prompt", "check"):
             if not isinstance(row.get(field_name), str) or not row[field_name]:
                 raise ValueError(f"{source}:{number} ({task_id}) has no {field_name}")
+        check = row["check"]
+        if "expect" in row:
+            # Generated diagnosis task files may have been written on another machine. Rebuild
+            # their checker command from the checked-in script instead of running a stale path.
+            from harness.tasks.build_workspaces import EXPECT, check_command
+
+            expected = row["expect"]
+            if not isinstance(expected, list) or not all(isinstance(x, str) for x in expected):
+                raise ValueError(f"{source}:{number} ({task_id}) has invalid expect phrases")
+            if tuple(expected) != EXPECT.get(task_id):
+                raise ValueError(f"{source}:{number} ({task_id}) differs from the task's checker")
+            check = check_command(task_id)
         # The workspace is resolved from the id: the task set records no absolute path, because the
         # fixtures are generated into a gitignored directory and a recorded path would be one
         # machine's. Three levels up from `harness/tasks/<file>.jsonl` is the repository root;
@@ -103,7 +115,7 @@ def load_round_tasks(path: str | Path) -> tuple[RoundTask, ...]:
         fixture = row.get("cwd") or str(
             source.resolve().parent.parent.parent / "data" / "tasks" / task_id
         )
-        tasks.append(RoundTask(id=task_id, prompt=row["prompt"], fixture=fixture, check=row["check"]))
+        tasks.append(RoundTask(id=task_id, prompt=row["prompt"], fixture=fixture, check=check))
     if not tasks:
         raise ValueError(f"{source} holds no tasks")
     return tuple(tasks)
@@ -133,6 +145,8 @@ def _run_check(
             shell=True,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
             env=child_env,
         )
