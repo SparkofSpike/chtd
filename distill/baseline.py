@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from distill.sft import HarnessPrefix, TrainingSample, conversation_before, samples_digest
+from harness.digest import text_sha256
 from harness.ledger import open_ledger
 from harness.trajectory import prefix_chain, read_trajectory
 
@@ -62,9 +63,7 @@ def build_candidates(collection: Path, prefix_file: Path, review_file: Path, out
     if set(task_ids) & set(collection_manifest["holdout_ids"]):
         raise ValueError("train/holdout task overlap in the collection manifest")
     review = json.loads(review_file.read_text(encoding="utf-8"))
-    collection_manifest_sha = hashlib.sha256(
-        (collection / "collection-manifest.json").read_bytes()
-    ).hexdigest()
+    collection_manifest_sha = text_sha256(collection / "collection-manifest.json")
     if review.get("collection_manifest_sha256") != collection_manifest_sha:
         raise ValueError("review is for a different collection manifest")
     accepted = review.get("accepted_task_ids")
@@ -136,21 +135,23 @@ def build_candidates(collection: Path, prefix_file: Path, review_file: Path, out
     sample_rows = [sample.to_json() for sample in samples]
     (output / "candidates.jsonl").write_text(
         "".join(json.dumps(row, sort_keys=True, ensure_ascii=False) + "\n" for row in decisions),
-        encoding="utf-8",
+        encoding="utf-8", newline="\n",
     )
-    (output / "samples.jsonl").write_text("".join(row + "\n" for row in sample_rows), encoding="utf-8")
+    (output / "samples.jsonl").write_text(
+        "".join(row + "\n" for row in sample_rows), encoding="utf-8", newline="\n"
+    )
     (output / "refusals.jsonl").write_text(
         "".join(json.dumps(row, sort_keys=True, ensure_ascii=False) + "\n" for row in refusals),
-        encoding="utf-8",
+        encoding="utf-8", newline="\n",
     )
     manifest = {
         "arm": "baseline",
         "definition": "teacher decisions on the teacher's own trajectory",
         "track_sha256": next(iter(tracks)),
         "harness_prefix_digest": prefix.digest(),
-        "harness_prefix_file_sha256": hashlib.sha256(prefix_file.read_bytes()).hexdigest(),
+        "harness_prefix_file_sha256": text_sha256(prefix_file),
         "collection_manifest_sha256": collection_manifest_sha,
-        "review_sha256": hashlib.sha256(review_file.read_bytes()).hexdigest(),
+        "review_sha256": text_sha256(review_file),
         "samples_sha256": samples_digest(sample_rows),
         "candidate_count": len(decisions),
         "refusal_count": len(refusals),
@@ -159,7 +160,8 @@ def build_candidates(collection: Path, prefix_file: Path, review_file: Path, out
         "selection_status": "unmatched; compare against the CHTD arm before training",
     }
     (output / "manifest.json").write_text(
-        json.dumps(manifest, ensure_ascii=False, sort_keys=True, indent=2) + "\n", encoding="utf-8"
+        json.dumps(manifest, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+        encoding="utf-8", newline="\n",
     )
     return manifest
 

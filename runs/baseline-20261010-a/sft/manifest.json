@@ -1,10 +1,10 @@
 {
   "arm": "baseline",
   "candidate_count": 76,
-  "collection_manifest_sha256": "cdcf2a0fc742830bb73182bef8c4c7e8d93983f5cd6b239412d97095139fb6ef",
+  "collection_manifest_sha256": "32cc8701da033c156ca6cb9dec4d61f45658a563f933752ae1052f5e31418b54",
   "definition": "teacher decisions on the teacher's own trajectory",
   "harness_prefix_digest": "dbaddc7e2d8ffcfcde19c38f1fc62f6bc96a45336922357d3907b007d0b6edcd",
-  "harness_prefix_file_sha256": "0533ec3c4f11a94f1179bfdc36026b7d861f7292c111a564486b2bc03a9b3980",
+  "harness_prefix_file_sha256": "9b3f18bc543f39dcf0f885fdedd9770ce7e88b1b3c4699dbb3ccba8f9355b312",
   "holdout_ids": [
     "fix-ordinal-index",
     "fix-shallow-copy",
@@ -13,7 +13,7 @@
     "fix-string-case"
   ],
   "refusal_count": 11,
-  "review_sha256": "d46a477f3e7ded382a48acb51448d5fcfb014753482525178319afeb4f994c6a",
+  "review_sha256": "a810c278c4b433d2d379be7c8e7ab5f8e178f8001df22b721576ceef1e14be02",
   "samples_sha256": "e4cb0036d4b6afa00afb01d30d3e2c9cc173b1cfc9346bc6ee4d5f92638de4ff",
   "selection_status": "unmatched; compare against the CHTD arm before training",
   "task_ids": [

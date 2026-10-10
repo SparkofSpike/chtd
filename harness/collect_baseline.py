@@ -14,12 +14,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+from harness.digest import canonical_bytes, text_sha256
 from harness.round import Arm, load_round_tasks, run_round
 from harness.rollout import CliRunner
-
-
-def _sha(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def _fixture_sha(path: Path) -> str:
@@ -27,7 +24,7 @@ def _fixture_sha(path: Path) -> str:
     for file in sorted(item for item in path.rglob("*") if item.is_file()):
         digest.update(file.relative_to(path).as_posix().encode("utf-8"))
         digest.update(b"\0")
-        digest.update(file.read_bytes())
+        digest.update(canonical_bytes(file))
         digest.update(b"\0")
     return digest.hexdigest()
 
@@ -40,13 +37,14 @@ def _revision(path: Path) -> str:
 
 def _write_json(path: Path, value: object) -> None:
     temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+    temporary.write_text(json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+                         encoding="utf-8", newline="\n")
     temporary.replace(path)
 
 
 def _write_lines(path: Path, lines: list[str]) -> None:
     temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text("".join(line + "\n" for line in lines), encoding="utf-8")
+    temporary.write_text("".join(line + "\n" for line in lines), encoding="utf-8", newline="\n")
     temporary.replace(path)
 
 
@@ -84,10 +82,10 @@ def main(argv: list[str] | None = None) -> int:
         "arm": "student" if is_student else "baseline",
         "definition": ("student decisions on the base student's own trajectory" if is_student
                        else "teacher decisions on the teacher's own trajectory"),
-        "task_set_sha256": _sha(args.tasks),
-        "holdout_sha256": _sha(args.holdout),
-        "profile_file_sha256": _sha(args.profile_file),
-        "collector_sha256": _sha(Path(__file__)),
+        "task_set_sha256": text_sha256(args.tasks),
+        "holdout_sha256": text_sha256(args.holdout),
+        "profile_file_sha256": text_sha256(args.profile_file),
+        "collector_sha256": text_sha256(Path(__file__)),
         "agh_preset_sha256": (args.agh_source / "packages/code/presets/minimal-rl.sha256")
         .read_text(encoding="utf-8").strip(),
         "train_fixture_sha256": {task.id: _fixture_sha(Path(task.fixture)) for task in tasks},

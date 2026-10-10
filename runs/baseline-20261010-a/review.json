@@ -1,5 +1,5 @@
 {
-  "collection_manifest_sha256": "cdcf2a0fc742830bb73182bef8c4c7e8d93983f5cd6b239412d97095139fb6ef",
+  "collection_manifest_sha256": "32cc8701da033c156ca6cb9dec4d61f45658a563f933752ae1052f5e31418b54",
   "method": "Read every teacher answer against its fixture and task check; reject a correct keyword match with materially wrong diagnosis or unsupported workspace claims.",
   "accepted_task_ids": [
     "fix-assertion",

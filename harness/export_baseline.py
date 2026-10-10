@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import shutil
 import sqlite3
 from pathlib import Path
 
 from distill.baseline import build_candidates
+from harness.digest import raw_sha256, text_sha256
 
 
 def export_collection(
@@ -49,7 +49,8 @@ def export_collection(
             row["ledger_path"] = "sessions.db"
         row["workspace"] = f"workspaces/{task_id}/teacher"
         (task_dir / f"{task_id}.json").write_text(
-            json.dumps(row, ensure_ascii=False, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+            json.dumps(row, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+            encoding="utf-8", newline="\n")
     shutil.copyfile(prefix, destination / "prefix.json")
     shutil.copyfile(review, destination / "review.json")
     sample_manifest = build_candidates(
@@ -59,8 +60,8 @@ def export_collection(
     if secret in exported.read_bytes():
         raise ValueError("credential found in exported ledger; refusing publication")
     summary = {
-        "collection_manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
-        "ledger_sha256": hashlib.sha256(exported.read_bytes()).hexdigest(),
+        "collection_manifest_sha256": text_sha256(source / "collection-manifest.json"),
+        "ledger_sha256": raw_sha256(exported),
         "raw_task_count": len(raw),
         "accepted_task_count": len(json.loads(review.read_text(encoding="utf-8"))["accepted_task_ids"]),
         "candidate_count": sample_manifest["candidate_count"],
@@ -68,7 +69,8 @@ def export_collection(
         "training_status": "unmatched; no adapter was trained from this snapshot",
     }
     (destination / "summary.json").write_text(
-        json.dumps(summary, ensure_ascii=False, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+        json.dumps(summary, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+        encoding="utf-8", newline="\n")
     return summary
 
 

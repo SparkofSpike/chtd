@@ -3,25 +3,21 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 from pathlib import Path
 
 from distill.sft import samples_digest
 from distill.train import LoraRecipe, TrainingPlan
+from harness.digest import text_sha256
 
 
 def _rows(path: Path) -> list[dict]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
 
 
-def _digest(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
 def _write_rows(path: Path, rows: list[dict]) -> str:
     lines = [json.dumps(row, sort_keys=True, ensure_ascii=False) for row in rows]
-    path.write_text("".join(line + "\n" for line in lines), encoding="utf-8")
+    path.write_text("".join(line + "\n" for line in lines), encoding="utf-8", newline="\n")
     return samples_digest(lines)
 
 
@@ -90,15 +86,15 @@ def select(baseline_samples: Path, baseline_manifest: Path, chtd_samples: Path,
         "holdout_ids": chtd["holdout_ids"],
         "track_sha256": base["track_sha256"],
         "harness_prefix_digest": base["harness_prefix_digest"],
-        "baseline_source_manifest_sha256": _digest(baseline_manifest),
-        "chtd_source_manifest_sha256": _digest(chtd_manifest),
+        "baseline_source_manifest_sha256": text_sha256(baseline_manifest),
+        "chtd_source_manifest_sha256": text_sha256(chtd_manifest),
         "baseline_samples_sha256": baseline_digest,
         "chtd_samples_sha256": chtd_digest,
         "recipe": json.loads(recipe.fingerprint()),
         "selections": selections,
     }
     (output / "selection-manifest.json").write_text(
-        json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n"
     )
     return report
 

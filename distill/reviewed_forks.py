@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 from pathlib import Path
 
@@ -13,13 +12,10 @@ from distill.gate import (
     Outcome, OutcomeTable, OutcomeValidator, RecordedVerdicts, SignalGate, WorkspaceRelativePaths,
 )
 from distill.sft import HarnessPrefix, build_samples, sample_rows, samples_digest, write_samples
+from harness.digest import raw_sha256, text_sha256
 from harness.ledger import open_ledger
 from harness.rollout import RolloutRecord
 from harness.trajectory import read_trajectory
-
-
-def _digest(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def build(student_run: Path, fork_run: Path, review_file: Path, ledger_file: Path,
@@ -97,10 +93,10 @@ def build(student_run: Path, fork_run: Path, review_file: Path, ledger_file: Pat
     report = {
         "definition": "teacher decisions at student-reached completed-turn states",
         "limitation": "AGH cannot fork within a turn; this is an after-turn recovery experiment",
-        "student_collection_sha256": _digest(manifest_file),
-        "review_sha256": _digest(review_file),
-        "ledger_sha256": _digest(ledger_file),
-        "harness_prefix_file_sha256": _digest(prefix_file),
+        "student_collection_sha256": text_sha256(manifest_file),
+        "review_sha256": text_sha256(review_file),
+        "ledger_sha256": raw_sha256(ledger_file),
+        "harness_prefix_file_sha256": text_sha256(prefix_file),
         "track_sha256": track,
         "dataset_sha256": dataset.manifest.dataset_sha256,
         "samples_sha256": samples_digest(sample_rows(samples)),
@@ -111,7 +107,7 @@ def build(student_run: Path, fork_run: Path, review_file: Path, ledger_file: Pat
         "holdout_ids": manifest["holdout_ids"],
     }
     (output / "reviewed-manifest.json").write_text(
-        json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n"
     )
     return report
 

@@ -6,8 +6,8 @@ used another profile and prefix and is not part of this comparison.
 
 | Input | Frozen value |
 | --- | --- |
-| Train tasks | `harness/tasks/error-recovery.jsonl`, SHA256 `5ef2b505c2ef4c203d9b05df9f7bbb28e7c9ea0881c10c94504281db055fea1b` |
-| Holdout tasks | `harness/tasks/final-holdout.jsonl`, SHA256 `b726ae317ff1e95ff2dc78c6d000bb3585ad5190a4ca11c6fdf24ec213025a4b` |
+| Train tasks | `harness/tasks/error-recovery.jsonl`, SHA256 `037cad2617b3f53ca9c0b0903b4b046ee833917e066d2f1ad2a73a1fa421a2a8` |
+| Holdout tasks | `harness/tasks/final-holdout.jsonl`, SHA256 `adcc47633d497aea32ee1c869766fed5beb5a947efbf9c2f1142967dfbe18e5e` |
 | AGH source | commit `a39272bb6bcb3109584e1bd3abac595789ae365d` |
 | Builtin preset | `minimal-rl`, SHA256 `b0fe54debc808a2e7552d46984f8123fa6151b8a7e24ff32aa4633c126354954` |
 | Profile | `harness/profile/paired-minimal-rl.yaml`, SHA256 `1a5c5f73fa43799b657438efe6d5045bee150dd589ffd983bdd3166f4f363b2e` |
