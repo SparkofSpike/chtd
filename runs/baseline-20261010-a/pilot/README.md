@@ -8,6 +8,8 @@ two-arm performance claim. The five holdout tasks were not evaluated.
 The exact inputs are `../pilot-plan.json` and `../sft/samples.jsonl`. The cloud
 run used the frozen Qwen3-4B-Instruct-2507 weights recorded in `../preflight.json`.
 The run record is `run.json`; `train.log` is the captured trainer output.
+For this pilot, the plan's `dataset_sha256` field names the candidate sample
+JSONL digest because there is no matched two-arm dataset manifest yet.
 The command on the training node was:
 
 ```sh
