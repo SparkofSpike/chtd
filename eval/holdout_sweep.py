@@ -1,4 +1,4 @@
-"""Run the five held-out diagnosis tasks against both arms and score them.
+"""Run the selected held-out diagnosis tasks against serving arms and score them.
 
 Why this is hand-driven rather than a pipeline command: the held-out measurement is a
 *serving* comparison, not a training step. Each arm is an endpoint -- the adapter and the

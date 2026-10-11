@@ -17,12 +17,10 @@ to ``-100``. CHTD rows use a teacher target; an exploratory row may explicitly n
 source, such as a student's first tool action.
 
 **What the input contains, stated exactly.** The state is the conversation *up to* the decision the
-dataset names, so the student's own action at that decision is not in it; that action is the thing
-being aligned, and the teacher's answer replaces it. For a one-step task this means the sample
-teaches the correct *first* move, which is what the shipped dataset does. "Recovering from its own
-mistake" is a different training shape and needs a task where the student's error lands in the
-state a later decision is made in — a multi-step task, which this project does not yet have. The
-distinction is easy to lose in a summary and it changes what a result can be read as.
+dataset names, so the student's action at that decision is excluded and the target replaces it.
+The current multi-turn CHTD samples include earlier student tool calls as context and a teacher
+answer to a later prompt. A shared first-tool anchor is separately labeled as student-sourced.
+Neither label type shows a teacher correcting every student decision in the preceding history.
 """
 
 from __future__ import annotations
