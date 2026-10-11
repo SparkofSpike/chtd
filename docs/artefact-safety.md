@@ -121,10 +121,30 @@ sustained. The capacity was never the problem — the long-lived connection was.
 ```sh
 # on the box
 cd /mnt/user/chtd-experiments-backup && sha256sum -c MANIFEST.sha256 --quiet
-
-# locally: every adapter, against the hash recorded in its own run.json
-python tools\pull_artefacts.py          # reports "already local and correct" per artefact
 ```
+
+```powershell
+# locally: does the copy rebuild the round, byte for byte?
+python tools\verify_local_rebuild.py --round data/chtd-round-20261011
+```
+
+The second one is the check that matters, because it tests what the copy is *for* rather than whether
+files are present. It runs the real rebuild — `distill.reviewed_forks` over the local ledger, forks,
+review and prefix — and compares the result to the digests that were trained on. Measured on
+2026-10-11, with the box already offline:
+
+```
+samples  rebuilt  79d29560a72ca8a9209e20af0f3c4e5a54dd5485dec90ec584e2440e0a339705
+         expected 79d29560a72ca8a9209e20af0f3c4e5a54dd5485dec90ec584e2440e0a339705  MATCH
+dataset  rebuilt  7694a265f7b22603bb62867b35d9bd5be923d5f426ba22055bbd5f6a79d83ba0
+         expected 7694a265f7b22603bb62867b35d9bd5be923d5f426ba22055bbd5f6a79d83ba0  MATCH
+```
+
+So the local copy is not merely a set of files: it is a restorable round. **Task order is part of the
+digest** — the first version of that check fed the raw collection manifest, got thirteen rows that were
+identical field for field, and a digest that did not match. A reproduction has to use the same manifest
+the round was built from (`student-filtered/`), and the tool documents that in its own docstring rather
+than in a footnote here.
 
 Each adapter's `run.json`, kept beside it in `runs/`, records the sha256 of the weights that run
 produced, so a local file can be checked against the record rather than against itself.
