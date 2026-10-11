@@ -1,0 +1,35 @@
+{
+  "arm": "reviewed-tool-anchor-exploratory",
+  "base_model": "/mnt/proj/chtd-experiments/models/Qwen3-4B-Instruct-2507",
+  "base_model_revision": null,
+  "dataset_sha256": "96ee6b5be8d390ad8f3074a92de9793f54d09b56af03381d8369c0ab01485f65",
+  "entries": 22,
+  "notes": [
+    "Exploratory model-improvement arm. Each task contributes one student-sourced first ls action and one reviewed teacher diagnosis at a student-reached state.",
+    "This is not an all-teacher trajectory or a controlled CHTD-versus-teacher-own comparison."
+  ],
+  "output_dir": "/mnt/proj/chtd-experiments/aux-first-tool-20261011/adapter",
+  "recipe": {
+    "alpha": 64,
+    "batch_size": 1,
+    "dropout": 0.05,
+    "epochs": 14,
+    "gradient_accumulation": 4,
+    "learning_rate": 0.0001,
+    "max_sequence_length": 8192,
+    "rank": 32,
+    "seed": 0,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ],
+    "warmup_ratio": 0.03
+  },
+  "teacher_model": "agnes-3.0-flash",
+  "track_sha256": "47e6f191820db98de6e56c4afb7372dd23bd164b6f96157fa9f96635b14916b3"
+}

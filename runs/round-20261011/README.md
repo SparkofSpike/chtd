@@ -4,6 +4,12 @@ The first round built from the enlarged task set, and the first whose samples su
 instead of a tool call. It produced a clean negative result and one finding worth more than the score:
 **which assistant turns carry the loss decides whether the fine-tune can use tools at all.**
 
+**Correction, 2026-10-11:** CHTD samples contain earlier student assistant turns and a final teacher
+label. The `allturns` run below supervised both sources, so it is an exploratory mixed-provenance run,
+not a complete teacher trajectory. Its difference from `lastonly` cannot be attributed to teacher
+trajectory supervision. The trainer now refuses all-turn supervision without explicit proof that
+every assistant turn came from the teacher.
+
 ## What was wrong with the previous arm, stated mechanically
 
 `runs/chtd-20261011-a` supervised the last turn only. That is what the design calls for — the label is
@@ -32,8 +38,8 @@ the measurement is. Sixteen of the previous nineteen rows had supervised a tool 
 
 **2. Every assistant turn carries the loss, not just the last.** `--supervise assistant`. This is the
 change that fixed the tool calls, and it is a real departure from the design's letter: the samples are
-now demonstration learning over a teacher trajectory rather than "only the divergence is learned". The
-comparison between arms still holds because both arms' data is built the same way.
+now imitation of earlier student turns together with the teacher's final answer. This run does not
+isolate the effect of teacher trajectory supervision.
 
 **3. The scorer was repaired where it was failing correct answers.** `collect_forks._score` compared
 literal strings, so an expectation written `mutable|shared|default argument` could never match anything:
@@ -51,10 +57,11 @@ allturns        every turn supervised          3.0          13/15
 lastonly        last turn only supervised      0.0           0/15
 ```
 
-**The supervision rule is decisive and the gain is zero.**
+**The observed gain over `lastonly` is not attributable to teacher-only supervision.**
 
-The pair `allturns`/`lastonly` differs in exactly one thing — which turns carry the loss — and one of
-them cannot read a file. That finding stands on its own and is worth the round.
+The pair `allturns`/`lastonly` differs in which turns carry the loss, including student tool calls
+in `allturns`. It shows that the extra labels preserved tool use in this run; it does not validate
+the intended CHTD comparison.
 
 Against the base, though, the repaired arm is **one task behind**, and both arms fail the same way:
 

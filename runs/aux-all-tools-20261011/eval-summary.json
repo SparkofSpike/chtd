@@ -1,0 +1,146 @@
+{
+  "kind": "diagnostic_keyword_proxy",
+  "task_count_per_arm": 15,
+  "raw_archive": "/mnt/proj/chtd-experiments/aux-all-tools-20261011/aux-all-tools-eval-20261011-a.tar.gz",
+  "raw_archive_sha256": "6692ad40669e0375e06b442d0c9234a62c0d2f9c8ecb8f93972e7afe21f09741",
+  "arms": {
+    "base": {
+      "automatic_passes": 13,
+      "successful_runs": 15,
+      "tasks": {
+        "fix-string-case": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-sort-key": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-shallow-copy": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-ordinal-index": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-single-name": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-strip-whitespace": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-closure-late-binding": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-generator-exhaust": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-broad-except": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-none-cap": {
+          "automatic_pass": false,
+          "exit": 0
+        },
+        "fix-enumerate-start": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-zip-truncates": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-or-default-falsy": {
+          "automatic_pass": false,
+          "exit": 0
+        },
+        "fix-row-alias": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-augmented-assign-mutates": {
+          "automatic_pass": true,
+          "exit": 0
+        }
+      }
+    },
+    "candidate": {
+      "automatic_passes": 15,
+      "successful_runs": 15,
+      "tasks": {
+        "fix-string-case": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-sort-key": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-shallow-copy": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-ordinal-index": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-single-name": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-strip-whitespace": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-closure-late-binding": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-generator-exhaust": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-broad-except": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-none-cap": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-enumerate-start": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-zip-truncates": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-or-default-falsy": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-row-alias": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-augmented-assign-mutates": {
+          "automatic_pass": true,
+          "exit": 0
+        }
+      }
+    }
+  },
+  "manual_spot_check": {
+    "fix-none-cap": "Candidate correctly suggests a None guard but falsely says min(5,None) returns None; Python raises TypeError.",
+    "fix-broad-except": "Candidate correctly identifies broad except, but its suggested except (IndexError, TypeError) still swallows TypeError.",
+    "fix-string-case": "Candidate diagnoses case handling, but suggested change to the assertion does not fix the function."
+  },
+  "caveat": "Reused inspected tasks and a keyword gate with known false positives and false negatives. These counts are not human-validated accuracy or a controlled method effect."
+}

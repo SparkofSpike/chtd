@@ -1,4 +1,4 @@
-"""Run the five held-out diagnosis tasks against both arms and score them.
+"""Run the selected held-out diagnosis tasks against serving arms and score them.
 
 Why this is hand-driven rather than a pipeline command: the held-out measurement is a
 *serving* comparison, not a training step. Each arm is an endpoint -- the adapter and the
@@ -34,10 +34,12 @@ import time
 from pathlib import Path
 
 CHTD = Path(__file__).resolve().parent.parent
-AGNES = r"E:\Coding\agnes-harness\packages\cli\dist\local\agnes.mjs"
+AGNES = os.environ.get("CHTD_AGNES_CLI", r"E:\Coding\agnes-harness\packages\cli\dist\local\agnes.mjs")
+NODE = os.environ.get("CHTD_NODE", "node")
 TASKS_JSONL = CHTD / "harness" / "tasks" / "final-holdout.jsonl"
-PROFILE_SRC = CHTD / "data" / "agh_home" / "profiles" / "local-dev" / "profile.yaml"
-TASKS_DIR = CHTD / "data" / "tasks"
+PROFILE_SRC = Path(os.environ.get("CHTD_PROFILE_SRC", str(
+    CHTD / "data" / "agh_home" / "profiles" / "local-dev" / "profile.yaml")))
+TASKS_DIR = Path(os.environ.get("CHTD_TASKS_DIR", str(CHTD / "data" / "tasks")))
 
 HOST = os.environ.get("CHTD_EVAL_HOST", "100.84.151.62")
 ARMS = [("adapter", 8000), ("base", 8001)]
@@ -46,7 +48,7 @@ ARMS = [("adapter", 8000), ("base", 8001)]
 if os.environ.get("CHTD_ARMS"):
     ARMS = [(part.split(":")[0], int(part.split(":")[1]))
             for part in os.environ["CHTD_ARMS"].split(",") if part.strip()]
-RUN_ROOT = CHTD / "data" / "rollouts"
+RUN_ROOT = Path(os.environ.get("CHTD_RUN_ROOT", str(CHTD / "data" / "rollouts")))
 STUDENT_MODEL = "primary=student/qwen3-4b-instruct-2507"
 PRESET = "minimal-rl"
 # A held-out diagnosis is three or four tool calls; a healthy run finishes in ~20 s. A run
@@ -68,7 +70,7 @@ def load_tasks() -> list[dict]:
 def profile_for(port: int) -> str:
     """The same profile with the student route pointed at this arm's port."""
     text = PROFILE_SRC.read_text(encoding="utf-8")
-    old = "http://100.113.249.5:8000/v1"
+    old = os.environ.get("CHTD_PROFILE_STUDENT_URL", "http://100.113.249.5:8000/v1")
     new = f"http://{HOST}:{port}/v1"
     if old not in text:
         raise SystemExit(f"profile does not contain the expected student baseUrl {old!r}; "
@@ -86,10 +88,13 @@ def session_key(ledger: Path) -> str:
     return sessions[-1].session_key
 
 
-def score(ledger: Path, key: str, expect: list[str]) -> tuple[bool, str]:
+def score(ledger: Path, key: str, expect: list[str], forbid: list[str],
+          workspace: Path) -> tuple[bool, str]:
     env = dict(os.environ)
     env["CHTD_LEDGER"] = str(ledger)
     env["CHTD_SESSION_KEY"] = key
+    env["CHTD_FORBID"] = json.dumps(forbid)
+    env["CHTD_WORKSPACE"] = str(workspace)
     r = subprocess.run(
         [sys.executable, str(CHTD / "harness" / "tasks" / "check_diagnosis.py"), *expect],
         capture_output=True, text=True, encoding="utf-8", errors="replace", env=env, timeout=120,
@@ -113,7 +118,9 @@ def run_one(arm: str, port: int, task: dict, root: Path) -> dict:
     work = base_dir / "student"
     home = base_dir / "_agh_home"
     if base_dir.exists():
-        shutil.rmtree(base_dir)
+        raise FileExistsError(
+            f"{base_dir} already exists; choose a new run name to preserve its raw ledger"
+        )
     work.mkdir(parents=True)
     (home / "profiles" / "local-dev").mkdir(parents=True)
     (home / "profiles" / "local-dev" / "profile.yaml").write_text(
@@ -130,7 +137,7 @@ def run_one(arm: str, port: int, task: dict, root: Path) -> dict:
     for var in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"):
         env.pop(var, None)
 
-    argv = ["node", AGNES, "-p", "--standalone", "--preset", PRESET, "--model", STUDENT_MODEL,
+    argv = [NODE, AGNES, "-p", "--standalone", "--preset", PRESET, "--model", STUDENT_MODEL,
             task["prompt"]]
     started = time.time()
     timed_out = False
@@ -159,8 +166,10 @@ def run_one(arm: str, port: int, task: dict, root: Path) -> dict:
     try:
         key = session_key(ledger)
         record["session_key"] = key
-        passed, output = score(ledger, key, task["expect"])
-        record["passed"] = passed
+        from harness.tasks.build_workspaces import FORBID
+        forbidden = task.get("forbid", list(FORBID.get(task_id, ())))
+        passed, output = score(ledger, key, task["expect"], forbidden, work)
+        record["passed"] = exit_code == 0 and not timed_out and passed
         record["check_output"] = output
     except Exception as exc:  # a run that produced no session is a failed run, recorded as one
         record["session_key"] = None
@@ -179,6 +188,8 @@ def main() -> int:
             only = a.split("=", 1)[1]
     run_name = argv[0] if argv else "chtd-20261011-a"
     root = RUN_ROOT / run_name
+    if root.exists() and any(root.iterdir()):
+        raise FileExistsError(f"{root} already contains a run; choose a new name")
     root.mkdir(parents=True, exist_ok=True)
     tasks = load_tasks()
     if only:
@@ -192,10 +203,14 @@ def main() -> int:
     print()
 
     records = []
-    for arm, port in arms:
-        print(f"--- arm {arm} (port {port})")
-        for task in tasks:
-            records.append(run_one(arm, port, task, root))
+    with (root / "records.jsonl").open("x", encoding="utf-8") as journal:
+        for arm, port in arms:
+            print(f"--- arm {arm} (port {port})")
+            for task in tasks:
+                record = run_one(arm, port, task, root)
+                records.append(record)
+                journal.write(json.dumps(record, ensure_ascii=False) + "\n")
+                journal.flush()
 
     print()
     print("=" * 74)
@@ -207,8 +222,6 @@ def main() -> int:
                        for r in rows))
     print("=" * 74)
 
-    (root / "records.jsonl").write_text(
-        "\n".join(json.dumps(r, ensure_ascii=False) for r in records) + "\n", encoding="utf-8")
     (root / "run.json").write_text(json.dumps({
         "run": run_name,
         "host": HOST,

@@ -1,0 +1,25 @@
+{
+  "source_samples_sha256": "65d35841b89658a26d400407ab25d568b14cf96fed8bafc61037bb6366f0bc1a",
+  "review_sha256": "e521915ab7a1b954026171712a67e2a631ad45f84246ab6e5de88454f4ec6bf3",
+  "samples_sha256": "8bb209dc0c0434478cb6df1ba6551d4ba6f6061f319715e2ac773917f97b9f0f",
+  "entries": 44,
+  "anchor_mode": "all-tools",
+  "accepted_task_ids": [
+    "fix-always-true-guard",
+    "fix-append-not-extend",
+    "fix-argument-order",
+    "fix-cli-flag",
+    "fix-empty-input",
+    "fix-integer-division",
+    "fix-json-trailing-comma",
+    "fix-missing-dict-default",
+    "fix-one-element-tuple",
+    "fix-slice-direction",
+    "fix-wrong-operator"
+  ],
+  "label_sources": {
+    "student_tool_anchor": 33,
+    "teacher_on_student_state": 11
+  },
+  "plan_dataset_sha256": "eb0782fc149c86b15b0693ba43304f1fb57c19b1a275d01c59866ce2ce762c15"
+}

@@ -146,19 +146,18 @@ def test_missing_session_is_a_usage_error(monkeypatch) -> None:
     assert main() == 2
 
 
-def test_every_assistant_message_counts(tmp_path) -> None:
-    """Not just the last: a run that states the diagnosis and restates it should not be judged on
-    the order it happened to use."""
+def test_only_the_final_assistant_message_is_scored(tmp_path) -> None:
+    """An earlier correct guess must not rescue a contradictory final answer."""
     path = tmp_path / "sessions.db"
     builder = build_ledger(path)
     builder.session(SESSION).start(SESSION)
     builder.user(SESSION, "what is wrong?")
     builder.assistant(SESSION, "The mean is computed correctly but the assert is wrong.")
-    builder.assistant(SESSION, "In short: fix the expected value.")
+    builder.assistant(SESSION, "In short: this is a different, unrelated problem.")
     builder.close()
     text = answer_text(str(path), SESSION)
-    assert "assert" in text.lower()
-    assert "expected value" in text.lower()
+    assert "assert" not in text.lower()
+    assert "different, unrelated problem" in text.lower()
 
 
 # ------------------------------------- the refusals a phrase list cannot express
@@ -348,6 +347,7 @@ def test_a_phrase_matches_itself_literally() -> None:
 
     assert _spells("key=len", "the call is key=len(words)")
     assert _spells("list.sort", "list.sort returns None")
+    assert not _spells("list.sort", "listXsort returns None")
     assert not _spells("key=len", "the key is length")
 
 

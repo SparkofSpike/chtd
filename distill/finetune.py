@@ -12,17 +12,15 @@ budget that was set too small for its data. They do **not** establish that :func
 still agrees with whatever serves the model — that is a separate program, and keeping the two in
 step is checked on the box, by serving a request and comparing, not by anything here.
 
-**Only the teacher's turn is supervised.** Every token before the label is masked to ``-100``, so
-the loss is over the decision and nothing else — the difference between teaching a decision and
-teaching a sentence.
+**Only the final target turn is supervised in the default mode.** Every token before it is masked
+to ``-100``. CHTD rows use a teacher target; an exploratory row may explicitly name another label
+source, such as a student's first tool action.
 
 **What the input contains, stated exactly.** The state is the conversation *up to* the decision the
-dataset names, so the student's own action at that decision is not in it; that action is the thing
-being aligned, and the teacher's answer replaces it. For a one-step task this means the sample
-teaches the correct *first* move, which is what the shipped dataset does. "Recovering from its own
-mistake" is a different training shape and needs a task where the student's error lands in the
-state a later decision is made in — a multi-step task, which this project does not yet have. The
-distinction is easy to lose in a summary and it changes what a result can be read as.
+dataset names, so the student's action at that decision is excluded and the target replaces it.
+The current multi-turn CHTD samples include earlier student tool calls as context and a teacher
+answer to a later prompt. A shared first-tool anchor is separately labeled as student-sourced.
+Neither label type shows a teacher correcting every student decision in the preceding history.
 """
 
 from __future__ import annotations
@@ -171,20 +169,29 @@ made **zero** tool calls across all fifteen (the base made three on each), and a
 with the same sentence about no files being listed, because the only behaviour it had ever been shown
 was prose placed after a conversation somebody else had already conducted.
 
-    The turns before the divergence are the teacher's own decisions too — the same teacher, the same
-    track, the same fixtures. Supervising them teaches the trajectory rather than its last word, and
-    keeps what the method is for: every supervised turn is the teacher's, at a state the run actually
-    reached.
+    This mode is valid only for a complete teacher demonstration. A CHTD sample contains the
+    student's earlier decisions and one teacher label at the end. Supervising its earlier turns
+    would imitate the student, so explicit per-sample teacher provenance is required here.
 
-    What is given up, stated plainly: this is no longer "only the divergence is learned". It is
-    demonstration learning over a teacher trajectory that happens to contain a divergence. The
-    comparison between arms still holds, because both arms' data is built the same way.
+    This is demonstration learning over a teacher trajectory, not the original CHTD objective of
+    learning only the teacher's decision at a student-reached state. Compare it as a separate arm.
     """
     messages = list(sample["messages"])
     tools = sample.get("tools")
     if len(messages) < 2:
         raise ValueError(f"sample {sample.get('task_id')!r} has {len(messages)} messages; a state "
                          "and a label are the minimum")
+
+    assistant_indices = [i for i, message in enumerate(messages)
+                         if message.get("role") == "assistant"]
+    teacher_indices = sample.get("teacher_turn_indices")
+    if (not isinstance(teacher_indices, list)
+            or teacher_indices != assistant_indices):
+        raise ValueError(
+            f"sample {sample.get('task_id')!r} cannot use supervise='assistant': every assistant "
+            "turn must have explicit teacher provenance. CHTD prefixes contain student turns; "
+            "use supervise='last' or collect a complete teacher demonstration."
+        )
 
     full_text = render_chat(tokenizer, messages, tools, add_generation_prompt=False)
     full_ids = tokenizer(full_text, add_special_tokens=False)["input_ids"]
@@ -310,29 +317,31 @@ def samples_digest_over(row_lines: Sequence[str]) -> str:
 
 
 def _base_weights_fingerprint(base_model: str) -> dict[str, Any]:
-    """What the base weights were, in a form that can be compared later.
+    """Hash the actual base weight shards and rendering configuration.
 
-    ``base_model`` is a *path*, and on this box it ends in ``snapshots/master`` — a mutable ref. A
-    record that names only the path cannot tell a later reader whether the weights changed under it,
-    which is the one thing a reproduction needs to know about the base.
-
-    Hashing the weights themselves would mean reading several gigabytes; hashing the files that
-    *describe* them is cheap and discriminating: two different models do not ship the same config and
-    tokenizer. A model whose weights were swapped while its config and tokenizer stayed identical is
-    not a case this distinguishes, and saying so here is better than implying it does.
+    A config-only digest cannot distinguish weights swapped under a mutable model path. Reading the
+    shards costs I/O once per run, but makes the base identity claim checkable.
     """
     root = Path(base_model)
     digest = hashlib.sha256()
-    parts: dict[str, str | None] = {}
-    for name in ("config.json", "tokenizer_config.json", "generation_config.json"):
-        candidate = root / name
+    parts: dict[str, str] = {}
+    weights = sorted(root.glob("*.safetensors")) + sorted(root.glob("pytorch_model*.bin"))
+    if not weights:
+        raise FileNotFoundError(f"no model weight shards found in {root}")
+    files = [root / name for name in
+             ("config.json", "tokenizer_config.json", "generation_config.json")]
+    files.extend(weights)
+    for candidate in files:
         if candidate.exists():
-            value = hashlib.sha256(candidate.read_bytes()).hexdigest()
-            parts[name] = value
-            digest.update(f"{name}\0{value}\n".encode())
-        else:
-            parts[name] = None
-    return {"files": parts, "digest": digest.hexdigest()}
+            part_digest = hashlib.sha256()
+            with candidate.open("rb") as handle:
+                for chunk in iter(lambda: handle.read(8 * 1024 * 1024), b""):
+                    part_digest.update(chunk)
+            value = part_digest.hexdigest()
+            parts[candidate.name] = value
+            digest.update(f"{candidate.name}\0{value}\n".encode())
+    return {"algorithm": "sha256-file-bytes-v2", "files": parts,
+            "digest": digest.hexdigest()}
 
 
 def _logical_parameter_count(config: Any) -> int:

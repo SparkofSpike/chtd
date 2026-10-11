@@ -1,0 +1,141 @@
+{
+  "kind": "diagnostic_keyword_proxy",
+  "task_count_per_arm": 15,
+  "raw_archive": "/mnt/proj/chtd-experiments/aux-first-tool-20261011/aux-first-tool-eval-20261011-b.tar.gz",
+  "raw_archive_sha256": "463fcae2d71e5f8b4786baaf67122c1ed0887398c4eed51e534d66f844276453",
+  "arms": {
+    "base": {
+      "automatic_passes": 13,
+      "completed_runs": 15,
+      "tasks": {
+        "fix-string-case": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-sort-key": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-shallow-copy": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-ordinal-index": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-single-name": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-strip-whitespace": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-closure-late-binding": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-generator-exhaust": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-broad-except": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-none-cap": {
+          "automatic_pass": false,
+          "exit": 0
+        },
+        "fix-enumerate-start": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-zip-truncates": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-or-default-falsy": {
+          "automatic_pass": false,
+          "exit": 0
+        },
+        "fix-row-alias": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-augmented-assign-mutates": {
+          "automatic_pass": true,
+          "exit": 0
+        }
+      }
+    },
+    "candidate": {
+      "automatic_passes": 12,
+      "completed_runs": 14,
+      "tasks": {
+        "fix-string-case": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-sort-key": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-shallow-copy": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-ordinal-index": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-single-name": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-strip-whitespace": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-closure-late-binding": {
+          "automatic_pass": false,
+          "exit": 4
+        },
+        "fix-generator-exhaust": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-broad-except": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-none-cap": {
+          "automatic_pass": false,
+          "exit": 0
+        },
+        "fix-enumerate-start": {
+          "automatic_pass": false,
+          "exit": 0
+        },
+        "fix-zip-truncates": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-or-default-falsy": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-row-alias": {
+          "automatic_pass": true,
+          "exit": 0
+        },
+        "fix-augmented-assign-mutates": {
+          "automatic_pass": true,
+          "exit": 0
+        }
+      }
+    }
+  },
+  "caveat": "The tasks were inspected before this run; the keyword gate has verified false positives and false negatives. These counts are not human-validated accuracy or a controlled method effect."
+}
