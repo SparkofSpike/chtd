@@ -22,6 +22,44 @@ NAT, so no direct path can be established) and it manages 100–200 KB/s, and in
 mid-transfer. That is why the local copy is made in 4 MB chunks with a stall detector rather than with
 one `scp` per file.
 
+## The box can disappear, and it has — twice, the same way
+
+The training boxes are Tailscale nodes, and **a node key that expires takes the machine off the
+network**. This is not hypothetical and it is not a one-off:
+
+| node | key expired | last reachable | gap |
+| --- | --- | --- | --- |
+| `cgpai-node3-2` (`100.113.249.5`) | 2026-10-08 22:56 | 2026-10-09 22:56 | 24 h |
+| `cgpai-node3-5` (`100.84.151.62`) | 2026-10-10 11:58 | 2026-10-11 11:58 | 24 h |
+
+The second one interrupted a local pull mid-transfer — after 41 of 64 chunks, at 164 MB of 264 MB — and
+from this end there is nothing to do about it: the machine is not on the tailnet, so no ssh, no scp, no
+reminder that it is about to go. The 24 hours of grace between expiry and disconnection are the whole
+warning, and they pass silently.
+
+**The fix is one setting.** In the Tailscale admin console, disable key expiry for the training node.
+A machine that is reached from a script rather than by a person logging in has no reason to carry an
+expiring key, and every reason not to: the failure is silent, delayed, and indistinguishable from the
+box being broken.
+
+### Recovering the box
+
+Requires someone at the machine (or with console access to it) to re-authenticate:
+
+```sh
+tailscale up          # prints a URL to open; the node rejoins under its own name and IP
+```
+
+Nothing on `/mnt/proj` or `/mnt/user` is affected — both are NFS mounts served by `172.25.70.4`, a
+different machine from the one that went offline. **Losing the node is not losing the data**, which is
+exactly what the redundancy above is for.
+
+### What a local pull does when this happens
+
+`tools/pull_artefacts.py` keeps every completed chunk and re-splits deterministically on the next run,
+so the 41 chunks already on disk are reused rather than re-fetched. An interruption costs the chunk in
+flight, not the transfer. The run above reported six failures and left 164 MB of usable work behind.
+
 ## What cannot be rebuilt, and what can
 
 Training is not deterministic. `docs/finetune.md` records the same plan against the same samples run
