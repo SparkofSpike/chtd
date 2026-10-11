@@ -1,0 +1,70 @@
+{
+  "adapter_files": [
+    "README.md",
+    "adapter_config.json",
+    "adapter_model.safetensors",
+    "added_tokens.json",
+    "chat_template.jinja",
+    "merges.txt",
+    "special_tokens_map.json",
+    "tokenizer.json",
+    "tokenizer_config.json",
+    "vocab.json"
+  ],
+  "arm": "reviewed-all-tool-anchors-exploratory",
+  "base_model": "/mnt/proj/chtd-experiments/models/Qwen3-4B-Instruct-2507",
+  "base_model_revision": null,
+  "base_weights_fingerprint": {
+    "algorithm": "sha256-file-bytes-v2",
+    "digest": "e36d2f3848f1b704d35f4fa91a4983137448f76d0ad8a22c87378a5b0f655c7b",
+    "files": {
+      "config.json": "5beea1a4a34c62782bfb2f911c606741a3bab8f92d80a118fa053c28af12e8ba",
+      "generation_config.json": "835fffe355c9438e7a25be099b3fccaa98350b83451f9fd2d99512e74f1ade48",
+      "model-00001-of-00003.safetensors": "75311d91bb08cf0b882913da464a1e722a31fb44db35208663487efb7a3d8ed6",
+      "model-00002-of-00003.safetensors": "0b48adbb1f60e901153d91907ba11ce63bd4b8b584482e730f48808d055dfba1",
+      "model-00003-of-00003.safetensors": "7dd39ccca5e4de123c74c14af44c9bf2eb75df33b4614382af0134528e060d5d",
+      "tokenizer_config.json": "a62ff0a2472a0fa1b8eaabcb57c59b58afa42a22831dc141400b6e0cf2b65ce3"
+    }
+  },
+  "dataset_sha256": "eb0782fc149c86b15b0693ba43304f1fb57c19b1a275d01c59866ce2ce762c15",
+  "entries": 44,
+  "epochs": 8,
+  "global_step": 88,
+  "logical_parameters": 4022468096,
+  "max_sequence_length_used": 8192,
+  "packed_parameters_4bit": 2271870464,
+  "peak_gpu_memory_gb": 11.521,
+  "recipe": {
+    "alpha": 64,
+    "batch_size": 1,
+    "dropout": 0.05,
+    "epochs": 8,
+    "gradient_accumulation": 4,
+    "learning_rate": 0.0001,
+    "max_sequence_length": 8192,
+    "rank": 32,
+    "seed": 0,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ],
+    "warmup_ratio": 0.03
+  },
+  "samples_sha256": "8bb209dc0c0434478cb6df1ba6551d4ba6f6061f319715e2ac773917f97b9f0f",
+  "samples_trained": 44,
+  "teacher_model": "agnes-3.0-flash",
+  "token_lengths": {
+    "max": 3408,
+    "min": 2492
+  },
+  "track_sha256": "47e6f191820db98de6e56c4afb7372dd23bd164b6f96157fa9f96635b14916b3",
+  "trainable_parameters": 66060288,
+  "trainable_share_of_logical_pct": 1.6423,
+  "training_loss": 0.21717685268661377,
+  "wall_clock_seconds": 486.1
+}

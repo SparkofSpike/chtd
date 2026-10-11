@@ -15,4 +15,10 @@ first candidate); it is **not** an exact matched-budget method comparison. Plan 
 sample digests are in this directory; raw samples, logs, and weights stay under
 `/mnt/proj/chtd-experiments/aux-all-tools-20261011/`.
 
-Results will be added after training and serving checks. Any result here is diagnostic only.
+The 44-row tokenizer preflight passed with no prefix drift or over-length sample. Training then
+completed 88 updates in 486.1 seconds; the final training loss was 0.2172. The exact base weight
+digest matches the first candidate (`e36d2f3848f1b704d35f4fa91a4983137448f76d0ad8a22c87378a5b0f655c7b`).
+The adapter SHA256 is `08d4c66b3ca005556e3d3768ebec0b90b5542f410de7d3094a8145d871680f9b`;
+its weight file stays in the cloud run directory. The full record is `train-run.json`.
+
+Serving evaluation is in progress. Any result here is diagnostic only.
