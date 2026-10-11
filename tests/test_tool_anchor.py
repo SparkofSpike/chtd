@@ -43,3 +43,18 @@ def test_builder_refuses_held_out_tasks_and_non_ls_anchors() -> None:
     row["messages"][2]["tool_calls"][0]["function"]["name"] = "read"
     with pytest.raises(ValueError, match="first student action"):
         build_rows([row], ["fix-assertion"])
+
+
+def test_all_tools_labels_each_student_tool_action_separately() -> None:
+    row = _source()
+    row["messages"].insert(4, {"role": "assistant", "content": None, "tool_calls": [
+        {"type": "function", "function": {"name": "read", "arguments": '{"path":"check.py"}'}}
+    ]})
+    row["messages"].insert(5, {"role": "tool", "content": "pass", "tool_call_id": "y"})
+    anchors = build_rows([row], ["fix-assertion"], "all-tools")
+    assert [item["label_source"] for item in anchors] == [
+        "student_tool_anchor", "student_tool_anchor", "teacher_on_student_state"
+    ]
+    assert [len(item["messages"]) for item in anchors] == [3, 5, 8]
+    assert all(not item["teacher_turn_indices"] for item in anchors[:2])
+    assert anchors[-1]["teacher_turn_indices"] == [7]
