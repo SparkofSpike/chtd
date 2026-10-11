@@ -28,7 +28,17 @@ import tempfile
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-__all__ = ["EXPECT", "FINAL_HOLDOUT", "TASKS", "build", "self_check", "split", "write_task_set", "main"]
+__all__ = [
+    "EXPECT",
+    "FINAL_HOLDOUT",
+    "FORBID",
+    "TASKS",
+    "build",
+    "main",
+    "self_check",
+    "split",
+    "write_task_set",
+]
 
 
 #: Each task: an id, the symptom a user would report, the files to write, the check that must fail
@@ -874,6 +884,399 @@ TASKS: tuple[Mapping[str, Any], ...] = (
     },
 )
 
+#: The second tranche, written 2026-10-11 because the first twenty-nine could not resolve a
+#: difference: with five held-out tasks, one task is twenty points of the score, and the base model's
+#: own run-to-run range measured larger than any arm gap. A set that cannot see an effect is a set
+#: that cannot support a claim, so the defect kinds are broadened here beyond indexing and arithmetic
+#: — scope, iteration, error handling, and text handling each get their own fixtures.
+#:
+#: Every one still obeys the same rule as the rest: the defect must fail its own check, and the fix
+#: must make that check pass. `self_check` refuses to write a task set where that is not true, so a
+#: task below that looks right and is not cannot reach a round.
+TASKS = TASKS + (
+    _bug(
+        # Calls `.strip` instead of `.strip()`, so the function returns a bound method. The class of
+        # defect where the code names the right operation and never invokes it.
+        "fix-strip-whitespace", "clean.py",
+        'def tidy(text):\n'
+        '    """The text without surrounding whitespace."""\n'
+        '    return text.strip\n',
+        'def tidy(text):\n'
+        '    """The text without surrounding whitespace."""\n'
+        '    return text.strip()\n',
+        'from clean import tidy\n'
+        '\n'
+        'assert tidy("  hi  ") == "hi", repr(tidy("  hi  "))\n'
+        'print("ok")\n',
+    ),
+    _bug(
+        # Two computed totals compared with `==`. Correct for integers, wrong for the floats a
+        # running total actually is.
+        "fix-float-equal", "totals.py",
+        'def same(a, b):\n'
+        '    """Whether two computed totals agree."""\n'
+        '    return a == b\n',
+        'def same(a, b):\n'
+        '    """Whether two computed totals agree."""\n'
+        '    return abs(a - b) < 1e-9\n',
+        'from totals import same\n'
+        '\n'
+        'assert same(0.1 + 0.2, 0.3), (0.1 + 0.2, 0.3)\n'
+        'print("ok")\n',
+    ),
+    _bug(
+        # A list of closures over a loop variable: every one of them reads the value the loop
+        # variable holds *after* the loop, so all of them behave alike.
+        "fix-closure-late-binding", "handlers.py",
+        'def build(prefixes):\n'
+        '    """One function per prefix, each prepending that prefix."""\n'
+        '    return [lambda text: prefix + text for prefix in prefixes]\n',
+        'def build(prefixes):\n'
+        '    """One function per prefix, each prepending that prefix."""\n'
+        '    return [lambda text, prefix=prefix: prefix + text for prefix in prefixes]\n',
+        'from handlers import build\n'
+        '\n'
+        'first, second = build(["[a]", "[b]"])\n'
+        'assert first("x") == "[a]x", first("x")\n'
+        'assert second("x") == "[b]x", second("x")\n'
+        'print("ok")\n',
+    ),
+    _bug(
+        # The same generator consumed twice: counting it exhausts it, so the total that follows is
+        # zero. A defect that makes a function quietly return a plausible wrong number.
+        "fix-generator-exhaust", "streams.py",
+        'def doubled(values):\n'
+        '    """A generator of each value, doubled."""\n'
+        '    return (value * 2 for value in values)\n'
+        '\n'
+        '\n'
+        'def summarise(values):\n'
+        '    """How many values there are, and their total."""\n'
+        '    stream = doubled(values)\n'
+        '    return sum(1 for _ in stream), sum(stream)\n',
+        'def doubled(values):\n'
+        '    """A generator of each value, doubled."""\n'
+        '    return (value * 2 for value in values)\n'
+        '\n'
+        '\n'
+        'def summarise(values):\n'
+        '    """How many values there are, and their total."""\n'
+        '    doubled_values = list(doubled(values))\n'
+        '    return len(doubled_values), sum(doubled_values)\n',
+        'from streams import summarise\n'
+        '\n'
+        'count, total = summarise([1, 2, 3])\n'
+        'assert (count, total) == (3, 12), (count, total)\n'
+        'print("ok")\n',
+    ),
+    _bug(
+        # A bare `except` that turns every failure into a missing value, including the ones that
+        # are bugs in the caller rather than an absent item.
+        "fix-broad-except", "reader.py",
+        'def load(values, index):\n'
+        '    """The value at an index, or None when it is not there."""\n'
+        '    try:\n'
+        '        return values[index]\n'
+        '    except:\n'
+        '        return None\n',
+        'def load(values, index):\n'
+        '    """The value at an index, or None when it is not there."""\n'
+        '    try:\n'
+        '        return values[index]\n'
+        '    except IndexError:\n'
+        '        return None\n',
+        'from reader import load\n'
+        '\n'
+        'assert load(["a", "b"], 1) == "b"\n'
+        'assert load(["a", "b"], 9) is None\n'
+        'try:\n'
+        '    load(["a", "b"], "not an index")\n'
+        'except TypeError:\n'
+        '    print("ok: a real error still surfaces")\n'
+        'else:\n'
+        '    raise AssertionError("a bare except swallowed a TypeError")\n',
+    ),
+    _bug(
+        # Text joined to a number without converting it, so the function raises rather than
+        # returning the label it was written to return.
+        "fix-string-concat-int", "report.py",
+        'def label(count):\n'
+        '    """A line saying how many items were seen."""\n'
+        '    return "seen " + count + " items"\n',
+        'def label(count):\n'
+        '    """A line saying how many items were seen."""\n'
+        '    return "seen " + str(count) + " items"\n',
+        'from report import label\n'
+        '\n'
+        'assert label(3) == "seen 3 items", label(3)\n'
+        'print("ok")\n',
+    ),
+    _bug(
+        # Two lookups that assume both levels exist, where the docstring promises a missing one is
+        # reported as an absent setting.
+        "fix-dict-get-chain", "configs.py",
+        'def lookup(settings, section, key):\n'
+        '    """A setting, or None when either level is absent."""\n'
+        '    return settings[section][key]\n',
+        'def lookup(settings, section, key):\n'
+        '    """A setting, or None when either level is absent."""\n'
+        '    return settings.get(section, {}).get(key)\n',
+        'from configs import lookup\n'
+        '\n'
+        'assert lookup({"a": {"b": 1}}, "a", "b") == 1\n'
+        'assert lookup({"a": {}}, "a", "b") is None\n'
+        'assert lookup({}, "a", "b") is None\n'
+        'print("ok")\n',
+    ),
+    _bug(
+        # `max` over a mapping compares its keys. The function reads as if it returns the highest
+        # scorer and returns the last name in alphabetical order instead — wrong, and plausible.
+        "fix-max-returns-key", "scores.py",
+        'def best(scores):\n'
+        '    """The name of the highest scorer."""\n'
+        '    return max(scores)\n',
+        'def best(scores):\n'
+        '    """The name of the highest scorer."""\n'
+        '    return max(scores, key=scores.get)\n',
+        'from scores import best\n'
+        '\n'
+        'table = {"ada": 3, "bob": 9, "cy": 5}\n'
+        'assert best(table) == "bob", best(table)\n'
+        'print("ok")\n',
+    ),
+    _bug(
+        # A guard that cannot fail: `len(items) >= 0` holds for every list including the empty one,
+        # so the branch meant to protect the index never runs.
+        "fix-always-true-guard", "peek.py",
+        'def last(items):\n'
+        '    """The final item, or None when there is none."""\n'
+        '    return items[-1] if len(items) >= 0 else None\n',
+        'def last(items):\n'
+        '    """The final item, or None when there is none."""\n'
+        '    return items[-1] if items else None\n',
+        'from peek import last\n'
+        '\n'
+        'assert last([1, 2, 3]) == 3\n'
+        'assert last([]) is None, last([])\n'
+        'print("ok")\n',
+    ),
+    _bug(
+        # The accumulator is created inside the loop, so every element carries only itself and the
+        # function returns a copy of its input while looking like it accumulates.
+        "fix-accumulator-reset", "running.py",
+        'def running(values):\n'
+        '    """Each value plus everything before it."""\n'
+        '    out = []\n'
+        '    for value in values:\n'
+        '        total = 0\n'
+        '        total += value\n'
+        '        out.append(total)\n'
+        '    return out\n',
+        'def running(values):\n'
+        '    """Each value plus everything before it."""\n'
+        '    out = []\n'
+        '    total = 0\n'
+        '    for value in values:\n'
+        '        total += value\n'
+        '        out.append(total)\n'
+        '    return out\n',
+        'from running import running\n'
+        '\n'
+        'assert running([1, 2, 3]) == [1, 3, 6], running([1, 2, 3])\n'
+        'print("ok")\n',
+    ),
+    _bug(
+        # A list of lists built one element at a time with `append`, so the result is a list of
+        # lists where the callers of this function expect a flat one.
+        "fix-append-not-extend", "flat.py",
+        'def flatten(groups):\n'
+        '    """Every value from a list of lists, as one list."""\n'
+        '    out = []\n'
+        '    for group in groups:\n'
+        '        out.append(group)\n'
+        '    return out\n',
+        'def flatten(groups):\n'
+        '    """Every value from a list of lists, as one list."""\n'
+        '    out = []\n'
+        '    for group in groups:\n'
+        '        out.extend(group)\n'
+        '    return out\n',
+        'from flat import flatten\n'
+        '\n'
+        'assert flatten([[1, 2], [3]]) == [1, 2, 3], flatten([[1, 2], [3]])\n'
+        'print("ok")\n',
+    ),
+    _bug(
+        # `list.sort` sorts in place and returns None, so a function written as `return words.sort()`
+        # returns nothing at all.
+        "fix-sort-returns-none", "order.py",
+        'def ordered(words):\n'
+        '    """The words in alphabetical order."""\n'
+        '    return words.sort()\n',
+        'def ordered(words):\n'
+        '    """The words in alphabetical order."""\n'
+        '    return sorted(words)\n',
+        'from order import ordered\n'
+        '\n'
+        'assert ordered(["b", "a"]) == ["a", "b"], ordered(["b", "a"])\n'
+        'print("ok")\n',
+    ),
+    _bug(
+        # An optional cap that is compared even when it was not given, so the documented default
+        # path raises instead of returning the value unchanged.
+        "fix-none-cap", "limits.py",
+        'def limit(value, cap=None):\n'
+        '    """The value, never above the cap when one is given."""\n'
+        '    return min(value, cap)\n',
+        'def limit(value, cap=None):\n'
+        '    """The value, never above the cap when one is given."""\n'
+        '    return value if cap is None else min(value, cap)\n',
+        'from limits import limit\n'
+        '\n'
+        'assert limit(5) == 5, limit(5)\n'
+        'assert limit(5, 3) == 3, limit(5, 3)\n'
+        'print("ok")\n',
+    ),
+    _bug(
+        # Numbering that starts where `enumerate` starts rather than where the docstring says.
+        "fix-enumerate-start", "listing.py",
+        'def numbered(items):\n'
+        '    """One line per item, numbered from one."""\n'
+        '    return [f"{i}: {item}" for i, item in enumerate(items)]\n',
+        'def numbered(items):\n'
+        '    """One line per item, numbered from one."""\n'
+        '    return [f"{i}: {item}" for i, item in enumerate(items, 1)]\n',
+        'from listing import numbered\n'
+        '\n'
+        'assert numbered(["a", "b"]) == ["1: a", "2: b"], numbered(["a", "b"])\n'
+        'print("ok")\n',
+    ),
+    _bug(
+        # `zip` stops at the shorter input, so mismatched lists are silently paired short instead of
+        # reported — the failure mode that produces a plausible result from bad data.
+        "fix-zip-truncates", "pairs.py",
+        'def pairs(names, values):\n'
+        '    """Name and value for every name; the lists must be the same length."""\n'
+        '    return list(zip(names, values))\n',
+        'def pairs(names, values):\n'
+        '    """Name and value for every name; the lists must be the same length."""\n'
+        '    if len(names) != len(values):\n'
+        '        raise ValueError(f"{len(names)} names against {len(values)} values")\n'
+        '    return list(zip(names, values))\n',
+        'from pairs import pairs\n'
+        '\n'
+        'assert pairs(["a"], [1]) == [("a", 1)]\n'
+        'try:\n'
+        '    pairs(["a", "b"], [1])\n'
+        'except ValueError:\n'
+        '    print("ok: a length mismatch is reported")\n'
+        'else:\n'
+        '    raise AssertionError("zip silently truncated to the shorter list")\n',
+    ),
+    _bug(
+        # Removing entries while iterating the mapping they live in.
+        "fix-dict-mutation-while-iterating", "prune.py",
+        'def prune(counts):\n'
+        '    """The counts with every zero removed."""\n'
+        '    for word in counts:\n'
+        '        if counts[word] == 0:\n'
+        '            del counts[word]\n'
+        '    return counts\n',
+        'def prune(counts):\n'
+        '    """The counts with every zero removed."""\n'
+        '    return {word: count for word, count in counts.items() if count != 0}\n',
+        'from prune import prune\n'
+        '\n'
+        'assert prune({"a": 1, "b": 0}) == {"a": 1}, prune({"a": 1, "b": 0})\n'
+        'print("ok")\n',
+    ),
+    _bug(
+        # `or` used as a default: it cannot tell "absent" from "falsy", so a legitimate zero is
+        # replaced by the fallback.
+        "fix-or-default-falsy", "ports.py",
+        'def port(settings):\n'
+        '    """The configured port, or 8080 when none is set."""\n'
+        '    return settings.get("port") or 8080\n',
+        'def port(settings):\n'
+        '    """The configured port, or 8080 when none is set."""\n'
+        '    value = settings.get("port")\n'
+        '    return 8080 if value is None else value\n',
+        'from ports import port\n'
+        '\n'
+        'assert port({}) == 8080\n'
+        'assert port({"port": 0}) == 0, port({"port": 0})\n'
+        'assert port({"port": 9000}) == 9000\n'
+        'print("ok")\n',
+    ),
+    _bug(
+        # Parentheses instead of a tuple: `(value)` is the value, so the function returns a number
+        # where every caller unpacks or indexes.
+        "fix-one-element-tuple", "wrap.py",
+        'def wrap(value):\n'
+        '    """A one-element tuple holding the value."""\n'
+        '    return (value)\n',
+        'def wrap(value):\n'
+        '    """A one-element tuple holding the value."""\n'
+        '    return (value,)\n',
+        'from wrap import wrap\n'
+        '\n'
+        'assert wrap(3) == (3,), wrap(3)\n'
+        'assert isinstance(wrap(3), tuple), type(wrap(3))\n'
+        'print("ok")\n',
+    ),
+    _bug(
+        # A ratio that does not handle the denominator the docstring says it handles.
+        "fix-division-by-zero", "ratios.py",
+        'def ratio(part, whole):\n'
+        '    """Part as a fraction of whole, or None when whole is zero."""\n'
+        '    return part / whole\n',
+        'def ratio(part, whole):\n'
+        '    """Part as a fraction of whole, or None when whole is zero."""\n'
+        '    return None if whole == 0 else part / whole\n',
+        'from ratios import ratio\n'
+        '\n'
+        'assert ratio(1, 4) == 0.25\n'
+        'assert ratio(1, 0) is None, ratio(1, 0)\n'
+        'print("ok")\n',
+    ),
+    _bug(
+        # A grid whose rows are one list repeated, so writing a cell writes it in every row. The
+        # classic aliasing defect, and invisible until something mutates the result.
+        "fix-row-alias", "grid.py",
+        'def grid(rows, cols):\n'
+        '    """A rows-by-cols grid of zeroes."""\n'
+        '    return [[0] * cols] * rows\n',
+        'def grid(rows, cols):\n'
+        '    """A rows-by-cols grid of zeroes."""\n'
+        '    return [[0] * cols for _ in range(rows)]\n',
+        'from grid import grid\n'
+        '\n'
+        'cells = grid(2, 3)\n'
+        'cells[0][0] = 1\n'
+        'assert cells[1][0] == 0, cells\n'
+        'print("ok")\n',
+    ),
+    _bug(
+        # `+=` on a list extends the caller\'s list rather than producing a new one, so a function
+        # that reads as pure changes its argument.
+        "fix-augmented-assign-mutates", "tags.py",
+        'def add_tag(tags, tag):\n'
+        '    """A new list of tags with this one added."""\n'
+        '    tags += [tag]\n'
+        '    return tags\n',
+        'def add_tag(tags, tag):\n'
+        '    """A new list of tags with this one added."""\n'
+        '    return tags + [tag]\n',
+        'from tags import add_tag\n'
+        '\n'
+        'original = ["a"]\n'
+        'result = add_tag(original, "b")\n'
+        'assert result == ["a", "b"], result\n'
+        'assert original == ["a"], original\n'
+        'print("ok")\n',
+    ),
+)
+
 
 #: What the prompt says. One sentence for every task, and deliberately so: the defect is the same
 #: kind of thing in all of them, and a prompt written per task would be a prompt that tells the model
@@ -912,37 +1315,112 @@ EXPECT: dict[str, tuple[str, ...]] = {
     # substring of it — the e becomes i. Caught by running the check against the answer that was
     # plainly correct and watching it fail.
     "fix-argument-order": ("argument",),
-    "fix-empty-input": ("index",),
-    "fix-missing-prefix": ("prefix",),
+    "fix-empty-input": ("index", "empty"),
+    "fix-missing-prefix": ("prefix|f-string|formatted",),
     "fix-slice-direction": ("slic",),
     # The wider set. One word each, chosen to name the defect rather than its subject — the lesson
     # from the held-out four above, where a phrase matching the subject passed an answer saying
     # there was no bug at all.
-    "fix-default-mutable": ("mutable",),
+    "fix-default-mutable": ("mutable|shared|default argument",),
     "fix-integer-division": ("floor", "int"),
     "fix-shadowed-total": ("assign", "+="),
-    "fix-string-case": ("case", "lower"),
+    "fix-string-case": ("case", "lower|insensitive|capital|uppercase|sensitive"),
     "fix-missing-dict-default": ("keyerror", "get"),
-    "fix-sort-key": ("key",),
+    # `sort` alongside `key` because `key` alone is satisfied by the word "KeyError", which an answer
+    # about a sorting defect may well use for a different reason — the same one-sidedness that let
+    # the control arm's confabulations pass. An answer that found this defect says either `sorted` or
+    # `sorting`, so the second phrase costs nothing and closes the collision.
+    "fix-sort-key": ("key", "sort"),
     "fix-parity-test": ("odd", "even"),
     "fix-loop-continue": ("continue",),
     "fix-missing-return": ("return",),
     "fix-min-max-clamp": ("min", "max"),
-    "fix-shallow-copy": ("copy", "mutat"),
-    "fix-ordinal-index": ("index",),
-    "fix-single-name": ("index", "length"),
+    "fix-shallow-copy": ("table|blanked", "copy|in.?place|mutat|changes the original|modifies the original"),
+    # These three shared the single phrase `index`, which made them interchangeable: an answer
+    # saying only "there is an IndexError" passed all three. Each now carries a second phrase that
+    # only its own defect produces — an empty input, a 1-based position, a two-part assumption.
+    "fix-ordinal-index": ("index", "based|off.by.one|zero"),
+    "fix-single-name": ("index", "two part|one part|one-word|single"),
+    # The second tranche, 2026-10-11. Each pair names the mechanism the defect actually involves,
+    # not the area of code it sits in: an answer that says "there is a bug in clean.py" names
+    # neither phrase, and an answer that found the missing call says `strip` and `call`.
+    "fix-strip-whitespace": ("strip", "call"),
+    "fix-float-equal": ("float", "compar"),
+    "fix-closure-late-binding": ("closure|capture|lambda", "bind|by reference|by value|same variable|outer scope"),
+    "fix-generator-exhaust": ("generator", "exhaust|consum|twice|already|reuse"),
+    "fix-broad-except": ("bare|catches|swallow|blanket|indiscriminat", "except"),
+    "fix-string-concat-int": ("str", "concat"),
+    "fix-dict-get-chain": ("both levels|nested|index|lookup", "keyerror|missing|absent|get"),
+    "fix-max-returns-key": ("max", "dict"),
+    "fix-always-true-guard": ("empty", "guard"),
+    "fix-accumulator-reset": ("accumulat|total", "reset|inside the loop|each iteration|reinitiali"),
+    # The second half of the tranche: scope, iteration and the falsy/None distinction.
+    "fix-append-not-extend": ("extend", "append"),
+    "fix-sort-returns-none": ("sorted", "none"),
+    "fix-none-cap": ("none", "cap"),
+    "fix-enumerate-start": ("enumerate", "start"),
+    "fix-zip-truncates": ("zip|pairs", "length|truncat|mismatch|silently"),
+    "fix-dict-mutation-while-iterating": ("dict|mapping", "iterat|delet|mutat|modif"),
+    "fix-or-default-falsy": ("falsy|fals|zero|0", "none|8080|default"),
+    "fix-one-element-tuple": ("tuple", "parenthes"),
+    "fix-division-by-zero": ("zero", "division"),
+    "fix-row-alias": ("alias|referenc|shared|same (inner )?list|same object|shallow copy",),
+    "fix-augmented-assign-mutates": ("caller|original|same list|mutat|in.?place", "list|tags"),
+}
+
+#: Phrases that must **not** appear, per task. A phrase list can only ask whether the right words are
+#: present; it cannot ask whether the answer has wandered into a neighbouring defect. The three
+#: `index` tasks are the case in point — they are mutually exclusive fixtures, and an answer about
+#: one of them naming another's mechanism is describing a file it did not read.
+#:
+#: Kept deliberately small. A forbidden phrase is a claim about what a *correct* answer would never
+#: say, and that claim is easy to get wrong; the invented-file check covers the general case without
+#: anyone having to predict the wording.
+FORBID: dict[str, tuple[str, ...]] = {
+    "fix-empty-input": ("1-based", "off-by-one"),
+    "fix-ordinal-index": ("empty string", "empty input"),
+    "fix-single-name": ("1-based", "off-by-one"),
+    # A phrase list is loosened so that a correct diagnosis in unfamiliar words still passes; the
+    # loosening has to be paid for, or it starts passing answers that concluded the opposite. These
+    # two tasks are where that happened. `fix-or-default-falsy` names the right file, the right
+    # expression and the word `falsy`, and then says the function is *correct* — while `0 or 8080`
+    # returns 8080, not 0. Measured on 2026-10-11, that answer scored as a pass until this list
+    # existed. An answer that says the code is fine has not diagnosed the defect the task is about,
+    # whatever words it used on the way.
+    "fix-or-default-falsy": ("otherwise correct", "correctly returns", "no defect",
+                             "not a defect", "code is correct", "appears to be correct"),
+    "fix-none-cap": ("no defect", "not a defect", "appears to be correct",
+                     "code is correct", "there is no"),
 }
 
 #: Tasks no run will train on and no result reported so far has used. The held-out four in the tuple
 #: above were written before run 2 and were used to measure it; reusing them would measure the same
-#: model on the same questions and call it evidence. These five are for the next measurement, and
-#: `build` leaves them out of the training set rather than trusting a caller to remember.
+#: model on the same questions and call it evidence. `build` leaves these out of the training set
+#: rather than trusting a caller to remember.
+#:
+#: **Fifteen as of 2026-10-11, from five.** Five tasks gave a score where one task was twenty points
+#: and the base model's own run-to-run range measured wider than any gap between arms — a set that
+#: cannot see an effect cannot support a claim, in either direction. The ten added here were chosen
+#: to span the defect kinds the second tranche introduced (scope, iteration, error handling, the
+#: falsy/None distinction, aliasing) rather than to be the ten easiest, so a difference that shows
+#: up on them is a difference in the capability and not in one fixture's phrasing.
 FINAL_HOLDOUT: frozenset[str] = frozenset({
     "fix-string-case",
     "fix-sort-key",
     "fix-shallow-copy",
     "fix-ordinal-index",
     "fix-single-name",
+    # Added with the second tranche, 2026-10-11.
+    "fix-strip-whitespace",
+    "fix-closure-late-binding",
+    "fix-broad-except",
+    "fix-generator-exhaust",
+    "fix-none-cap",
+    "fix-enumerate-start",
+    "fix-row-alias",
+    "fix-augmented-assign-mutates",
+    "fix-zip-truncates",
+    "fix-or-default-falsy",
 })
 
 CHECK_SCRIPT = Path(__file__).resolve().parent / "check_diagnosis.py"
@@ -954,8 +1432,17 @@ def check_command(task_id: str) -> str:
     Absolute, because a check runs with the run's workspace as its working directory and the depth
     from there to this repository is a property of where the round wrote its workspaces. The
     alternative — a relative walk — is a path that silently resolves somewhere else.
+
+    Both phrase lists travel on the command line, separated by ``--forbid``, because a stored `check`
+    string is the only channel a task has: it runs in the run's workspace with no environment of its
+    own. The forbidden list is omitted entirely when a task has none, so an existing command is
+    unchanged in meaning.
     """
     phrases = " ".join(f'"{phrase}"' for phrase in EXPECT[task_id])
+    forbid = FORBID.get(task_id, ())
+    if forbid:
+        banned = " ".join(f'"{phrase}"' for phrase in forbid)
+        return f'python "{CHECK_SCRIPT}" {phrases} --forbid {banned}'
     return f'python "{CHECK_SCRIPT}" {phrases}'
 
 

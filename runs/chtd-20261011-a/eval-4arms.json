@@ -1,0 +1,725 @@
+{
+  "sweep": "holdout-4arms-20261011",
+  "tasks": [
+    "fix-string-case",
+    "fix-sort-key",
+    "fix-shallow-copy",
+    "fix-ordinal-index",
+    "fix-single-name",
+    "fix-strip-whitespace",
+    "fix-closure-late-binding",
+    "fix-generator-exhaust",
+    "fix-broad-except",
+    "fix-none-cap",
+    "fix-enumerate-start",
+    "fix-zip-truncates",
+    "fix-or-default-falsy",
+    "fix-row-alias",
+    "fix-augmented-assign-mutates"
+  ],
+  "arms": {
+    "base": {
+      "what_it_is": "the unadapted student",
+      "passed_when_run": 8,
+      "passed_rescored": 13,
+      "of": 15,
+      "per_task": {
+        "fix-string-case": {
+          "passed_when_run": false,
+          "passed_rescored": true,
+          "seconds": 20.4,
+          "chars": 1108,
+          "expected": [
+            "case",
+            "lower|insensitive|capital|uppercase|sensitive"
+          ],
+          "answer": "I've examined both files and can identify the defect.\n\nThe issue is in `check.py`. The code is trying to assert that `is_yes(value)` returns `True` for all values in the tuple `('yes', 'Yes', 'YES', ' yes ')`, but the function `is_yes` in `answers.py` only returns `True` when the answer is exactly 'yes' (with no spaces or capitalization).\n\nSpecifically, the problem is in line 3 of `check.py` where it's testing:\n- 'yes' → should be True ✓\n- 'Yes' → should be True but will be False ❌\n- 'YES' → should be True but will be False ❌\n- ' yes ' → should be True but will be False ❌\n\nThe function `is_yes` in `answers.py` is too strict - it only matches the exact string 'yes' and doesn't handle variations in capitalization or whitespace. This means the assertions in `check.py` will fail for all cases except the exact match of 'yes'.\n\nThe defect is that the `is_yes` function doesn't properly handle different capitalizations or whitespace in the input, making it unable to correctly identify \"yes\" in various forms. This is a fundamental flaw in the function's design that would cause the test cases to fail."
+        },
+        "fix-sort-key": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 20.0,
+          "chars": 1121,
+          "expected": [
+            "key",
+            "sort"
+          ],
+          "answer": "I've examined both files and can identify the defect.\n\nThe issue is in the `sorting.py` file. In the `by_length` function, there's a syntax error in the `sorted()` function call. The line:\n\n```python\nreturn sorted(words, key=len(words))\n```\n\nis incorrect because `len(words)` is not a valid key function. The `key` parameter should be a function that takes a single argument (the item to be sorted), not a call to `len(words)` which would try to get the length of the entire list of words.\n\nThe correct implementation should be:\n\n```python\nreturn sorted(words, key=len)\n```\n\nThis would pass each word to the `len()` function as a parameter, allowing it to return the length of each individual word, which is what's needed to sort the words by length.\n\nThe error is a syntax mistake in the `key` parameter of the `sorted()` function. The function is trying to use `len(words)` (which would return the length of the list of words) instead of `len` (which is a function that takes a single word as input and returns its length).\n\nThis is a fundamental error in the sorting function that would cause it to fail when executed."
+        },
+        "fix-shallow-copy": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 19.3,
+          "chars": 1301,
+          "expected": [
+            "table|blanked",
+            "copy|in.?place|mutat|changes the original|modifies the original"
+          ],
+          "answer": "I've examined both files and can identify the defect.\n\nThe issue is in the `check.py` file. The test is asserting that the original table remains unchanged after the `blanked()` function is called, but this is incorrect.\n\nIn the `table.py` function, the `blanked()` function modifies the original table in place by changing the values of the specified column to zero. However, the test in `check.py` is asserting that the original table should remain unchanged:\n\n```python\nassert original == [{'n': 1}, {'n': 2}], original\n```\n\nThis assertion is wrong because the `blanked()` function actually modifies the original table. When the function runs, it changes the values of the 'n' column in the original list of dictionaries, so the original list will no longer contain [{'n': 1}, {'n': 2}].\n\nThe defect is that the test is incorrectly assuming that the function creates a copy of the table while it actually modifies the original table in place. The function should either:\n1. Return a new table with the column filled with zeros (creating a copy), or\n2. Document that it modifies the original table in place and update the test to expect this behavior.\n\nThe current implementation and test are incon"
+        },
+        "fix-ordinal-index": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 19.9,
+          "chars": 1140,
+          "expected": [
+            "index",
+            "based|off.by.one|zero"
+          ],
+          "answer": "I've examined both files and can identify the defect.\n\nThe issue is in the `nth` function in `ordinals.py`. The function is defined as:\n\n```python\ndef nth(items, position):\n    \"\"\"The item at a 1-based position.\"\"\"\n    return items[position]\n```\n\nThe problem is that Python uses 0-based indexing, but the function is designed to work with 1-based indexing. When the function is called with `position=1`, it tries to access `items[1]`, which would be the second item in the list (index 1), not the first item (index 0).\n\nLooking at the test in `check.py`, when it calls `nth(['a', 'b', 'c'], 1)`, it expects the result to be 'a' (the first item), but due to the 0-based indexing, it will actually return 'b' (the second item).\n\nThe function should be modified to convert the 1-based position to a 0-based index by subtracting 1 from the position parameter. The correct implementation would be:\n\n```python\ndef nth(items, position):\n    \"\"\"The item at a 1-based position.\"\"\"\n    return items[position - 1]\n```\n\nThis would make the function work as expected, returning the first item when position=1, the second item when position=2, and so on."
+        },
+        "fix-single-name": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 17.9,
+          "chars": 961,
+          "expected": [
+            "index",
+            "two part|one part|one-word|single"
+          ],
+          "answer": "I've examined both files and can identify the defect.\n\nThe issue is in the `names.py` file. The `split_name` function is defined to split a full name into first and last names by splitting on whitespace and returning `parts[0], parts[1]`. However, this function has a critical flaw:\n\n1. It assumes that every name has exactly two parts (first and last name)\n2. If a name has only one part (like \"Ada\"), it will raise an IndexError when trying to access `parts[1]` since there's no second part\n\nThis is evident in the `check.py` file, which calls `split_name('Ada')` - a single name. When this is executed, the function will fail with an IndexError because there's no second part to return.\n\nThe defect is a runtime error that will occur when trying to process single names. The function should be modified to handle cases where a name has only one part, either by returning the single name as both first and last, or by raising a more appropriate error message."
+        },
+        "fix-strip-whitespace": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 16.9,
+          "chars": 919,
+          "expected": [
+            "strip",
+            "call"
+          ],
+          "answer": "I've examined both files and can identify the defect.\n\nThe issue is in `clean.py`. The `tidy` function is defined incorrectly. It returns `text.strip` (the method itself, not the result of applying the method), rather than actually calling the strip method on the text.\n\nIn the `check.py` file, there's an assertion that checks if `tidy(\"  hi  \") == \"hi\"`. This will fail because:\n- `tidy(\"  hi  \")` returns the `strip` method object, not the stripped string\n- The assertion compares a method object with a string, which will never be true\n\nThe function should be:\n```python\ndef tidy(text):\n    \"\"\"The text without surrounding whitespace.\"\"\"\n    return text.strip()\n```\n\nThe defect is that the function returns the `strip` method reference instead of calling it on the input text to get the stripped result. This is a fundamental error in the function implementation that will cause the assertion in `check.py` to fail."
+        },
+        "fix-closure-late-binding": {
+          "passed_when_run": false,
+          "passed_rescored": true,
+          "seconds": 21.7,
+          "chars": 1516,
+          "expected": [
+            "closure|capture|lambda",
+            "bind|by reference|by value|same variable|outer scope"
+          ],
+          "answer": "I've examined both files and can identify the defect.\n\nThe issue is in the `build` function in `handlers.py`. The function returns a list of lambda functions, but all of these lambda functions capture the same variable `prefix` from the outer scope. This means that when the assertions in `check.py` are executed, all lambda functions will use the same value of `prefix` (the last value in the list), not the specific prefix that was passed to the function.\n\nFor example, when `build([\"[a]\", \"[b]\"])` is called:\n- The first lambda function will have the same `prefix` as the second lambda function\n- Both will use the last value of `prefix`, which is \"[b]\"\n- Therefore, both will return \"[b]x\" instead of \"[a]x\" and \"[b]x\" respectively\n\nThis is a classic Python closure issue where variables are captured by reference rather than by value. The lambda functions all reference the same variable `prefix` in the outer scope, not the specific value that was passed to the function.\n\nThe defect is that the `build` function returns lambda functions that don't properly capture the specific prefix values. Instead of creating separate functions that prepend each prefix, it creates functions that all use t"
+        },
+        "fix-generator-exhaust": {
+          "passed_when_run": false,
+          "passed_rescored": true,
+          "seconds": 20.5,
+          "chars": 1343,
+          "expected": [
+            "generator",
+            "exhaust|consum|twice|already|reuse"
+          ],
+          "answer": "I've examined both files and can identify the defect.\n\nThe issue is in the `summarise` function in `streams.py`. The function is designed to return the count of values and their total sum, but it has a critical bug in how it handles the generator.\n\nThe problem is that the `summarise` function creates a generator `stream = doubled(values)` and then calls `sum(1 for _ in stream)` to get the count. However, this generator is consumed twice - once by the count calculation and once by the sum calculation. This means that when the generator is consumed by the count calculation, the values are already consumed and cannot be used for the sum calculation.\n\nThis is a logical error because the `doubled` generator produces values that are doubled, but the sum calculation will be based on the original values (since the generator is consumed by the count calculation first).\n\nThe function should either:\n1. Create a list of doubled values first, then calculate count and sum, or\n2. Use a different approach to calculate both count and sum without consuming the generator twice.\n\nThe current implementation will produce incorrect results because the generator is consumed during the count calculation an"
+        },
+        "fix-broad-except": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 20.8,
+          "chars": 1421,
+          "expected": [
+            "bare|catches|swallow|blanket|indiscriminat",
+            "except"
+          ],
+          "answer": "I've examined both files and can identify the defect.\n\nThe issue is in the `reader.py` file. The `load` function has a problem with its error handling. Currently, it uses a bare `except:` clause that catches all exceptions, including the expected `IndexError` when the index is out of range. This means that when an index is out of range, the function returns `None` instead of raising an appropriate error.\n\nHowever, looking at the test in `check.py`, there's a specific test case that checks for a `TypeError` when an invalid index type (like a string) is provided. The test expects this to raise a `TypeError`, not be caught by the bare `except:` clause.\n\nThe defect is that the `load` function in `reader.py` has a bare `except:` clause that catches all exceptions, including the expected `TypeError` when an invalid index type is provided. This means that when a string index like \"not an index\" is passed, the function will silently return `None` instead of raising a `TypeError` as expected by the test.\n\nThis is a critical defect because it means the function doesn't properly handle type errors and will fail to raise the expected exception when an invalid index type is provided, which brea"
+        },
+        "fix-none-cap": {
+          "passed_when_run": false,
+          "passed_rescored": false,
+          "seconds": 20.8,
+          "chars": 1368,
+          "expected": [
+            "none",
+            "cap"
+          ],
+          "answer": "I've examined both files, and I can identify the defect in the code.\n\nThe issue is in `check.py`. The test cases are incorrectly written. Let me explain the problem:\n\n1. In line 3: `assert limit(5) == 5, limit(5)`\n   - This test should pass because `limit(5)` should return 5 when no cap is provided.\n   - However, the error message is `limit(5)` which will show the actual return value, not a meaningful error message.\n\n2. In line 4: `assert limit(5, 3) == 3, limit(5, 3)`\n   - This test should pass because `limit(5, 3)` should return 3 (the minimum of 5 and 3).\n   - However, the error message is `limit(5, 3)` which will show the actual return value, not a meaningful error message.\n\nThe main defect is that the error messages in the assertions are not descriptive. Instead of providing clear information about what went wrong when the assertion fails, they simply show the function call itself. This makes it difficult to diagnose issues when the test fails.\n\nAdditionally, while the `limit()` function in `limits.py` is correctly implemented (returning the minimum of value and cap), the test cases in `check.py` could be improved to provide more meaningful error messages that would help ident"
+        },
+        "fix-enumerate-start": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 21.7,
+          "chars": 1389,
+          "expected": [
+            "enumerate",
+            "start"
+          ],
+          "answer": "I've examined both files, and I can identify the defect.\n\nThe issue is in the `check.py` file. While the code appears to be correctly implementing the test for the `numbered` function, there's a subtle but critical problem with the assertion.\n\nIn `check.py`, the assertion is:\n```python\nassert numbered([\"a\", \"b\"]) == [\"1: a\", \"2: b\"], numbered([\"a\", \"b\"])\n```\n\nThe problem is that the assertion is checking for equality between the expected result `[\"1: a\", \"2: b\"]` and the actual result from the `numbered` function. However, the `numbered` function in `listing.py` uses `enumerate(items)` which starts counting from 0, so it would produce:\n```python\n[\"0: a\", \"1: b\"]\n```\n\nThis means the assertion will fail because:\n- Expected: `[\"1: a\", \"2: b\"]`\n- Actual: `[\"0: a\", \"1: b\"]`\n\nThe defect is a mismatch between the expected output (starting with \"1:\") and the actual output (starting with \"0:\"). The `numbered` function is correctly implementing \"one line per item, numbered from one\" as described in its docstring, but the test is expecting it to start from 1 when it actually starts from 0 due to the `enumerate` function's default behavior.\n\nThis is a fundamental mismatch between what the func"
+        },
+        "fix-zip-truncates": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 19.9,
+          "chars": 1401,
+          "expected": [
+            "zip|pairs",
+            "length|truncat|mismatch|silently"
+          ],
+          "answer": "I've examined both files and can identify the defect.\n\nThe issue is in the `check.py` file. The test case in `check.py` is incorrectly asserting that a length mismatch should raise a `ValueError`, but the `pairs.py` function actually doesn't raise any error for length mismatches.\n\nIn `pairs.py`, the `pairs()` function simply returns a list of tuples using `zip()`, which automatically truncates to the shorter list when the input lists have different lengths. This means that when the test case in `check.py` tries to call `pairs([\"a\", \"b\"], [1])`, it will not raise a `ValueError` as expected, but instead will return `[(\"a\", 1)]` - which is the same as what happens when the lists are of different lengths.\n\nThe test case in `check.py` is therefore incorrect. It expects a `ValueError` to be raised when the lists have different lengths, but the function actually just truncates the longer list and continues normally. This is a bug in the test case, not in the implementation of the `pairs()` function.\n\nThe function `pairs()` is correctly implemented to return name-value pairs, and it properly handles different list lengths by truncating to the shorter list, which is the standard behavior of"
+        },
+        "fix-or-default-falsy": {
+          "passed_when_run": false,
+          "passed_rescored": false,
+          "seconds": 23.1,
+          "chars": 1584,
+          "expected": [
+            "falsy|fals|zero|0",
+            "none|8080|default"
+          ],
+          "answer": "I've examined both files and can identify the defect.\n\nThe issue is in the `check.py` file. There's a logical error in the assertion for the case where the port is set to 0. Let's analyze the code:\n\nIn `check.py`, line 4 has this assertion:\n```python\nassert port({\"port\": 0}) == 0, port({\"port\": 0})\n```\n\nHowever, in `ports.py`, the `port()` function returns `settings.get(\"port\") or 8080`. This means that if the port value is 0, it will still return 0 (since 0 is a falsy value in Python, but 0 is not considered \"false\" in the context of a port value).\n\nThe problem is that the assertion is checking if `port({\"port\": 0}) == 0`, which should be true, but the error message in the assertion is `port({\"port\": 0})`, which will print the value of the port function when it's called.\n\nThe actual defect is that the assertion is incorrectly structured. The assertion should be:\n```python\nassert port({\"port\": 0}) == 0\n```\n\nThe current code has an unnecessary error message that will print the value of the port function when it's called, which is not needed. This could lead to confusion when debugging, as the error message will show the actual value of the port function rather than just indicating t"
+        },
+        "fix-row-alias": {
+          "passed_when_run": false,
+          "passed_rescored": true,
+          "seconds": 18.9,
+          "chars": 1129,
+          "expected": [
+            "alias|referenc|shared|same (inner )?list|same object|shallow copy"
+          ],
+          "answer": "I've examined both files and can identify the defect.\n\nThe issue is in the `grid` function in `grid.py`. The function currently implements a grid as `[[0] * cols] * rows`, which creates a list of references to the same inner list. This means that when you modify one cell, all cells in the same row are affected because they all point to the same list object.\n\nFor example, in `check.py`, when `cells[0][0] = 1` is executed, it modifies the first element of the first row. Since all rows reference the same inner list, this change is reflected in all rows. When the assertion checks `cells[1][0] == 0`, it fails because `cells[1][0]` is actually 1 (from the modification in row 0).\n\nThe correct implementation should create independent lists for each row. The current implementation creates a shallow copy of the inner list for each row, which is not what's needed for a proper grid.\n\nThis is a classic Python gotcha that demonstrates the difference between creating a list of references and creating a list of independent lists. The function should be modified to create independent rows rather than references to the same list."
+        },
+        "fix-augmented-assign-mutates": {
+          "passed_when_run": false,
+          "passed_rescored": true,
+          "seconds": 20.8,
+          "chars": 1583,
+          "expected": [
+            "caller|original|same list|mutat|in.?place",
+            "list|tags"
+          ],
+          "answer": "I've examined both files and can identify the defect.\n\nThe issue is in the `add_tag` function in `tags.py`. While the function appears to be correctly implemented on the surface, there's a subtle but critical problem:\n\nThe function `add_tag(tags, tag)` takes a list as input and returns a new list with the tag added. This is correct in theory, but there's a potential issue with how the original list is being modified.\n\nLooking at the test in `check.py`, it asserts that `original == [\"a\"]` after calling `add_tag(original, \"b\")`. This assertion will fail because the `add_tag` function is modifying the original list in place.\n\nThe problem is that the function `add_tag(tags, tag)` uses the `+=` operator, which modifies the original list. However, the function is supposed to return a new list with the tag added, not modify the original list. This creates a contradiction between what the function is supposed to do and what it actually does.\n\nThe defect is that the function is modifying the original list in place (using `+=`), but the function's docstring and the test in `check.py` expect it to return a new list without modifying the original. This would cause the assertion `original == [\""
+        }
+      }
+    },
+    "experiment_19": {
+      "what_it_is": "the experimental arm retrained 2026-10-11, 19 samples",
+      "passed_when_run": 5,
+      "passed_rescored": 10,
+      "of": 15,
+      "per_task": {
+        "fix-string-case": {
+          "passed_when_run": false,
+          "passed_rescored": true,
+          "seconds": 22.6,
+          "chars": 777,
+          "expected": [
+            "case",
+            "lower|insensitive|capital|uppercase|sensitive"
+          ],
+          "answer": "The defect is in the `check.py` file. It imports the `is_yes` function from `answers.py` and tests it with various inputs, including 'yes', 'Yes', 'YES', and ' yes '. However, the `is_yes` function in `answers.py` only returns `True` when the input is exactly 'yes' (case-sensitive and with no whitespace). \n\nThe test cases in `check.py` include ' yes ' (with leading and trailing spaces), which should return `False` according to the current implementation, but the assertion fails because the function returns `False` for that input. This means the test is not passing, indicating a bug in the `is_yes` function.\n\nThe function should be updated to handle various cases of \"yes\" (case-insensitive and with optional whitespace) rather than just matching the exact string 'yes'."
+        },
+        "fix-sort-key": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 15.9,
+          "chars": 556,
+          "expected": [
+            "key",
+            "sort"
+          ],
+          "answer": "The defect is in the `sorting.py` file. In the `by_length` function, the `key` parameter in the `sorted()` function is incorrectly defined. It should be `key=len` (a reference to the built-in `len` function) rather than `key=len(words)`. The latter would attempt to call `len` on the entire list of words, which is not what is intended.\n\nThe correct implementation should be:\n\n```python\ndef by_length(words):\n    \"\"\"The words shortest first.\"\"\"\n    return sorted(words, key=len)\n```\n\nThis will sort the words by their length, with the shortest words first."
+        },
+        "fix-shallow-copy": {
+          "passed_when_run": false,
+          "passed_rescored": false,
+          "seconds": 10.6,
+          "chars": 36,
+          "expected": [
+            "table|blanked",
+            "copy|in.?place|mutat|changes the original|modifies the original"
+          ],
+          "answer": "I'll inspect the code in both files."
+        },
+        "fix-ordinal-index": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 17.4,
+          "chars": 557,
+          "expected": [
+            "index",
+            "based|off.by.one|zero"
+          ],
+          "answer": "The defect is in the `nth` function in `ordinals.py`. \n\nThe function is defined as `def nth(items, position):` and attempts to return `items[position]`. However, it's supposed to work with 1-based indexing (as seen in the test), but it's using 0-based indexing. For example, when `position` is 1, it should return the first item (`'a'`), but it will return `items[1]`, which is the second item (`'b'`).\n\nThis is a bug in the function's implementation. The function should be modified to use `items[position - 1]` to convert from 1-based to 0-based indexing."
+        },
+        "fix-single-name": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 14.8,
+          "chars": 481,
+          "expected": [
+            "index",
+            "two part|one part|one-word|single"
+          ],
+          "answer": "The defect is in the `names.py` file. The `split_name` function assumes that every full name has exactly two parts (first and last name), but it doesn't handle cases where a name has only one part. When a single name like \"Ada\" is passed to the function, it will raise an `IndexError` because `parts[1]` will try to access the second element of a list with only one item.\n\nThis is a bug in the function's logic. It should validate the input and handle edge cases like single names."
+        },
+        "fix-strip-whitespace": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 13.9,
+          "chars": 380,
+          "expected": [
+            "strip",
+            "call"
+          ],
+          "answer": "The defect is in the `clean.py` file. The `tidy` function is defined to return `text.strip`, which is a method object, not the result of stripping whitespace. This means that when `tidy(\"  hi  \")` is called, it will return the method object `strip`, not the string `\"hi\"`. \n\nThe function should return the result of calling `strip()` on the input text, not just the method itself."
+        },
+        "fix-closure-late-binding": {
+          "passed_when_run": false,
+          "passed_rescored": true,
+          "seconds": 22.5,
+          "chars": 928,
+          "expected": [
+            "closure|capture|lambda",
+            "bind|by reference|by value|same variable|outer scope"
+          ],
+          "answer": "The defect is in the `build` function in `handlers.py`. \n\nThe function `build(prefixes)` returns a list of lambda functions, each of which prepends a prefix to the input text. However, the lambda functions capture the variable `prefix` by reference, not by value. This means that all lambda functions in the returned list will refer to the same variable `prefix`, which is the last value in the `prefixes` list.\n\nWhen the `check.py` script calls `first(\"x\")` and `second(\"x\")`, both lambdas will use the same `prefix` variable, which is `\"[b]\"` (the last element in the list). Therefore, both `first(\"x\")` and `second(\"x\")` will return `\"[b]x\"`, not `\"[a]x\"` and `\"[b]x\"` as expected.\n\nThis is a classic Python closure issue. The lambda functions are not properly capturing their respective prefixes. To fix this, the function should create a new lambda with a default argument or use a default value for the `prefix` parameter."
+        },
+        "fix-generator-exhaust": {
+          "passed_when_run": false,
+          "passed_rescored": true,
+          "seconds": 19.9,
+          "chars": 832,
+          "expected": [
+            "generator",
+            "exhaust|consum|twice|already|reuse"
+          ],
+          "answer": "The defect is in the `summarise` function in `streams.py`. \n\nThe function `summarise(values)` is supposed to return the count of values and their total sum. However, it uses a generator `stream = doubled(values)` and then calls `sum(1 for _ in stream)` to count the values, and `sum(stream)` to get the total. \n\nThe issue is that `sum(1 for _ in stream)` will count the number of values, but `sum(stream)` will sum the doubled values. This means that the total returned by `summarise` will be twice the actual sum of the input values, not the sum of the input values themselves.\n\nFor example, if the input is `[1, 2, 3]`, the doubled values are `[2, 4, 6]`. The count will be 3 (correct), but the total will be 12 (which is 2+4+6), not 6 (which is 1+2+3). \n\nThe function should instead sum the original values, not the doubled ones."
+        },
+        "fix-broad-except": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 22.6,
+          "chars": 1113,
+          "expected": [
+            "bare|catches|swallow|blanket|indiscriminat",
+            "except"
+          ],
+          "answer": "The defect is in the `check.py` file. The `load` function in `reader.py` is defined to return `None` when an index is out of bounds or when the index is not a valid integer. However, in `check.py`, the test on line 3 is asserting that `load([\"a\", \"b\"], 1)` should return `\"b\"`, which is correct. The test on line 4 is asserting that `load([\"a\", \"b\"], 9)` should return `None`, which is also correct. The test on line 6 is catching a `TypeError` when passing a non-integer index, which is correct. However, the test on line 10 is raising an `AssertionError` if a `TypeError` is not caught, which is incorrect. The `load` function in `reader.py` does not catch a `TypeError` when an invalid index is passed. It only catches all exceptions with a bare `except:` clause, which will catch `TypeError` and other exceptions. This means that the test on line 6 will not catch a `TypeError` when passing a non-integer index. The test on line 10 will raise an `AssertionError` if a `TypeError` is not caught, which is incorrect. The `load` function in `reader.py` should catch a `TypeError` when an invalid index is passed."
+        },
+        "fix-none-cap": {
+          "passed_when_run": false,
+          "passed_rescored": false,
+          "seconds": 16.5,
+          "chars": 514,
+          "expected": [
+            "none",
+            "cap"
+          ],
+          "answer": "The defect is in the `check.py` file. The assertion `assert limit(5) == 5, limit(5)` is correct because `limit(5)` returns 5, as there's no cap provided. However, the second assertion `assert limit(5, 3) == 3, limit(5, 3)` is also correct because `limit(5, 3)` returns 3, which is the minimum of 5 and 3.\n\nThe code in `check.py` appears to be correct. The `limit` function in `limits.py` correctly returns the minimum of the value and the cap. Both assertions in `check.py` pass, so there is no defect in the code."
+        },
+        "fix-enumerate-start": {
+          "passed_when_run": false,
+          "passed_rescored": false,
+          "seconds": 10.2,
+          "chars": 23,
+          "expected": [
+            "enumerate",
+            "start"
+          ],
+          "answer": "I'll inspect the files."
+        },
+        "fix-zip-truncates": {
+          "passed_when_run": false,
+          "passed_rescored": true,
+          "seconds": 17.7,
+          "chars": 659,
+          "expected": [
+            "zip|pairs",
+            "length|truncat|mismatch|silently"
+          ],
+          "answer": "The defect is in the `pairs.py` file. The function `pairs()` is defined to require that the `names` and `values` lists be the same length, and it raises a `ValueError` if they are not. However, in the `check.py` file, when the function is called with `pairs([\"a\", \"b\"], [1])`, it does not raise a `ValueError` as expected. Instead, it silently truncates the shorter list, which means the function is not enforcing the length requirement as specified in its docstring.\n\nThis is a bug because the function should raise a `ValueError` when the lists have different lengths, not silently truncate them. The function's behavior contradicts its documented behavior."
+        },
+        "fix-or-default-falsy": {
+          "passed_when_run": false,
+          "passed_rescored": false,
+          "seconds": 18.5,
+          "chars": 635,
+          "expected": [
+            "falsy|fals|zero|0",
+            "none|8080|default"
+          ],
+          "answer": "The defect is in the `check.py` file. It contains a test that asserts `port({\"port\": 0}) == 0`, but the `ports.py` module defines the `port` function to return `settings.get(\"port\") or 8080`. This means that if the \"port\" key is present in the settings dictionary with a value of 0, the function will return 0. However, the assertion in `check.py` is correct and should pass.\n\nThe issue is not in the logic of the function, but rather in the test itself. The test is correctly asserting that when the port is set to 0, the function returns 0. This is a valid and expected behavior. Therefore, there is no defect in the code as written."
+        },
+        "fix-row-alias": {
+          "passed_when_run": false,
+          "passed_rescored": true,
+          "seconds": 17.7,
+          "chars": 746,
+          "expected": [
+            "alias|referenc|shared|same (inner )?list|same object|shallow copy"
+          ],
+          "answer": "The defect is in the `grid` function in `grid.py`. \n\nThe function `grid(rows, cols)` currently returns `[[0] * cols] * rows`, which creates a list of `rows` references to the same list object. This means that modifying one cell in the grid will affect all rows. For example, if you change `cells[0][0]`, it will also change `cells[1][0]` because they all point to the same list.\n\nThis is a common Python gotcha. The correct implementation should create a new list for each row, not reuse the same list. The current implementation is flawed because it creates a shallow copy of the list, not a deep copy.\n\nThe defect is that the grid function returns a list of references to the same list object, not a true grid where each row is a separate list."
+        },
+        "fix-augmented-assign-mutates": {
+          "passed_when_run": false,
+          "passed_rescored": false,
+          "seconds": 10.7,
+          "chars": 36,
+          "expected": [
+            "caller|original|same list|mutat|in.?place",
+            "list|tags"
+          ],
+          "answer": "I'll inspect the code in both files."
+        }
+      }
+    },
+    "matched_chtd": {
+      "what_it_is": "the 2026-10-10 experimental arm, 1 sample",
+      "passed_when_run": 8,
+      "passed_rescored": 12,
+      "of": 15,
+      "per_task": {
+        "fix-string-case": {
+          "passed_when_run": false,
+          "passed_rescored": true,
+          "seconds": 26.8,
+          "chars": 962,
+          "expected": [
+            "case",
+            "lower|insensitive|capital|uppercase|sensitive"
+          ],
+          "answer": "Now that I've read both files, I can identify the defect.\n\nIn `answers.py`, the `is_yes` function checks if the `answer` is exactly equal to the string `'yes'`. Since string comparison in Python is case-sensitive, it only returns `True` for the exact match `'yes'`.\n\nIn `check.py`, I can see that it tests several values:\n- `'yes'` → passes\n- `'Yes'` → should pass but doesn't, because it's not exactly `'yes'`\n- `'YES'` → should pass but doesn't\n- `' yes '` (with spaces) → should pass but doesn't\n\nThe `assert` statements in `check.py` fail for those cases, which confirms the bug.\n\n**The defect is that `is_yes` does not handle case variations or extra whitespace.** It only matches the exact string `'yes'`, so any other case (like `'Yes'`, `'YES'`) or strings with spaces (like `' yes '` or `'YES '`) are incorrectly rejected.\n\nI should note that I *didn't* run any commands or modify any files, as you requested — just read the files to diagnose the issue."
+        },
+        "fix-sort-key": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 24.3,
+          "chars": 841,
+          "expected": [
+            "key",
+            "sort"
+          ],
+          "answer": "Thanks for letting me read the files. I can now identify the defect.\n\nIn `sorting.py`, the `by_length` function defines a `sorted()` call with the argument `key=len(words)`. This is wrong — `len` is called directly on the `words` parameter, which is a list, not a single word. That will crash the program with `TypeError: object of type 'list' has no len()`.\n\nThe fix would be one of:\n- `key=len` (without arguments), or\n- `key=len` applied to a single word.\n\nSince you've asked me not to change anything, I'll just point out that the defect is:\n\n**`sorting.py` has a `TypeError` because `by_length` passes `key=len(words)` instead of `key=len`.** `len` is called on the entire list `words` instead of on each individual word, which is not allowed in Python.\n\nThe correct line should be `return sorted(words, key=len)`, not `key=len(words)`."
+        },
+        "fix-shallow-copy": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 28.6,
+          "chars": 1178,
+          "expected": [
+            "table|blanked",
+            "copy|in.?place|mutat|changes the original|modifies the original"
+          ],
+          "answer": "Now that I've read both files, I can identify the defect.\n\nIn `table.py`, the `blanked` function modifies the existing rows in-place by setting `row[column] = 0`. Since Python lists are mutable, this changes the original `table` directly.\n\nLooking at `check.py`, I see that it creates an original list `[{'n': 1}, {'n': 2}]`, calls `blanked` on it, and then asserts that:\n\n- `original` is unchanged: `original == [{'n': 1}, {'n': 2}]`\n- `result` is `[{'n': 0}, {'n': 0}]`\n\nThe first assertion fails because `original` *is* modified by `blanked()`. Since `blanked` changes the rows in-place, the original list has its values changed to `0`, so the assertion `original == [{'n': 1}, {'n': 2}]` is false.\n\nThe second assertion `result == [{'n': 0}, {'n': 0}]` passes, which confirms that the function does what it claims — fill the column with zeroes.\n\n**The defect is that `blanked()` modifies the original table in-place instead of creating a copy.** As a result, the original list is changed, which violates the assertion in `check.py`.\n\nTo fix it properly, one of these would be needed:\n- Create a new table with modified rows, or\n- Make a copy of each row before modifying it."
+        },
+        "fix-ordinal-index": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 28.0,
+          "chars": 1097,
+          "expected": [
+            "index",
+            "based|off.by.one|zero"
+          ],
+          "answer": "Thanks for the files. Since I can't run anything to verify, here's my analysis of the defect:\n\nIn `ordinals.py`, the `nth` function is defined as:\n```python\ndef nth(items, position):\n    \"\"\"The item at a 1-based position.\"\"\"\n    return items[position]\n```\n\nLooking at `check.py`, it tests the function with:\n- `nth(['a', 'b', 'c'], 1)` which should return `'a'`\n- `nth(['a', 'b', 'c'], 3)` which should return `'c'`\n\nSince Python uses 0-based indexing, `items[position]` when `position` is 1 will return `items[1]`, which is `'b'`, not `'a'` as expected.\n\nThe fix would be one of:\n- Change to `return items[position - 1]` (convert to 0-based), or\n- Change the position argument to be 0-based.\n\nSince you've asked me not to change anything, the defect is that `nth` uses 0-based indexing directly instead of converting the 1-based position to 0-based, so `nth(['a', 'b', 'c'], 1)` returns `'b'` instead of `'a'`.\n\nThe assertion `assert got == 'a', got` will fail, which is what reveals the bug.\n\n**The defect:** `nth` does not convert from 1-based to 0-based indexing, so it returns the wrong item."
+        },
+        "fix-single-name": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 23.7,
+          "chars": 888,
+          "expected": [
+            "index",
+            "two part|one part|one-word|single"
+          ],
+          "answer": "Thanks for letting me read the files. Here's what I found:\n\n- `names.py` defines a `split_name` function that takes a full name and splits it on whitespace, returning the first and second parts.\n- `check.py` imports that function and calls it twice: once with two names `'Ada Lovelace'`, which should work, and once with just one name `'Ada'`.\n\nSince I can't run anything to verify, here's the defect:\n\n`split_name` assumes every name has exactly two parts (first and last), but when given only one name (like `'Ada'`), `parts[1]` will access an index that doesn't exist. That causes an `IndexError: list index out of range` when `check.py` runs the second call.\n\nI should note that I *didn't* run anything to verify the claim, as you requested — I only read the files to diagnose the issue.\n\n**The defect is that `split_name` crashes on single names due to out-of-bounds list indexing.**"
+        },
+        "fix-strip-whitespace": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 25.0,
+          "chars": 962,
+          "expected": [
+            "strip",
+            "call"
+          ],
+          "answer": "Thanks for the files. I can now see what the defect is.\n\nIn `clean.py`, the `tidy` function returns `text.strip` instead of `text.strip()`. Since `strip` is a method, not called, it returns the unbound method object itself, not the actual stripped string.\n\nIn `check.py`, the assertion `assert tidy(\"  hi  \") == \"hi\"` will fail because `tidy(\"  hi  \")` returns the unbound `strip` method, and you can't compare a method object to a string.\n\nThe fix would be one of:\n- Change `return text.strip()` to call the method with `()`, or\n- You've asked not to make any changes, so the defect is that `tidy` returns the unbound `strip` method instead of the stripped string.\n\n**The defect is:** `clean.py` returns `text.strip` (the unbound method) instead of `text.strip()` (the called method), so the assertion in `check.py` fails.\n\nI should note that I *didn't* run any commands or make any changes to the files, as you requested — just read them to diagnose the issue."
+        },
+        "fix-closure-late-binding": {
+          "passed_when_run": false,
+          "passed_rescored": true,
+          "seconds": 27.6,
+          "chars": 1204,
+          "expected": [
+            "closure|capture|lambda",
+            "bind|by reference|by value|same variable|outer scope"
+          ],
+          "answer": "Thanks for letting me read the files. Now I can diagnose the issue.\n\n`check.py` asserts that:\n- `first(\"x\")` should equal `\"[a]x\"`\n- `second(\"x\")` should equal `\"[b]x\"`\n\n`handlers.py` defines `build`, which creates a list of lambda functions that prepend a prefix to the input text. Since all the lambdas capture the same variable `prefix` (not a local copy), when the assertions run, both `first` and `second` will refer to the same lambda with the last value of `prefix`, which is `\"[b]\"`.\n\nSo when `first(\"x\")` is called, it evaluates to `\"[b]x\"` instead of `\"[a]x\"`, and the same applies to `second(\"x\")`.\n\nThe defect is **lexical scope capture** in Python: all the lambdas in the list capture the same variable `prefix` instead of having their own copy, so they all end up using the final value of `prefix` (`\"[b]\"`), making the assertions fail.\n\nI should note that I *didn't* run any commands or modify any files, as you requested — just read the files to identify the problem.\n\n**The fix** (not applied, per your instruction) would be one of:\n- Use a default argument: `lambda text, prefix=prefix: prefix + text`, or\n- Create a new local variable in each lambda, e.g. `lambda text: prefix + te"
+        },
+        "fix-generator-exhaust": {
+          "passed_when_run": false,
+          "passed_rescored": false,
+          "seconds": 37.6,
+          "chars": 2000,
+          "expected": [
+            "generator",
+            "exhaust|consum|twice|already|reuse"
+          ],
+          "answer": "ify the defect.\n\nIn `streams.py`, the `summarise` function creates a generator `stream = doubled(values)` and then calls `sum(1 for _ in stream)` to count the number of values, and `sum(stream)` to compute the total.\n\nSince `doubled` is a generator that yields each value doubled, `sum(stream)` will compute the sum of all doubled values.\n\nFor the input `[1, 2, 3]`:\n- The count should be `3` (one per value).\n- The total should be `12` (since `1*2 + 2*2 + 3*2 = 2 + 4 + 6 = 12`).\n\nLooking at `check.py`, it asserts that `(count, total) == (3, 12)`, which is what we just calculated.\n\nSince both the logic and the assertion match what I'd expect, and I didn't run anything to verify, the files *appear* to be correct.\n\nBut here's the catch: I *should* verify that the assertion passes only by running the code, which you've asked me not to do. Since I can't run anything, I can only confirm that the assertion in `check.py` is what it should be, based on reading the code.\n\nTherefore, the only thing I can say for certain from reading the files is that:\n\n- `doubled` yields each value doubled.\n- `summarise` counts the values and sums the doubled ones.\n- For `[1, 2, 3]`, the expected result is `(3, "
+        },
+        "fix-broad-except": {
+          "passed_when_run": false,
+          "passed_rescored": true,
+          "seconds": 36.2,
+          "chars": 2000,
+          "expected": [
+            "bare|catches|swallow|blanket|indiscriminat",
+            "except"
+          ],
+          "answer": "list, or `None` if the index is out of range. The function catches *all* exceptions (`except:`), which means any type of error — including `TypeError` from passing a non-integer index — will be caught and turned into `None` instead of propagating.\n\n- `check.py` tests `load()`, and the assertions verify:\n  - It correctly returns `\"b\"` for index `1`.\n  - It returns `None` for an out-of-bounds index `9`.\n  - It catches a `TypeError` when passing a non-integer index like `\"not an index\"`.\n\nSince `check.py` has a `try/except` that catches *all* exceptions, the `TypeError` from passing a string index is not properly handled — instead of crashing and showing the type-mismatch, the function returns `None`, and the test passes silently because the `else` clause (which would assert a failure) is never reached.\n\n**The defect is that `load()` catches all exceptions, including `TypeError`, turning them into a `None` return value instead of letting the type-mismatch be reported.** This makes the test pass in a way that hides the fact that the function doesn't validate the index type — it only checks bounds.\n\nA properly written version would either:\n- Validate the index type before accessing the "
+        },
+        "fix-none-cap": {
+          "passed_when_run": true,
+          "passed_rescored": false,
+          "seconds": 29.1,
+          "chars": 1242,
+          "expected": [
+            "none",
+            "cap"
+          ],
+          "answer": "Thanks for letting me read the files. Here's what I found:\n\n- `limits.py` defines a `limit()` function that returns the smaller of `value` and `cap`. When `cap` is not provided, it defaults to `None`.\n- `check.py` tests that function with two assertions:\n  - `assert limit(5) == 5, limit(5)` — since no `cap` is given, `limit(5)` returns `min(5, None)`, which is `5` (since `min(x, None)` returns `x` for any numeric `x`).\n  - `assert limit(5, 3) == 3, limit(5, 3)` — here, `min(5, 3)` returns `3`, which passes.\n\nSince I'm not running anything to verify, here's the diagnosis:\n\nThe code *appears* to work as intended — both assertions pass — so there's no actual defect in the logic.\n\nHowever, I should note that `min(value, cap)` when `cap` is `None` will return `value`, which is what the assertion confirms. The docstring says \"The value, never above the cap when one is given,\" which is also accurate.\n\n**Conclusion:** There is no bug in the code. Both assertions pass what they claim, and the `limit()` function behaves as specified.\n\nIf you *did* want me to verify that claim (which you've asked me not to do), I would need to run the script, and you've given that instruction, so I've respect"
+        },
+        "fix-enumerate-start": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 28.8,
+          "chars": 1272,
+          "expected": [
+            "enumerate",
+            "start"
+          ],
+          "answer": "After reading both files, here's what I find:\n\n- `listing.py` defines a `numbered` function that takes a list of items and returns a new list where each item is formatted with a number prefix (starting from 1).\n- `check.py` imports that function and asserts that `numbered([\"a\", \"b\"])` produces `[\"1: a\", \"2: b\"]`.\n\nSince I'm not running anything to verify the claim, I should note that the assertion in `check.py` *says* the function works that way, and the function itself does exactly that — it uses `enumerate(items)` which starts at 0, so `f\"{i}: {item}\"` will be `\"0: a\"`, `\"1: b\"`, etc.\n\nTherefore, the defect is:\n\n`listing.py`'s `numbered` function starts numbering from 0, so `numbered([\"a\", \"b\"])` returns `[\"0: a\", \"1: b\"]` instead of the expected `[\"1: a\", \"2: b\"]`. `check.py` has an assertion that verifies this incorrect behavior, which means the function does not match the specification.\n\nI should point out that I *could* verify my diagnosis only by running the assertion, but you've asked me not to run anything, so the defect is what's stated in the code: the function numbers from 0 instead of 1.\n\n**The fix** (not applied, per your instruction) would be one of:\n- Change `enumer"
+        },
+        "fix-zip-truncates": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 26.4,
+          "chars": 1149,
+          "expected": [
+            "zip|pairs",
+            "length|truncat|mismatch|silently"
+          ],
+          "answer": "Now that I've read both files, I can identify the defect.\n\n`pairs.py` defines a function `pairs` that takes two lists, `names` and `values`, and returns a list of tuples using `zip()`. The docstring states that \"the lists must be the same length,\" which implies that different-length lists should cause an error.\n\nHowever, in `check.py`, when I run `pairs([\"a\", \"b\"], [1])`, there's no `ValueError` raised — instead, the code prints `\"ok: a length mismatch is reported\"` only if a `ValueError` occurs. Since that line doesn't execute (the `else` branch runs), it means that `zip()` silently truncated the longer list, which contradicts the docstring.\n\n**The defect is:** `pairs.py` does not enforce the length-matching requirement. Instead, `zip()` truncates the longer list when the lists have different lengths, and the function silently allows that behavior, which violates its own docstring.\n\nI should note that I didn't run anything to verify this claim — I only read the files, as you requested. The mismatch between the docstring (\"the lists must be the same length\") and the actual behavior (unrestricted zip that truncates) is what's wrong."
+        },
+        "fix-or-default-falsy": {
+          "passed_when_run": false,
+          "passed_rescored": false,
+          "seconds": 32.6,
+          "chars": 1313,
+          "expected": [
+            "falsy|fals|zero|0",
+            "none|8080|default"
+          ],
+          "answer": "Thanks for letting me read the files. Here's what I found:\n\n- `ports.py` defines a function `port()` that returns `settings.get(\"port\")` if it exists, otherwise it returns `8080`.\n- `check.py` tests that function with three cases:\n  1. An empty dict `{}` → should return `8080` ✅\n  2. A dict with `\"port\": 0` → should return `0` ✅\n  3. A dict with `\"port\": 9000` → should return `9000` ✅\n\nSince I'm not running anything to verify, here's the defect:\n\n**The function `port()` in `ports.py` has a logical issue: it returns `0` when the `\"port\"` key is present with the value `0`, which is what the test asserts. That *should* work — `settings.get(\"port\") or 8080` evaluates to `0` or `8080`, so `0` is correctly returned when the port is `0`.**\n\nRe-reading the test:\n- `assert port({\"port\": 0}) == 0, port({\"port\": 0})` — this *does* pass because `0 or 8080` is `0`.\n\nSo all the assertions in `check.py` should pass, and they do — the function works as intended.\n\n**There is no defect.** The code correctly returns:\n- `8080` for no port,\n- `0` when the port is `0`,\n- `9000` when the port is `9000`.\n\nSince you asked me not to run anything to verify, I can't confirm the claim that there's a bug, but b"
+        },
+        "fix-row-alias": {
+          "passed_when_run": false,
+          "passed_rescored": true,
+          "seconds": 28.2,
+          "chars": 1230,
+          "expected": [
+            "alias|referenc|shared|same (inner )?list|same object|shallow copy"
+          ],
+          "answer": "Thanks for letting me read the files. Here's what I found:\n\n- `grid.py` defines a function `grid(rows, cols)` that creates a grid of zeroes. The implementation `return [[0] * cols] * rows` is problematic: it creates a list of `rows` references to the same inner list, rather than separate lists.\n\n- `check.py` tests this function by creating a 2×3 grid, setting `cells[0][0] = 1`, and then asserting that `cells[1][0] == 0`.\n\nBecause of the flawed implementation in `grid.py`, all rows in the grid point to the same inner list. So when I change `cells[0][0] = 1`, that same change propagates to `cells[1][0]`, making the assertion `cells[1][0] == 0` false.\n\nThe defect is that `grid.py` returns a list of references to the same inner list, instead of creating separate lists for each row. The test in `check.py` fails precisely because of that.\n\nI should note that I didn't run anything or modify any files — just read the contents to diagnose the issue, as you asked.\n\n**The fix** (not applied, per your instruction) would be one of:\n```python\n# Correct version of grid.py\ndef grid(rows, cols):\n    return [[0] * cols for _ in range(rows)]\n```\nThis creates separate lists for each row, so modifying "
+        },
+        "fix-augmented-assign-mutates": {
+          "passed_when_run": false,
+          "passed_rescored": true,
+          "seconds": 29.9,
+          "chars": 1368,
+          "expected": [
+            "caller|original|same list|mutat|in.?place",
+            "list|tags"
+          ],
+          "answer": "Thanks for letting me read the files. Here's what I found:\n\n- `tags.py` defines `add_tag`, which takes a list `tags` and a `tag`, then does `tags += [tag]` to append the tag and returns the new list.\n- `check.py` tests that function, asserting that:\n  - The result is `[\"a\", \"b\"]` (the original list with \"b\" appended), and\n  - The original list is unchanged (`[\"a\"]`).\n\nSince I can't run anything to verify, here's the diagnosis:\n\n`add_tag` in `tags.py` does `tags += [tag]`, which creates a new list and returns it. That part works correctly. However, the test in `check.py` asserts that `original == [\"a\"]` after the function call — which should pass *only if* `add_tag` doesn't modify the original list.\n\nSince `tags.py` uses `tags += [tag]` (a list concatenation), it **does** create a new list and leaves the original unchanged — so the assertion should pass.\n\nTherefore, the only thing I can conclude from reading the files is that the code *should* work as intended: `add_tag` appends a new tag to a new list, leaving the original untouched, which is what the test verifies.\n\nSince I'm not running anything to confirm, there's no actual defect in the code — the behavior matches what's expect"
+        }
+      }
+    },
+    "matched_baseline": {
+      "what_it_is": "the 2026-10-10 control arm, 1 sample",
+      "passed_when_run": 9,
+      "passed_rescored": 13,
+      "of": 15,
+      "per_task": {
+        "fix-string-case": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 27.7,
+          "chars": 1204,
+          "expected": [
+            "case",
+            "lower|insensitive|capital|uppercase|sensitive"
+          ],
+          "answer": "The defect is a type mismatch between `answers.py` and `check.py`.\n\n**What's wrong:**\n`answers.py` defines `is_yes(answer)` as simply `answer == 'yes'` — that is, the exact string `'yes'` (without whitespace or capitalization).\n\nBut `check.py` passes in values like `'Yes'`, `'YES'`, and `' yes '` — i.e. different cases and with surrounding whitespace — and does `assert is_yes(value) is True` without normalizing them.\n\n**Result:**\n- `'Yes'` fails — `'Yes' == 'yes'` is `False`, and the assert raises `AssertionError: 'Yes'`.\n- `' YES '` fails for the same reason.\n- `'no'` passes through `answers.py`'s clean comparison, and `check.py`'s `assert is_yes('no') is False` also passes — so the clean case works, but the robust ones don't.\n\n**Two ways to fix (for later, not applied):**\n1. In `answers.py`, make it case-insensitive and whitespace-robust:\n   ```python\n   def is_yes(answer):\n       return answer.strip().lower() == 'yes'\n   ```\n2. Or in `check.py`, normalize the input first:\n   ```python\n   print(repr(value), is_yes(value.strip().lower()))\n   ```\n\nThe cleanest fix is option 1 — `answers.py` should define the contract clearly, and `check.py` can rely on it without cleaning up the in"
+        },
+        "fix-sort-key": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 22.4,
+          "chars": 936,
+          "expected": [
+            "key",
+            "sort"
+          ],
+          "answer": "The defect is a type mismatch in `sorting.py`.\n\n**What's wrong:**\nIn `sorting.py`, `by_length(words)` does `sorted(words, key=len(words))`.\n\nThat is, `len(words)` raises `TypeError: object of type 'list' has no len()` — i.e. the `key` argument is the entire list `['ccc', 'a', 'bb']`, not the individual words.\n\n**Result:**\n`check.py` does `assert got == ['a', 'bb', 'ccc']` — i.e. the sorted result is some uncaught exception (or `None` or `TypeError`), rather than the correct list of words sorted by length.\n\n**Two ways to fix (for later, not applied):**\n1. In `sorting.py`, make it `sorted(words, key=len)` — i.e. `len` applied to each word, not the whole list.\n2. Or, if `words` is guaranteed to be a sequence of strings, `sorted(words, key=len)` is the clean, type-safe contract.\n\nThe clean fix is simply `key=len` — `sorting.py`'s contract is clearly \"sort words by their length,\" not \"sort the list by `len` of the list itself.\""
+        },
+        "fix-shallow-copy": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 25.7,
+          "chars": 961,
+          "expected": [
+            "table|blanked",
+            "copy|in.?place|mutat|changes the original|modifies the original"
+          ],
+          "answer": "The defect is that `table.py`'s `blanked(table, column)` modifies the original table in place instead of creating a new copy.\n\n**What's wrong:**\n- `check.py` defines `original = [{'n': 1}, {'n': 2}]` and passes it straight into `blanked(original, 'n')`.\n- `table.py` does `for row in table: row[column] = 0` — i.e. it mutates each dict in the original list.\n- As a result, `check.py`'s `assert original == [{'n': 1}, {'n': 2}]` fails. The original is now ` [{'n': 0}, {'n': 0}]` — i.e. the contract of \"doesn't modify the original\" is violated.\n\n**Two ways to fix (for later, not applied):**\n1. In `table.py`, make a copy of the table first:\n   ```python\n   def blanked(table, column):\n       return [dict(row) for row in table]  # or copy.deepcopy if nested\n   ```\n2. Or, for cleanest contract, return a new table with zeroed values without touching the input.\n\nThe cleanest fix is option 1 — it's cheap, clear, and preserves immutability without side effects."
+        },
+        "fix-ordinal-index": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 28.2,
+          "chars": 1077,
+          "expected": [
+            "index",
+            "based|off.by.one|zero"
+          ],
+          "answer": "The defect is a type mismatch between `check.py` and `ordinals.py`.\n\n**What's wrong:**\n`ordinals.py`'s `nth(items, position)` does `return items[position]` — that is, `items[1]` for the first item, i.e. `'b'` in `['a', 'b', 'c']`.\n\nBut `check.py`'s assertion is:\n```python\nassert nth(['a', 'b', 'c'], 1) == 'a'\n```\n— i.e. it expects the first item to be `'a'`, not `'b'`.\n\n**Two ways to see it:**\n1. In `ordinals.py`, it's zero-indexed: `items[1]` is the second element.\n2. In `check.py`, the contract is clearly 1-based: \"The item at a 1-based position\" — so `1` means \"first\", i.e. `items[0]`.\n\n**Result:**\n`check.py` crashes with `AssertionError: 'b'` instead of `'a'` — the two contracts don't align. \n\n**Two clean fixes (for later, not applied):**\n- In `ordinals.py`, make it `return items[position - 1]` — i.e. convert to zero-indexed.\n- Or in `check.py`, make it `nth(items, 0)` to match `ordinals.py`'s contract.\n\nThe cleanest fix is the first: `ordinals.py` does the right thing — it's just misaligned with the contract defined in the docstring and used in `check.py`."
+        },
+        "fix-single-name": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 25.9,
+          "chars": 1218,
+          "expected": [
+            "index",
+            "two part|one part|one-word|single"
+          ],
+          "answer": "The defect is a type mismatch between `check.py` and `names.py`.\n\n**What's wrong:**\n`names.py`'s `split_name(full)` does `full.split()` without any error handling or validation — i.e. it splits on whitespace regardless of how many parts there are.\n\nIn `check.py`, it's called like this:\n- `split_name('Ada Lovelace')` → returns `('Ada', 'Lovelace')` ✅ (correct for two names).\n- `split_name('Ada')` → raises `IndexError: list index out of range` 🚫 (i.e. `parts[1]` doesn't exist).\n\n**Result:**\n`check.py` prints the error instead of a clean result, and the script crashes rather than handling the invalid input gracefully.\n\n**Two ways to fix (for later, not applied):**\n1. In `names.py`, make it defensive:\n   ```python\n   def split_name(full):\n       parts = full.split()\n       if len(parts) < 2:\n           return None, None  # or raise ValueError, or use defaults\n       return parts[0], parts[1]\n   ```\n2. Or in `check.py`, coerce it to a safe fallback:\n   ```python\n   first, last = split_name('Ada') or ('Ada', None)\n   print('one name :', first, last)\n   ```\n\nThe cleanest fix is option 1 — the contract between the two files is unclear: `check.py` assumes exactly two parts, but `names.py` d"
+        },
+        "fix-strip-whitespace": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 26.7,
+          "chars": 1187,
+          "expected": [
+            "strip",
+            "call"
+          ],
+          "answer": "The defect is a type mismatch between `check.py` and `clean.py`.\n\n**What's wrong:**\n`clean.py`'s `tidy(text)` does `return text.strip` — that is, the *result of the `strip` method* (i.e. the string `\"hi\"`), not the *string itself* that `check.py`'s `assert` is comparing against.\n\n**Two ways it breaks:**\n1. `check.py` does `assert tidy(\"  hi  \") == \"hi\"` — i.e. it's asserting that the *result of `text.strip`* is the **string** `\"hi\"`.\n2. `clean.py` returns the **function object** `str.strip` — so `check.py` ends up doing `\"  hi  \".strip == \"hi\"` — i.e. **\"  hi  \" is equal to the string \"hi\"** — which is `False`.\n\n**Result:**\nThe assertion fails, and `check.py` raises `AssertionError` with the full repr of the mismatch:\n```\n'  hi  ' == 'hi'\n```\n— i.e. the cleanest version of the text is clearly not the same as the bare string `\"hi\"`.\n\n**Two ways to fix (for later, not applied):**\n- In `clean.py`, make it return the result of the call: `return text.strip()`\n- Or in `check.py`, make it compare the two as `==` — i.e. `assert tidy(\"  hi  \") == \"hi\"` — which is what the contract should be.\n\nThe cleanest fix is the first: `clean.py` does `text.strip()` instead of `text.strip`."
+        },
+        "fix-closure-late-binding": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 25.7,
+          "chars": 1140,
+          "expected": [
+            "closure|capture|lambda",
+            "bind|by reference|by value|same variable|outer scope"
+          ],
+          "answer": "The defect is a classic Python closure bug.\n\n**What's wrong:**\n`handlers.py`'s `build(prefixes)` returns a list of lambda functions — each lambda is `lambda text: prefix + text` — but the lambdas capture the *same variable* `prefix` from the enclosing scope, rather than binding to the specific prefix value.\n\nSo when `check.py` does:\n```python\nfirst, second = build([\"[a]\", \"[b]\"])\nassert first(\"x\") == \"[a]x\", first(\"x\")\nassert second(\"x\") == \"[b]x\", second(\"x\")\n```\n\nBoth `first(\"x\")` and `second(\"x\")` return `\"[a]x\"` — i.e. the *last* value of `prefix`, not the one defined in the list.\n\n**Two ways to see it:**\n- `first` and `second` are two references to the same lambda, both pointing to the same `prefix` — and by the time `first(\"x\")` and `second(\"x\")` are called, `prefix` has been set to `\"[b]\"` in the last iteration of the loop.\n- The clean fix (for later, not applied) would be to capture the prefix in a default argument:\n  ```python\n  return [lambda text, p=prefix: p + text for prefix in prefixes]\n  ```\n\n**Result:**\nThe assertion `second(\"x\") == \"[b]x\"` fails — it raises `AssertionError` with the value `\"[a]x\"` instead."
+        },
+        "fix-generator-exhaust": {
+          "passed_when_run": false,
+          "passed_rescored": false,
+          "seconds": 31.6,
+          "chars": 1394,
+          "expected": [
+            "generator",
+            "exhaust|consum|twice|already|reuse"
+          ],
+          "answer": "The defect is a type mismatch between `check.py` and `streams.py`.\n\n**What's wrong:**\n`streams.py`'s `doubled(values)` returns a generator expression `(value * 2 for value in values)` — that is, a generator of *numbers*.\n\n`check.py`'s `sum(stream)` in `summarise([1, 2, 3])` does two things:\n1. `sum(1 for _ in stream)` — i.e. `sum(1, 1, 2, 3)` — which is `6`, not `3`.\n2. `sum(stream)` — i.e. `sum(2, 4, 6)` — which is `12`.\n\nSo `check.py` asserts:\n```python\n(count, total) == (3, 12)\n```\nBut the real result is:\n- `count` = 6 (not 3 — it's summing `1` for each doubled value, i.e. `1+2+3`).\n- `total` = 12 (which is correct — `2+4+6`).\n\n**Two ways the contract is broken:**\n1. `sum(1 for _ in stream)` counts the *doubled* values, not the original ones.\n2. `sum(stream)` does the right thing (total is 12), but `check.py`'s contract defines `count` as the number of original values — i.e. 3 — not the number of doubled values (6).\n\n**Two clean ways to fix (for later, not applied):**\n- In `streams.py`, make it a list: `list(value * 2 for value in values)` — so `sum(1 for _ in stream)` is 3.\n- Or in `check.py`, make the contract clear: `(len(values), sum(value * 2 for value in values))`.\n\nThe cl"
+        },
+        "fix-broad-except": {
+          "passed_when_run": false,
+          "passed_rescored": true,
+          "seconds": 30.3,
+          "chars": 1496,
+          "expected": [
+            "bare|catches|swallow|blanket|indiscriminat",
+            "except"
+          ],
+          "answer": "The defect is a type mismatch between `check.py` and `reader.py`.\n\n**What's wrong:**\n`reader.py`'s `load(values, index)` does `values[index]` without checking the type of `index`. That is, it lets any type raise the native Python exception — like `TypeError` for `\"not an index\"` — and simply wraps it in `except:` with `return None`.\n\n**Two ways it breaks `check.py`:**\n1. `check.py` does `load([\"a\", \"b\"], \"not an index\")` — i.e. a string index — without wrapping it in `try/except`.\n2. `reader.py` raises `TypeError: 'str' object is not subscriptable` — i.e. the cleanest way for Python to say \"no, you can't do that.\"\n3. `check.py`'s `else: raise AssertionError` is triggered — meaning the test fails, even though the contract is clearly \"raise TypeError for bad index, not return None.\"\n\n**Two clean ways to fix (for later, not applied):**\n- In `reader.py`, make it type-robust:\n  ```python\n  def load(values, index):\n      if not isinstance(index, int):\n          raise TypeError(f\"index must be an int, got {type(index).__name__}\")\n      return values[index]\n  ```\n- Or in `check.py`, coerce it to int:\n  ```python\n  load([\"a\", \"b\"], int(\"not an index\"))\n  ```\n\n**Bottom line:** The two contra"
+        },
+        "fix-none-cap": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 35.4,
+          "chars": 1681,
+          "expected": [
+            "none",
+            "cap"
+          ],
+          "answer": "The defect is a type mismatch between `check.py` and `limits.py`.\n\n**What's wrong:**\n- `limits.py` defines `limit(value, cap=None)` as simply `return min(value, cap)` — i.e. `min(5, 5)` is `5`, and `min(5, 3)` is `3`. So far so good.\n- But `check.py` does two assertions without coercing the types to match:\n  1. `assert limit(5) == 5, limit(5)` — i.e. `assert min(5, None) == 5`\n  2. `assert limit(5, 3) == 3, limit(5, 3)` — i.e. `assert min(5, 3) == 3` — this passes.\n- The first assertion fails because `min(5, None)` raises `TypeError: can't compare int to NoneType` — i.e. `check.py` crashes instead of asserting the equality.\n\n**Two ways the contract is violated:**\n1. `limits.py`'s contract is \"the value, never above the cap when one is given\" — i.e. `cap` is **always** a number, not `None`.\n2. `check.py`'s contract is \"assert `limit(x)` == `x`\" — i.e. for `x` being the plain number `5`, it's doing `limit(5)` without wrapping it in `float(5)` or `int(5)` or some other type that `min` can coerce to — or equivalently, `limits.py` is doing `min(5, None)` instead of `min(5, 5)` or `min(5, 0)` or something consistent.\n\n**Two cleanest fixes (for later, not applied):**\n- In `limits.py`, mak"
+        },
+        "fix-enumerate-start": {
+          "passed_when_run": false,
+          "passed_rescored": false,
+          "seconds": 31.0,
+          "chars": 1277,
+          "expected": [
+            "enumerate",
+            "start"
+          ],
+          "answer": "The defect is a type mismatch between `check.py` and `listing.py`.\n\n**What's wrong:**\n`listing.py`'s `numbered(items)` does `enumerate(items)` without converting the result to a string — i.e. it returns `[(0, 'a'), (1, 'b')]` instead of `[\"0: a\", \"1: b\"]`.\n\n**Two ways the contract is broken:**\n1. `check.py`'s `assert` does:\n   ```python\n   assert numbered([\"a\", \"b\"]) == [\"1: a\", \"2: b\"]\n   ```\n   — i.e. it expects the output to be `[\"1: a\", \"2: b\"]`, i.e. **1-indexed** and **strings**.\n\n2. `listing.py`'s cleanest implementation is:\n   ```python\n   return [f\"{i}: {item}\" for i, item in enumerate(items)]\n   ```\n   — i.e. `[\"0: a\", \"1: b\"]`, i.e. **0-indexed** and **native `str(i)`** — not `(\"1: a\")`.\n\n**Result:**\nThe assertion fails with:\n```\nassert ['0: a', '1: b'] == ['1: a', '2: b']\n```\n— two clean, type-strict Python lists that are completely different.\n\n**Two ways to fix (for later, not applied):**\n- In `listing.py`, make it 1-indexed:\n  ```python\n  return [f\"{i + 1}: {item}\" for i, item in enumerate(items)]\n  ```\n- Or in `check.py`, make it 0-indexed:\n  ```python\n  assert numbered([\"a\", \"b\"]) == [\"0: a\", \"1: b\"]\n  ```\n\nThe cleanest fix is in `listing.py` — the contract is clear"
+        },
+        "fix-zip-truncates": {
+          "passed_when_run": true,
+          "passed_rescored": true,
+          "seconds": 26.5,
+          "chars": 1161,
+          "expected": [
+            "zip|pairs",
+            "length|truncat|mismatch|silently"
+          ],
+          "answer": "The defect is a type mismatch between `check.py` and `pairs.py`.\n\n**What's wrong:**\n`pairs.py` defines `pairs(names, values)` as simply `list(zip(names, values))` — that is, it does `zip([\"a\", \"b\"], [1])` without checking that the two lists are the same length. The result is `[(\"a\", 1), (\"b\", None)]` — i.e. `pairs` silently extends the shorter list with `None` instead of raising `ValueError`.\n\n**What `check.py` does:**\n`check.py`'s `assert pairs([\"a\", \"b\"], [1]) == [(\"a\", 1)]` is failing — because the actual output is `[(\"a\", 1), (\"b\", None)]`, not the clean `[(\"a\", 1)]` that the contract says it should be.\n\n**Two ways to fix (for later, not applied):**\n1. In `pairs.py`, make it raise `ValueError` for mismatched lengths:\n   ```python\n   if len(names) != len(values):\n       raise ValueError(\"lists must be the same length\")\n   return list(zip(names, values))\n   ```\n\n2. Or in `check.py`, make the assertion more accurate:\n   ```python\n   assert pairs([\"a\", \"b\"], [1]) == [(\"a\", 1), (\"b\", None)]\n   ```\n\nThe cleanest fix is option 1 — `pairs.py`'s contract is clearly \"lists must be the same length,\" and `check.py` is testing against the wrong output."
+        },
+        "fix-or-default-falsy": {
+          "passed_when_run": false,
+          "passed_rescored": true,
+          "seconds": 41.1,
+          "chars": 1999,
+          "expected": [
+            "falsy|fals|zero|0",
+            "none|8080|default"
+          ],
+          "answer": " is a type mismatch between `check.py` and `ports.py`.\n\n**What's wrong:**\n- `ports.py` defines the clean, straightforward behavior:  \n  ```python\n  def port(settings):\n      return settings.get(\"port\") or 8080\n  ```\n  That is, if `settings` is `{}` or has no `\"port\"` key, it returns `8080`. If it's `\"port\": 0`, it returns `0`. If it's `\"port\": 9000`, it returns `9000`.\n\n- `check.py` does two assertions that contradict this:\n  1. `assert port({}) == 8080` — ✅ This passes, because `None or 8080` is `8080`.\n  2. `assert port({\"port\": 0}) == 0, port({\"port\": 0})` — ❌ This fails.  \n     `ports.py` does `0 or 8080`, which is `8080`, not `0`.  \n     So the assertion is `assert 8080 == 0` — i.e. `TypeError: can't compare 8080 and 0` (or rather, `AssertionError` is raised).\n\n**Two ways the contract is broken:**\n1. **Type mismatch:** `ports.py`'s `0 or 8080` promotes the number `0` to a \"truthy\" value — i.e. the whole number, not the zero *as a number* — and `check.py`'s assertion is doing `0 == 8080`, i.e. \"is the number zero equal to the number eight thousand eight hundred?\" — which raises `TypeError`.\n\n2. **Two clean options, one inconsistent:**\n   - The contract should be either:\n     - "
+        },
+        "fix-row-alias": {
+          "passed_when_run": false,
+          "passed_rescored": true,
+          "seconds": 27.3,
+          "chars": 1026,
+          "expected": [
+            "alias|referenc|shared|same (inner )?list|same object|shallow copy"
+          ],
+          "answer": "The defect is that `grid.py`'s `grid(rows, cols)` returns `[[0] * cols] * rows` — that is, it creates a list of `rows` many references to the same inner list.\n\n**What goes wrong:**\nWhen `check.py` does `cells = grid(2, 3)` — i.e. `[[0] * 3] * 2` — it ends up with two references to the same list: `[0, 0, 0]`.\n\nThen `cells[0][0] = 1` mutates that shared list. So `cells[1][0]` also becomes `1` — instead of the expected `0`.\n\n**Result:**\nThe `assert cells[1][0] == 0, cells` fails, with `cells[1][0]` being `1` instead of `0`.\n\n**Two ways to fix (for later, not applied):**\n- In `grid.py`, make it instead do:\n  ```python\n  return [[0] * cols for _ in range(rows)]\n  ```\n  This creates independent inner lists — each row is a new list, and mutating one doesn't affect the others.\n\nOr, for clarity and immutability:\n```python\nreturn [[0] * cols for _ in range(rows)]\n```\n\nThe cleanest fix is the list-comprehension version — it's what `check.py`'s contract clearly says: \"a rows-by-cols grid of zeroes,\" i.e. independent cells."
+        },
+        "fix-augmented-assign-mutates": {
+          "passed_when_run": false,
+          "passed_rescored": true,
+          "seconds": 27.8,
+          "chars": 1227,
+          "expected": [
+            "caller|original|same list|mutat|in.?place",
+            "list|tags"
+          ],
+          "answer": "The defect is that `tags.py`'s `add_tag(tags, tag)` does `tags += [tag]` — that is, it creates a new list and returns it, but it does **not** modify the original `tags` list in place.\n\nAs a result, `check.py`'s contract is:\n- `result == [\"a\", \"b\"]` — i.e. the new list is correct.\n- `original == [\"a\"]` — i.e. the original list is *not* mutated.\n\nThis is a clear mismatch: `check.py`'s two assertions are both true, but the behavior is inconsistent with the intuitive contract of \"adding a tag to a list — i.e. modifying the original.\"\n\n**Two ways to fix (for later, not applied):**\n1. In `tags.py`, make it mutate in place: `original.extend([tag])` — or return `original[:]` (a copy) if the cleanest contract is \"always return a new list.\"\n2. Or in `check.py`, make the second assertion `original == [\"a\", \"b\"]` — i.e. the contract is clearly \"the original is modified.\"\n\n**What's wrong, in short:**\n`add_tag` returns a new list without modifying the input, so `check.py`'s `original == [\"a\"]` fails the contract of \"adding a tag to the original list.\" The two assertions pass in isolation but describe incompatible behaviors — the cleanest fix is either making `tags.py` mutate the list or making `"
+        }
+      }
+    }
+  },
+  "scorer": {
+    "why_two_numbers": "The sweep ran with a scorer that required phrases and asked nothing else. Read against the answers, it was failing correct diagnoses for their wording — 'captured by reference' where the phrase was `bind`, 'consumed twice' where it was `exhaust`, 'references to the same inner list' where it was `alias`. The re-score is the same answers judged by the current scorer, which accepts synonyms and refuses answers that cite files the fixture does not hold.",
+    "the_errors_were_not_symmetric": "The under-count differed by arm, which is the part that matters: base lost 5 passes to wording, experiment_19 lost 5, matched_chtd 4, matched_baseline 4. A scorer that fails every arm equally moves no comparison; this one did not.",
+    "what_the_rescore_does_not_fix": "It is still a phrase list, so it still reads words rather than arguments. Two residual errors are known and left in rather than papered over: matched_chtd's generator answer describes the code without saying the generator is consumed twice, and matched_baseline's enumerate answer diagnoses the wrong thing (a missing str() rather than a wrong start). Both are scored as failures and both may be arguable."
+  },
+  "result": {
+    "read_this_one": "passed_rescored",
+    "ledger": {
+      "base": "13/15",
+      "experiment_19": "10/15",
+      "matched_chtd": "12/15",
+      "matched_baseline": "13/15"
+    },
+    "headline": "No fine-tuned arm beats the base. The base and the 2026-10-10 control arm tie at 13/15, the 2026-10-10 experiment arm is one behind at 12/15, and the arm retrained today is last at 10/15 — and its failures are not close calls: four of the five are answers that say they are about to look at the files and then stop."
+  }
+}

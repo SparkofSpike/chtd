@@ -1,0 +1,28 @@
+{
+  "arm": "chtd",
+  "base_model": "/mnt/proj/chtd-experiments/models/Qwen3-4B-Instruct-2507",
+  "base_model_revision": null,
+  "dataset_sha256": "c031479db37bdff5cce4ee339d1075039102109c2415b4f0d9cf0d6ca2c1bf7f",
+  "entries": 19,
+  "notes": [
+    "Retrain of the experimental (chtd) arm after /root/chtd_runs was lost to a container reset.",
+    "Same track, tasks, budget and recipe as the recorded chtd-4 run; only base_model path and output_dir move to /mnt/proj.",
+    "base_model path repointed to persistent storage: the weights fingerprint must match c790f354771f62febbebd13f4024ed8f88527756447ed9e3c2d07bdd29895be0."
+  ],
+  "output_dir": "/mnt/proj/chtd-experiments/chtd-20261011-a/adapter",
+  "recipe": {
+    "alpha": 64,
+    "batch_size": 1,
+    "dropout": 0.05,
+    "epochs": 20,
+    "gradient_accumulation": 4,
+    "learning_rate": 0.0001,
+    "max_sequence_length": 8192,
+    "rank": 32,
+    "seed": 0,
+    "target_modules": ["q_proj","k_proj","v_proj","o_proj","gate_proj","up_proj","down_proj"],
+    "warmup_ratio": 0.03
+  },
+  "teacher_model": "agnes-3.0-flash",
+  "track_sha256": "1eb6b3ffaee3fb07228abebf4d3ce67112debb525c49e2dd0bc1eb363be0a97a"
+}

@@ -16,6 +16,33 @@ A sibling node `cgpai-node3-1` (`100.81.47.75`) is reachable on the tailnet but
 refuses SSH: `tailnet policy does not permit you to SSH to this node`. It belongs
 to a different tailnet account. `cgpai-node3-2` is the node this project uses.
 
+## The 2026-10-11 move to `cgpai-node3-5`
+
+`cgpai-node3-2` went offline on 2026-10-08 and its Tailscale node key expired with it. The container
+was reset, and because `/root` lives inside the container, everything written there went with it:
+`/root/chtd_runs/` (all four adapters, including the experimental arm's `chtd-4`), the model cache
+under `/root/models/`, and the pinned virtualenv.
+
+The replacement is **`cgpai-node3-5` (`100.84.151.62`)** — same tailnet account, same `ssh root@<ip>`
+Tailscale SSH path. The first connection needs a browser check at the URL Tailscale prints; after
+that it is unattended. Measured on 2026-10-11:
+
+| | |
+| --- | --- |
+| GPU | RTX 4090 48 GB — `mem_get_info` reports 47.0 GB free of 47.4 GB |
+| CPU / memory | 96 cores, 503 GB |
+| `/` | 1.8 TB, 684 GB free |
+| `/mnt/proj` | the same 100 TB NFS, 69 TB free |
+| Conda | `/root/miniconda3` with `myenv`; a task venv can be layered on it with `--system-site-packages` |
+
+**`/mnt/proj` is the only thing that survives a reset.** The model cache, the adapters and a copy of
+the environment itself now live there (`/mnt/proj/chtd-experiments/`), and `/root/chtd_runs/` is not
+used again. A run that keeps its weights under `/root` has not finished its work; it has only
+finished the training step.
+
+Sections below that name `100.113.249.5` or `/root/...` paths are the measurements taken on the box
+that was lost. The hardware and library findings carried over unchanged; the addresses did not.
+
 `tailscale ping` reaches the box over a DERP relay (237 ms), not a direct
 connection. Interactive SSH feels the latency; batch jobs do not care.
 

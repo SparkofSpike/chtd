@@ -1,0 +1,225 @@
+{
+  "arm_under_test": {
+    "experiment": "chtd",
+    "adapter": "fcc7de5d76d19dbf2fa4bb6a99a60764476eb7ac2223ec72b2dd1d04b787bed1",
+    "samples_sha256": "8de7e26147d14f78fae884d593803a62638d1eb26358925d287f720dc080dcbd",
+    "base_model": "Qwen3-4B-Instruct-2507"
+  },
+  "tasks": [
+    "fix-string-case",
+    "fix-sort-key",
+    "fix-shallow-copy",
+    "fix-ordinal-index",
+    "fix-single-name"
+  ],
+  "track": "minimal-rl",
+  "prompt": "the same diagnosis prompt for every arm",
+  "note": "Five tasks is a screen, not a rate. One task is 20 points of the score, and the difference between 2/5 and 3/5 is inside that granularity.",
+  "sweeps": {
+    "base_4bit": {
+      "run_dir": "chtd-20261011-a",
+      "arm": "base",
+      "passed": 3,
+      "of": 5,
+      "per_task": {
+        "fix-string-case": {
+          "passed": true,
+          "seconds": 21.5,
+          "exit": 0,
+          "timed_out": false,
+          "answer": "I've examined both files. Let me analyze what's wrong with the code.\n\nThe issue is in the `is_yes` function in `answers.py`. The function only returns True when the answer is exactly 'yes' (lowercase). However, in `check.py`, the function is being tested with various cases like 'yes', 'Yes', 'YES', and ' yes '.\n\nThe problem is that the `is_yes` function doesn't handle case variations or whitespace",
+          "check": "answer names every expected phrase: ['case', 'lower']"
+        },
+        "fix-sort-key": {
+          "passed": true,
+          "seconds": 21.2,
+          "exit": 0,
+          "timed_out": false,
+          "answer": "I've examined both files and can identify the defect.\n\nThe issue is in the `sorting.py` file. In the `by_length` function, there's a syntax error in the `sorted` function call:\n\n```python\nreturn sorted(words, key=len(words))\n```\n\nThis is incorrect because `len(words)` is being used as the key function, but it should be `key=len` to get the length of each individual word. The correct implementation",
+          "check": "answer names every expected phrase: ['key']"
+        },
+        "fix-shallow-copy": {
+          "passed": false,
+          "seconds": 22.2,
+          "exit": 0,
+          "timed_out": false,
+          "answer": "I've examined both files. Let me analyze what I see:\n\nThe issue is in the `check.py` file. It imports a function from `table.py` called `blanked`, but there's a logical error in how it's being used.\n\nIn `table.py`, the `blanked` function modifies the original table in place by setting each value in the specified column to 0. However, in `check.py`, the code is asserting that the original table rem",
+          "check": "answer does not name: ['mutat']\nanswer was: \"i'll help you identify what's wrong with the directory without making any changes or running commands. let me first check what files are present in the directory.\\ni see two files in the directory: check.py and table.py. let me examine their contents to i"
+        },
+        "fix-ordinal-index": {
+          "passed": true,
+          "seconds": 23.6,
+          "exit": 0,
+          "timed_out": false,
+          "answer": "I've examined both files and can identify the defect.\n\nThe issue is in the `nth` function in ordinals.py. The function is defined as:\n\n```python\ndef nth(items, position):\n    \"\"\"The item at a 1-based position.\"\"\"\n    return items[position]\n```\n\nThis function has a critical bug: it's using `position` directly as an index, but Python uses 0-based indexing. When the function is called with position 1",
+          "check": "answer names every expected phrase: ['index']"
+        },
+        "fix-single-name": {
+          "passed": false,
+          "seconds": 20.8,
+          "exit": 0,
+          "timed_out": false,
+          "answer": "I've examined both files and can identify the defect.\n\nThe issue is in the `names.py` file. The `split_name` function currently assumes that every full name has exactly two parts (first and last name). However, when it receives a name with only one part (like \"Ada\"), it will try to access `parts[1]` which will result in an IndexError since there's only one part.\n\nThis is evident in the `check.py` ",
+          "check": "answer does not name: ['length']\nanswer was: \"i'll help you identify what's wrong with the directory without making any changes or running commands. let me first check what files are present in the directory.\\ni see two files in the directory: check.py and names.py. let me examine their contents to "
+        }
+      }
+    },
+    "adapter_4bit": {
+      "run_dir": "chtd-20261011-a",
+      "arm": "adapter",
+      "passed": 0,
+      "of": 5,
+      "per_task": {
+        "fix-string-case": {
+          "passed": false,
+          "seconds": 180.1,
+          "exit": -1,
+          "timed_out": true,
+          "answer": "",
+          "check": "no assistant message in the session"
+        },
+        "fix-sort-key": {
+          "passed": false,
+          "seconds": 19.3,
+          "exit": 0,
+          "timed_out": false,
+          "answer": "I'll take a look at the files.",
+          "check": "answer does not name: ['key']\nanswer was: \"i'll take a look at the files.\""
+        },
+        "fix-shallow-copy": {
+          "passed": false,
+          "seconds": 14.9,
+          "exit": 0,
+          "timed_out": false,
+          "answer": "I'll inspect the files again.",
+          "check": "answer does not name: ['copy', 'mutat']\nanswer was: \"i'll inspect the files again.\""
+        },
+        "fix-ordinal-index": {
+          "passed": false,
+          "seconds": 20.0,
+          "exit": 0,
+          "timed_out": false,
+          "answer": "I'll take a look at the files.",
+          "check": "answer does not name: ['index']\nanswer was: \"i'll take a look at the files.\""
+        },
+        "fix-single-name": {
+          "passed": false,
+          "seconds": 180.0,
+          "exit": -1,
+          "timed_out": true,
+          "answer": "",
+          "check": "answer does not name: ['index', 'length']\nanswer was: '<tool_call>\\n{\"name\": \"edit\", \"arguments\": {\"path\": \"names.py\", \"edits\": [{\"oldtext\": \"def split_name(full):\\\\n    \\\\\"\\\\\"\\\\\"the first and last name, from a full name.\\\\\"\\\\\"\\\\\"\\\\n    parts = full.split()\\\\n    return parts[0], parts[1]\", \"newtext"
+        }
+      }
+    },
+    "adapter_bf16": {
+      "run_dir": "chtd-20261011-a-bf16",
+      "arm": "adapter_bf16",
+      "passed": 2,
+      "of": 5,
+      "per_task": {
+        "fix-string-case": {
+          "passed": false,
+          "seconds": 23.0,
+          "exit": 0,
+          "timed_out": false,
+          "answer": "The defect is in the `check.py` file. It imports the `is_yes` function from `answers.py` and tests it with various inputs, including 'yes', 'Yes', 'YES', and ' yes '. However, the `is_yes` function in `answers.py` only returns `True` when the input is exactly 'yes' (case-sensitive and with no whitespace). \n\nThe test cases in `check.py` include ' yes ' (with leading and trailing spaces), which shou",
+          "check": "answer does not name: ['lower']\nanswer was: \"the defect is in the `check.py` file. it imports the `is_yes` function from `answers.py` and tests it with various inputs, including 'yes', 'yes', 'yes', and ' yes '. however, the `is_yes` function in `answers.py` only returns `true` when the input is exa"
+        },
+        "fix-sort-key": {
+          "passed": true,
+          "seconds": 16.1,
+          "exit": 0,
+          "timed_out": false,
+          "answer": "The defect is in the `sorting.py` file. In the `by_length` function, the `key` parameter in the `sorted()` function is incorrectly defined. It should be `key=len` (a reference to the built-in `len` function) rather than `key=len(words)`. The latter would attempt to call `len` on the entire list of words, which is not what is intended.\n\nThe correct implementation should be:\n\n```python\ndef by_length",
+          "check": "answer names every expected phrase: ['key']"
+        },
+        "fix-shallow-copy": {
+          "passed": false,
+          "seconds": 11.0,
+          "exit": 0,
+          "timed_out": false,
+          "answer": "I'll inspect the code in both files.",
+          "check": "answer does not name: ['copy', 'mutat']\nanswer was: \"i'll inspect the code in both files.\""
+        },
+        "fix-ordinal-index": {
+          "passed": true,
+          "seconds": 17.2,
+          "exit": 0,
+          "timed_out": false,
+          "answer": "The defect is in the `nth` function in `ordinals.py`. \n\nThe function is defined as `def nth(items, position):` and attempts to return `items[position]`. However, it's supposed to work with 1-based indexing (as seen in the test), but it's using 0-based indexing. For example, when `position` is 1, it should return the first item (`'a'`), but it will return `items[1]`, which is the second item (`'b'`",
+          "check": "answer names every expected phrase: ['index']"
+        },
+        "fix-single-name": {
+          "passed": false,
+          "seconds": 15.1,
+          "exit": 0,
+          "timed_out": false,
+          "answer": "The defect is in the `names.py` file. The `split_name` function assumes that every full name has exactly two parts (first and last name), but it doesn't handle cases where a name has only one part. When a single name like \"Ada\" is passed to the function, it will raise an `IndexError` because `parts[1]` will try to access the second element of a list with only one item.\n\nThis is a bug in the functi",
+          "check": "answer does not name: ['length']\nanswer was: 'the defect is in the `names.py` file. the `split_name` function assumes that every full name has exactly two parts (first and last name), but it doesn\\'t handle cases where a name has only one part. when a single name like \"ada\" is passed to the function"
+        }
+      }
+    },
+    "base_bf16": {
+      "run_dir": "chtd-20261011-a-base-bf16",
+      "arm": "base_bf16",
+      "passed": 2,
+      "of": 5,
+      "per_task": {
+        "fix-string-case": {
+          "passed": false,
+          "seconds": 18.2,
+          "exit": 0,
+          "timed_out": false,
+          "answer": "I've examined both files and can identify the defect.\n\nThe issue is in `check.py`. The code is trying to assert that `is_yes(value)` returns `True` for all values in the tuple `('yes', 'Yes', 'YES', ' yes ')`, but the function `is_yes` in `answers.py` only returns `True` when the answer is exactly 'yes' (with no spaces or capitalization).\n\nSpecifically, the problem is in line 3 of `check.py` where",
+          "check": "answer does not name: ['lower']\nanswer was: \"i'll help you identify the defect in the directory without making any changes or running commands. let me first check what files are present in the directory.\\ni see two files in the directory: `answers.py` and `check.py`. since you mentioned something is"
+        },
+        "fix-sort-key": {
+          "passed": true,
+          "seconds": 17.7,
+          "exit": 0,
+          "timed_out": false,
+          "answer": "I've examined both files and can identify the defect.\n\nThe issue is in the `sorting.py` file. In the `by_length` function, there's a syntax error in the `sorted()` function call. The line:\n\n```python\nreturn sorted(words, key=len(words))\n```\n\nis incorrect because `len(words)` is not a valid key function. The `key` parameter should be a function that takes a single argument (the item to be sorted), ",
+          "check": "answer names every expected phrase: ['key']"
+        },
+        "fix-shallow-copy": {
+          "passed": false,
+          "seconds": 17.6,
+          "exit": 0,
+          "timed_out": false,
+          "answer": "I've examined both files and can identify the defect.\n\nThe issue is in the `check.py` file. The test is asserting that the original table remains unchanged after the `blanked()` function is called, but this is incorrect.\n\nIn the `table.py` function, the `blanked()` function modifies the original table in place by changing the values of the specified column to zero. However, the test in `check.py` ",
+          "check": "answer does not name: ['mutat']\nanswer was: \"i'll help you identify the defect in the directory without making any changes or running commands. let me first check what files are present in the directory.\\ni see two files in the directory: check.py and table.py. let me examine their contents to ident"
+        },
+        "fix-ordinal-index": {
+          "passed": true,
+          "seconds": 18.2,
+          "exit": 0,
+          "timed_out": false,
+          "answer": "I've examined both files and can identify the defect.\n\nThe issue is in the `nth` function in `ordinals.py`. The function is defined as:\n\n```python\ndef nth(items, position):\n    \"\"\"The item at a 1-based position.\"\"\"\n    return items[position]\n```\n\nThe problem is that Python uses 0-based indexing, but the function is designed to work with 1-based indexing. When the function is called with `position=",
+          "check": "answer names every expected phrase: ['index']"
+        },
+        "fix-single-name": {
+          "passed": false,
+          "seconds": 15.8,
+          "exit": 0,
+          "timed_out": false,
+          "answer": "I've examined both files and can identify the defect.\n\nThe issue is in the `names.py` file. The `split_name` function is defined to split a full name into first and last names by splitting on whitespace and returning `parts[0], parts[1]`. However, this function has a critical flaw:\n\n1. It assumes that every name has exactly two parts (first and last name)\n2. If a name has only one part (like \"Ada\"",
+          "check": "answer does not name: ['length']\nanswer was: \"i'll help you identify the defect in the directory without making any changes or running commands. let me first check what files are present in the directory.\\ni see two files in the directory: `check.py` and `names.py`. since you mentioned something is "
+        }
+      }
+    }
+  },
+  "claim_pair": [
+    "adapter_bf16",
+    "base_bf16"
+  ],
+  "serving_path_defect": {
+    "what": "the same adapter scores 0/5 behind 4-bit NF4 serving and 2/5 behind bf16; two of the 4-bit runs never terminated at all",
+    "where": "serve_openai.py loads the base with BitsAndBytesConfig from a QLoRA-trained adapter",
+    "not_yet_explained": "why 4-bit inference degrades an adapter trained under 4-bit quantisation. The quantisation settings match the trainer's; the measurement is recorded here rather than the explanation",
+    "evidence": {
+      "adapter_4bit": "0/5, 2 timeouts",
+      "adapter_bf16": "2/5, none"
+    }
+  }
+}

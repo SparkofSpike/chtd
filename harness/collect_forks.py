@@ -18,10 +18,31 @@ from harness.tasks.build_workspaces import EXPECT
 
 
 FOLLOWUP = (
-    "Please revisit your diagnosis of the current directory. Read relevant files "
-    "if needed; do not run shell commands or modify files. State the precise "
-    "defect and why it occurs."
+    "State your final diagnosis of the defect in this directory now: name the file, the "
+    "function or line, and why it fails. Answer in one paragraph, from what you have "
+    "already read. Do not read further files, do not run any commands, and do not modify "
+    "anything."
 )
+
+#: Why the follow-up asks for the diagnosis rather than permission to keep reading.
+#:
+#: The first version read *"Revisit your diagnosis ... Read relevant files if needed"*, and that
+#: clause decided what the samples taught. With reading left open, the teacher's continuation often
+#: began by opening another file while the student's began with prose, so the first divergence sat on
+#: a `tool_call` -- and the label became "whether to read again", ten to nineteen supervised tokens.
+#: Measured on the arm trained from those samples: sixteen of nineteen rows supervised a tool call,
+#: and the adapter's characteristic failure on held-out tasks was to answer *"I'll inspect the code
+#: in both files"* and stop. It had been trained to produce openings.
+#:
+#: The evaluation asks for a diagnosis. A follow-up that asks for a diagnosis makes the divergence
+#: fall where the measurement is: both sides answer the same question in the same state, and what
+#: differs is what they concluded. That is the signal the fine-tune needs, and it is a different
+#: order of magnitude of supervision per row.
+#:
+#: The cost is real and worth naming: this narrows the capability under study from "error recovery"
+#: to "describing a defect, given the files" -- the recovery move (re-reading, running the check) is
+#: no longer in the label. Co-harness comparison still holds, because both sides face the same
+#: prompt.
 
 
 def _events(connection: sqlite3.Connection, key: str, after: int = 0):
@@ -42,9 +63,23 @@ def _text(data: object) -> str:
 
 
 def _score(events, expected: tuple[str, ...]) -> dict:
+    """Does this run's own words name the defect?
+
+    Judged by the same rule a training round applies — `check_diagnosis._spells`, which understands the
+    `a|b` alternation the phrase lists now use — because this report is what a reader looks at to
+    decide whether a task produced a label. It read literal strings until 2026-10-11, so an
+    expectation written as `mutable|shared|default argument` could never match any answer, and four
+    tasks in this round's fork log were reported as teacher failures on that basis alone. Three of
+    the four were correct diagnoses.
+
+    It does not apply the invented-file refusal, which needs a workspace; the review step does that
+    with the fixture in hand. This is the cheap screen, and it is labeled as such in the report.
+    """
+    from harness.tasks.check_diagnosis import _spells
+
     answer = "\n".join(_text(data) for _, kind, data in events
                        if kind == "assistant/message")
-    missing = [phrase for phrase in expected if phrase.lower() not in answer.lower()]
+    missing = [phrase for phrase in expected if not _spells(phrase, answer.lower())]
     return {"passed": bool(answer.strip()) and not missing,
             "missing": missing, "answer": answer}
 
