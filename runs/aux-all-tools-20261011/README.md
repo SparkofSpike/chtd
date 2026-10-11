@@ -21,4 +21,17 @@ digest matches the first candidate (`e36d2f3848f1b704d35f4fa91a4983137448f76d0ad
 The adapter SHA256 is `08d4c66b3ca005556e3d3768ebec0b90b5542f410de7d3094a8145d871680f9b`;
 its weight file stays in the cloud run directory. The full record is `train-run.json`.
 
-Serving evaluation is in progress. Any result here is diagnostic only.
+The paired serving evaluation completed all 15 tasks on each arm without runtime failures.
+The automatic keyword proxy passed 13/15 base answers and 15/15 adapter answers. Raw session
+records are archived at `/mnt/proj/chtd-experiments/aux-all-tools-20261011/aux-all-tools-eval-20261011-a.tar.gz`
+(SHA256 `6692ad40669e0375e06b442d0c9234a62c0d2f9c8ecb8f93972e7afe21f09741`), and
+the small per-task report is `eval-summary.json`.
+
+Manual spot checks found errors despite the 15/15 proxy score. On `fix-none-cap`, the adapter
+claims `min(5, None)` returns `None`, although Python raises `TypeError`. On `fix-broad-except`,
+it recommends catching `TypeError`, which would preserve the bug of swallowing that exception.
+On `fix-string-case`, its suggested assertion change would not repair the case handling.
+These tasks were inspected in earlier rounds and this candidate was designed after seeing the
+first candidate fail; the result is an iterative diagnostic, not an independent holdout score or
+a controlled estimate of a CHTD method effect. Further gains require a fresh task set and an
+executable or human-checked correctness measure.
