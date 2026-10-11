@@ -34,12 +34,25 @@ def test_every_task_has_a_verify_command() -> None:
 
 
 def test_the_expected_phrases_are_not_in_the_prompt() -> None:
-    """The prompt must not name what the check looks for, or the task becomes a transcription."""
+    """The prompt must not name what the check looks for, or the task becomes a transcription.
+
+    Every alternative is checked, not just the phrase as written: `copy|in.?place` is two ways to
+    say the same thing, and either one appearing in the prompt makes the task a transcription. The
+    `.` wildcard is dropped before comparing, so `in.?place` is tested as both `inplace` and
+    `in.place` — a spelling the prompt could contain even when the literal phrase does not.
+    """
     from harness.tasks.build_workspaces import BUG_PROMPT
 
-    for phrases in EXPECT.values():
+    prompt = BUG_PROMPT.lower()
+    for task_id, phrases in EXPECT.items():
         for phrase in phrases:
-            assert phrase.lower() not in BUG_PROMPT.lower(), phrase
+            for alternative in phrase.split("|"):
+                word = alternative.strip().lower()
+                if not word:
+                    continue
+                assert word not in prompt, f"{task_id}: {word!r} is in the prompt"
+                collapsed = word.replace(".", "")
+                assert collapsed not in prompt, f"{task_id}: {collapsed!r} is in the prompt"
 
 
 def test_the_check_command_names_the_phrases() -> None:
@@ -302,6 +315,40 @@ def test_no_task_s_phrases_are_satisfied_by_another_task_s_answer() -> None:
             if a_id != b_id and b <= a:
                 clashes.append(f"{b_id} {sorted(b)} is satisfied by {a_id} {sorted(a)}")
     assert not clashes, "interchangeable tasks:\n  " + "\n  ".join(clashes)
+
+
+def test_alternation_accepts_every_spelling_of_one_mechanism() -> None:
+    """`copy|in.?place|mutat` is one concept with three spellings, and all three must pass.
+
+    The measurement behind this: on 2026-10-11 four arms read the same fixture and three diagnosed
+    the same in-place mutation in three different words — "changes the original `table` directly",
+    "modifies the original table in place", "mutates each dict in the original list". The single
+    phrase `mutat` passed one of the three, and the score it produced was quoted as a result. A
+    phrasing that is correct and scored wrong corrupts the comparison more quietly than a wrong
+    answer scored right, because nothing about it looks anomalous.
+    """
+    from harness.tasks.check_diagnosis import _spells
+
+    # The three real answers, as they were written.
+    direct = "this changes the original table directly"
+    in_place = "modifies the original table in place instead of creating a new copy"
+    mutated = "mutates each dict in the original list"
+    hyphenated = "modifies the existing rows in-place"
+
+    for text in (direct, in_place, mutated, hyphenated):
+        assert _spells("copy|in.?place|mutat|changes the original|modifies the original", text), text
+
+    # And the wildcard is exactly one character: two words are not one spelling of `in?place`.
+    assert not _spells("in.?place", "a thing in some place")
+
+
+def test_a_phrase_matches_itself_literally() -> None:
+    """Regex metacharacters in a phrase are literal, so `key=len` and `list.sort` match themselves."""
+    from harness.tasks.check_diagnosis import _spells
+
+    assert _spells("key=len", "the call is key=len(words)")
+    assert _spells("list.sort", "list.sort returns None")
+    assert not _spells("key=len", "the key is length")
 
 
 def test_a_task_never_requires_and_forbids_the_same_phrase() -> None:

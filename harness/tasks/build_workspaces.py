@@ -1307,15 +1307,15 @@ EXPECT: dict[str, tuple[str, ...]] = {
     # plainly correct and watching it fail.
     "fix-argument-order": ("argument",),
     "fix-empty-input": ("index", "empty"),
-    "fix-missing-prefix": ("prefix",),
+    "fix-missing-prefix": ("prefix|f-string|formatted",),
     "fix-slice-direction": ("slic",),
     # The wider set. One word each, chosen to name the defect rather than its subject — the lesson
     # from the held-out four above, where a phrase matching the subject passed an answer saying
     # there was no bug at all.
-    "fix-default-mutable": ("mutable",),
+    "fix-default-mutable": ("mutable|shared|default argument",),
     "fix-integer-division": ("floor", "int"),
     "fix-shadowed-total": ("assign", "+="),
-    "fix-string-case": ("case", "lower"),
+    "fix-string-case": ("case", "lower|insensitive|capital|uppercase|sensitive"),
     "fix-missing-dict-default": ("keyerror", "get"),
     # `sort` alongside `key` because `key` alone is satisfied by the word "KeyError", which an answer
     # about a sorting defect may well use for a different reason — the same one-sidedness that let
@@ -1326,20 +1326,20 @@ EXPECT: dict[str, tuple[str, ...]] = {
     "fix-loop-continue": ("continue",),
     "fix-missing-return": ("return",),
     "fix-min-max-clamp": ("min", "max"),
-    "fix-shallow-copy": ("copy", "mutat"),
+    "fix-shallow-copy": ("table|blanked", "copy|in.?place|mutat|changes the original|modifies the original"),
     # These three shared the single phrase `index`, which made them interchangeable: an answer
     # saying only "there is an IndexError" passed all three. Each now carries a second phrase that
     # only its own defect produces — an empty input, a 1-based position, a two-part assumption.
-    "fix-ordinal-index": ("index", "based"),
-    "fix-single-name": ("index", "two part"),
+    "fix-ordinal-index": ("index", "based|off.by.one|zero"),
+    "fix-single-name": ("index", "two part|one part|one-word|single"),
     # The second tranche, 2026-10-11. Each pair names the mechanism the defect actually involves,
     # not the area of code it sits in: an answer that says "there is a bug in clean.py" names
     # neither phrase, and an answer that found the missing call says `strip` and `call`.
     "fix-strip-whitespace": ("strip", "call"),
     "fix-float-equal": ("float", "compar"),
-    "fix-closure-late-binding": ("closure", "bind"),
-    "fix-generator-exhaust": ("generator", "exhaust"),
-    "fix-broad-except": ("bare", "except"),
+    "fix-closure-late-binding": ("closure|capture|lambda", "bind|by reference|by value|same variable|outer scope"),
+    "fix-generator-exhaust": ("generator", "exhaust|consum|twice|already|reuse"),
+    "fix-broad-except": ("bare|catches|swallow|blanket|indiscriminat", "except"),
     "fix-string-concat-int": ("str", "concat"),
     "fix-dict-get-chain": ("chained", "section"),
     "fix-max-returns-key": ("max", "dict"),
@@ -1350,13 +1350,13 @@ EXPECT: dict[str, tuple[str, ...]] = {
     "fix-sort-returns-none": ("sorted", "none"),
     "fix-none-cap": ("none", "cap"),
     "fix-enumerate-start": ("enumerate", "start"),
-    "fix-zip-truncates": ("zip", "length"),
+    "fix-zip-truncates": ("zip|pairs", "length|truncat|mismatch|silently"),
     "fix-dict-mutation-while-iterating": ("dict", "size"),
-    "fix-or-default-falsy": ("falsy", "none"),
+    "fix-or-default-falsy": ("falsy|fals|zero|0", "none|8080|default"),
     "fix-one-element-tuple": ("tuple", "parenthes"),
     "fix-division-by-zero": ("zero", "division"),
-    "fix-row-alias": ("alias", "refer"),
-    "fix-augmented-assign-mutates": ("caller", "list"),
+    "fix-row-alias": ("alias|referenc|shared|same (inner )?list|same object|shallow copy",),
+    "fix-augmented-assign-mutates": ("caller|original|same list|mutat|in.?place", "list|tags"),
 }
 
 #: Phrases that must **not** appear, per task. A phrase list can only ask whether the right words are
@@ -1371,6 +1371,17 @@ FORBID: dict[str, tuple[str, ...]] = {
     "fix-empty-input": ("1-based", "off-by-one"),
     "fix-ordinal-index": ("empty string", "empty input"),
     "fix-single-name": ("1-based", "off-by-one"),
+    # A phrase list is loosened so that a correct diagnosis in unfamiliar words still passes; the
+    # loosening has to be paid for, or it starts passing answers that concluded the opposite. These
+    # two tasks are where that happened. `fix-or-default-falsy` names the right file, the right
+    # expression and the word `falsy`, and then says the function is *correct* — while `0 or 8080`
+    # returns 8080, not 0. Measured on 2026-10-11, that answer scored as a pass until this list
+    # existed. An answer that says the code is fine has not diagnosed the defect the task is about,
+    # whatever words it used on the way.
+    "fix-or-default-falsy": ("otherwise correct", "correctly returns", "no defect",
+                             "not a defect", "code is correct", "appears to be correct"),
+    "fix-none-cap": ("no defect", "not a defect", "appears to be correct",
+                     "code is correct", "there is no"),
 }
 
 #: Tasks no run will train on and no result reported so far has used. The held-out four in the tuple

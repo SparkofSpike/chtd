@@ -63,6 +63,61 @@ from harness.ledger import open_ledger  # noqa: E402
 FILE_REFERENCE = re.compile(r"(?<![\w./-])([\w-]+(?:/[\w.-]+)*\.(?:py|json|csv|txt|md|ya?ml|ts|js|toml|ini|cfg))\b")
 
 
+def _alternatives(phrase: str) -> list[str]:
+    """A phrase split on ``|`` into the spellings that all count as saying it.
+
+    Why alternation exists, and why it is not a loosening. A defect has one mechanism and usually
+    several ordinary ways to name it, and a check that demands one wording fails the answers that
+    chose another. Measured on 2026-10-11, three arms diagnosed the same in-place mutation:
+
+        "modifies the original table in place"     — the phrase `mutat` matched nothing here
+        "mutates each dict in the original list"    — matched
+        "changes the original `table` directly"     — matched nothing here
+
+    Two of three correct answers were scored wrong, and the score they fed was quoted as a result.
+    An alternative is a spelling of the mechanism, not a different mechanism: `in.?place` and
+    `mutat` both say "the caller's data was changed" and neither says anything weaker than the
+    other. What alternation must **not** become is a place to put a word whose presence does not
+    imply the diagnosis — the invented-file check covers confabulation, and a phrase still has to
+    name the defect rather than its subject.
+
+    ``.?`` matches zero or one of any character, so `in.?place` covers `inplace`, `in place` and
+    `in-place`. Split on `|` rather than run as a full regex because a phrase list is written by
+    hand and read by hand: alternation a reader cannot see is alternation a reader will not
+    maintain.
+    """
+    parts = [part.strip().lower() for part in phrase.split("|")]
+    return [part for part in parts if part]
+
+
+def _spells(phrase: str, text: str) -> bool:
+    """Whether the text carries this phrase in any of its accepted spellings.
+
+    One operator, in one form: ``.?`` matches zero or one of any character. So `in.?place` covers
+    `inplace`, `in place` and `in-place` in a single alternative, and everything else in a phrase is
+    literal — `list.sort` matches those characters and not `listXsort`.
+
+    The operator exists because it was written down before it was implemented. A first version
+    escaped the `?`, so `in.?place` searched for a literal question mark and matched `in-place` not
+    at all — a wildcard that looks like it works is worse than none, and the test that caught it now
+    holds all three spellings.
+    """
+    for part in _alternatives(phrase):
+        pattern: list[str] = []
+        index = 0
+        while index < len(part):
+            if part.startswith(".?", index):
+                pattern.append(".?")
+                index += 2
+                continue
+            char = part[index]
+            pattern.append("." if char == "." else re.escape(char))
+            index += 1
+        if re.search("".join(pattern), text):
+            return True
+    return False
+
+
 def answer_text(ledger_path: str, session_key: str) -> str:
     """Every assistant message in the session, joined.
 
@@ -174,7 +229,7 @@ def main() -> int:
         print("no assistant message in the session")
         return 1
 
-    missing = [phrase for phrase in expected if phrase.lower() not in text]
+    missing = [phrase for phrase in expected if not _spells(phrase, text)]
     if missing:
         print(f"answer does not name: {missing}")
         print(f"answer was: {text[:400]!r}")
@@ -183,7 +238,7 @@ def main() -> int:
     # Refusals that a phrase list cannot express. Both are reported with the phrase that is
     # missing from the passing answer, so `checks.jsonl` shows why an answer that named every
     # expected word was still judged as not having diagnosed anything.
-    present_phrases = [phrase for phrase in forbidden if phrase.lower() in text]
+    present_phrases = [phrase for phrase in forbidden if _spells(phrase, text)]
     if present_phrases:
         print(f"answer names every expected phrase, but reaches for {present_phrases}, which this "
               f"defect does not involve")

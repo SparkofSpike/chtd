@@ -102,44 +102,58 @@ demonstrated is that both arms are displaced identically, so an arm-to-arm compa
 `PrefixDrift` still passes on all 19 rows — every prompt renders as a strict prefix of its full
 conversation — so training and serving agree with each other here, which is what that check covers.
 
-## The held-out comparison, and the serving path it caught
+## The held-out comparison: four arms, fifteen tasks, and no arm that wins
 
-The adapter was then run against the five held-out tasks, beside the unadapted base, on the
-same track and the same prompt. **Four sweeps were needed, not two**, because the first pair
-measured the serving path instead of the adapter.
+The adapter was measured against three others on the fifteen held-out tasks, every arm behind bf16
+serving, same track, same prompt. Two of them are the pair the method is about: the 2026-10-10
+experiment and control arms, trained on one sample each and differing only in where the teacher's
+data came from.
 
 ```
-                     base                 adapter
-bf16 serving         2/5                  2/5
-                     sort-key,            sort-key,
-                     ordinal-index        ordinal-index
-4-bit serving        3/5                  0/5   (two runs never terminated)
+                          passing when run    re-scored
+base   unadapted                8/15           13/15
+matched_baseline  2026-10-10 control   9/15     13/15
+matched_chtd      2026-10-10 experiment  8/15   12/15
+experiment_19     retrained today, 19 samples   5/15   10/15
 ```
 
-**On the path both were trained for, the adapter changes nothing measurable.** Both arms pass
-the same two tasks and fail the same three. Five tasks is a screen rather than a rate — one task
-is twenty points — so this says the adapter did not *break* anything on bf16, not that it could
-not have helped.
+**Read the second column.** The first is what the sweep printed with a scorer that required phrases
+and asked nothing else; the re-score is the same answers judged by the current one, which accepts a
+synonym for the same mechanism and refuses an answer citing a file the fixture does not hold. The
+under-count was **not equal across arms** — base lost five passes to wording, the retrained arm lost
+five, the two matched arms four each — and an unequal under-count moves the comparison, which is the
+only thing this project measures. `eval-4arms.json` carries both, per task, with every answer.
 
-**The 4-bit column is a defect in the serving path, and it is worth more than the score.**
-Behind 4-bit NF4 the *same adapter* scores 0/5 and two of its five runs never finish: one spends
-89 tool calls in a `web_fetch` loop against a URL that does not exist, the other 18 messages
-ending in a `<tool_call>` the loop never accepts. Behind bf16 the same tasks finish in 11–23 s.
-The base model is unharmed by the same 4-bit path (3/5). So the quantised path degrades the
-*adapter* specifically, which is the opposite of what one would expect of a QLoRA-trained
-adapter served under the same `BitsAndBytesConfig` it was trained with.
+**Four legs of evidence, one direction.** The fine-tune did not help, on either serving path, at
+either data size:
 
-That is recorded as a measurement and not as an explanation: the settings do match the trainer's,
-and why this happens has not been established here. Anyone serving this adapter should use bf16
+- the retrained experiment arm is **last**, three behind the base, on the repaired scorer;
+- it was last on the broken one too — the ordering is not an artefact of the scorer;
+- its failures are not close calls: **four of the five are answers that announce they are about to
+  look at the files and then stop** ("I'll inspect the code in both files."), which is a run that
+did not do the task rather than a run that did it slightly worse;
+- and the two matched arms — 1 sample each — also fail to beat the base, so this is not "19 samples
+  were too few": **one sample is not enough either, and neither is nineteen.**
+
+**Why the retrained arm is the weak one is visible in what it was trained on.** Each of its nineteen
+samples supervises one tool call, ten to nineteen tokens, with the label being the *first* move
+(`ls`, then `read`). Twenty epochs at a learning rate of 1e-4 fit that distribution hard — the
+recorded loss fell to 0.077 — and what it demonstrably learned is the opening, not the diagnosis.
+An arm that says it will look and then stops is what a first-move dataset produces when asked for a
+last move. That is hypothesis from the training record and the answers, not a measured mechanism;
+what is measured is the behaviour.
+
+## The serving path: a second defect, found in the same sweep
+
+Behind 4-bit NF4 the *same* adapter scores 0/5 and two of its five runs never finish: one spends 89
+tool calls in a `web_fetch` loop against a URL that does not exist, the other 18 messages ending in a
+`<tool_call>` the loop never accepts. Behind bf16 the same tasks finish in 11–23 s. The base model on
+the same 4-bit path is unharmed (3/5).
+
+So the quantised path degrades the *adapter* specifically — the opposite of what one would expect of
+a QLoRA-trained adapter served under the same `BitsAndBytesConfig` it was trained with. That is
+recorded as a measurement and not as an explanation; **anyone serving this adapter should use bf16**
 until it is.
-
-**And the base's own score moved**, which is the part that limits what can be claimed. `runs/chtd-4`
-records the base answering "Hello! How can I help you today?" and stopping, on all five tasks —
-0/5. Here the base walks `ls`, `read`, `read` and diagnoses, on every serving path tried. Same
-weights, same tasks, different behaviour, so the evaluation conditions are not the ones `chtd-4`
-was measured under, and **the 2/5-versus-0/5 comparison in that record cannot be reproduced or
-extended from here**. What can be said is what this sweep shows on its own: no gain on bf16, a
-harmful interaction on 4-bit.
 
 ## What this run does not establish
 
@@ -153,10 +167,19 @@ harmful interaction on 4-bit.
   (0.2022), and with a differently-tokenised prompt (the +39 above) plus a different sampling path,
   the difference is expected rather than diagnostic. The adapter hash differs too, for the same
   reason.
-- **It does not show the method working.** The comparison above has the adapter matching the base
-  and no more. `runs/chtd-4` reports the one positive result this project has; nothing here
-  reproduces it, and the base's changed behaviour says the setup that produced it is not the setup
-  available now.
+- **It does not show the method working.** The comparison above has every fine-tuned arm at or below
+  the base. `runs/chtd-4` reports the one positive result this project has; nothing here reproduces
+  it, and the base's changed behaviour says the setup that produced it is not the setup available
+  now. Fifteen tasks put one task at 6.7 points, so the ordering is firmer than it was at five — but
+  a 13-versus-10 gap is still three tasks, and a claim that the method *fails* would need more than
+  that too.
+- **It does not separate "the method" from "the data budget".** Every arm here was trained on one or
+  nineteen samples, and none of them beat a base that was trained on none. The literature in
+  `docs/why-finetuning-can-hurt.md` says a fine-tune at this scale is expected to do nothing or
+  harm; this run is consistent with that and does not distinguish it from a defect in CHTD's design.
+  Separating them needs the collection round that produces hundreds of admitted decision points —
+  tasks are now 35 training fixtures instead of 24, which is the lever, but the rollouts have not
+  been collected.
 
 ## Reproducing it
 
