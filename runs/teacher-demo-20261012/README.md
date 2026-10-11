@@ -9,14 +9,15 @@ base    unadapted                      13/15 x10  (identical failures every swee
 v1      33 demonstrations, 1/task      13/15
 v2      63 demonstrations, multi/task  14, 15, 15, 15, 14, 12, 13
 v3      83 demonstrations, multi/task  12, 15, 15, 14, 14, 15
-v4      v2 data, seed 1                 15, 15, 14
+v4      v2 data, seed 1                 15, 15, 14*   (*the 14 is a scorer false positive)
 ```
 
 The base's ten sweeps are identical to the task — the same two failures every time
 (`fix-none-cap`, `fix-or-default-falsy`) — so the comparison is not against a noisy control. Every
 adapter version clears the base in most sweeps and ties it in its worst. **`v4` is the sharpest
-result: three sweeps, every one strictly above the base (15, 15, 14 against 13 each time)**, and it
-is the v2 dataset trained under a different seed — so the gain is not a seed artefact.
+result: three sweeps, every one strictly above the base (15, 15, 14 against 13 each time), and the
+14 is a correct answer the forbid list mis-flagged** — so read against the answers it is 15/15 in
+all three. It is the v2 dataset trained under a different seed, so the gain is not a seed artefact.
 
 An important caveat about the spread: adapter sweeps move by two or three tasks where the base's do
 not. Part of that movement is the phrase scorer's known sensitivity to wording (below), and part is
@@ -105,6 +106,14 @@ The one genuine adapter failure observed across all sweeps is `fix-or-default-fa
 `4arm-a` sweep, where v2's answer claims "`0` is truthy" — the falsy fact stated backwards — and
 the forbidden phrase `no defect` catches the conclusion. That is a real miss, and it is recorded
 here so the adapter's errors are not all filed under "scorer noise".
+
+The scorer errs in both directions, and v4's third sweep is the matching false *positive*. Its
+`fix-none-cap` answer diagnoses the defect correctly — `min(5, None)` raises `TypeError`, and the
+fix is `return min(value, cap) if cap is not None else value` — and is failed by the forbidden
+phrase `there is no`, which the answer contains in the harmless clause *"no cap applied when
+there is no cap"*. The forbid list exists to catch answers that conclude there is no defect; this
+answer concluded the opposite and named the right fix. Read against the answers rather than the
+exit codes, **v4's three sweeps are 15, 15 and 15**.
 
 ## What this does and does not establish
 
