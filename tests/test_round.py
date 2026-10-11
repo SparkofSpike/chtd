@@ -60,11 +60,30 @@ def test_a_task_set_round_trips(tmp_path) -> None:
 
 
 def test_committed_holdout_checks_use_this_checkout() -> None:
+    """The committed holdout set: portably addressed, disjoint from training, and large enough to
+    resolve a difference.
+
+    The size assertion is deliberately a floor rather than an exact count. It was `== 5` until
+    2026-10-11, and five is the number this test was written around: with five tasks one task is
+    twenty points of the score, and the base model's own run-to-run range measured wider than any
+    gap between arms. A set that cannot see an effect cannot support a claim, so the floor records
+    the reason rather than the current number — adding tasks should not require editing a test, and
+    shrinking the set back should fail.
+    """
     task_set = Path(__file__).resolve().parent.parent / "harness" / "tasks" / "final-holdout.jsonl"
     tasks = load_round_tasks(task_set)
-    assert len(tasks) == 5
+    assert len(tasks) >= 15, (
+        f"the held-out set holds {len(tasks)} tasks; below 15 one task is worth more than 6 points "
+        "and the measurement cannot separate two arms"
+    )
     assert CHECK_SCRIPT.is_file()
     assert all(str(CHECK_SCRIPT) in task.check for task in tasks)
+
+    training = load_round_tasks(
+        Path(__file__).resolve().parent.parent / "harness" / "tasks" / "error-recovery.jsonl"
+    )
+    overlap = {task.id for task in tasks} & {task.id for task in training}
+    assert not overlap, f"a task is in both sets: {sorted(overlap)}"
 
 
 def test_comments_and_blank_lines_are_skipped(tmp_path) -> None:
