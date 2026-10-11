@@ -1,8 +1,9 @@
 # Run chTD-20261011-a — the experimental arm, retrained after the box's `/root` was lost
 
 This is a **re-run of the experimental (`chtd`) arm**, not a new experiment. It produces the adapter
-`runs/chtd-4/` recorded and the training box lost — same sample set, same recipe, same track, same
-base weights, each verified by digest rather than by name.
+`runs/chtd-4/` recorded and the training box lost — same sample set, recipe, and track. The old
+fingerprint covered configuration files only, so it cannot establish byte identity of the base
+weights; future runs record hashes of the actual weight shards.
 
 ## Why it exists
 
@@ -24,8 +25,8 @@ Both digests were recomputed from the local files before the run and matched. Th
 the one that matters most: it covers the exact bytes the trainer reads, so a match means the re-run
 trained on the recorded labels rather than on a rebuilt approximation. The base-model path moved
 from `/root/models/…` to `/mnt/proj/…`; the fingerprint, which is over `config.json`,
-`tokenizer_config.json` and `generation_config.json`, is byte-identical to the one `chtd-4` recorded,
-so the weights under the new path are the weights the recorded run used.
+`tokenizer_config.json` and `generation_config.json`, is byte-identical to the one `chtd-4` recorded.
+This confirms matching configuration files, not matching weight bytes.
 
 ## What ran
 
@@ -213,5 +214,6 @@ python serve_openai_bf16.py --model-path /mnt/proj/chtd-experiments/models/Qwen3
 CHTD_ARMS=adapter:8002,base:8003 python eval/holdout_sweep.py chtd-20261011-a-bf16
 ```
 
-Scoring calls `harness/tasks/check_diagnosis.py`, the same reader the training gate uses, so a
-pass means here what it means there. `CHTD_EVAL_HOST` overrides the box's address.
+Scoring calls `harness/tasks/check_diagnosis.py`. The corrected sweep passes its forbidden phrases
+and fixture path; the historical scores above should be checked against raw ledgers before being
+treated as results under the corrected gate. `CHTD_EVAL_HOST` overrides the box's address.

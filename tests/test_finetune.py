@@ -16,6 +16,7 @@ import pytest
 from distill.finetune import (
     PrefixDrift,
     SampleTooLong,
+    _base_weights_fingerprint,
     build_example,
     build_example_all_assistant,
     load_sample_lines,
@@ -24,6 +25,16 @@ from distill.finetune import (
     samples_digest_over,
 )
 from distill.sft import samples_digest
+
+
+def test_base_fingerprint_changes_when_weight_bytes_change(tmp_path) -> None:
+    (tmp_path / "config.json").write_text('{}', encoding="utf-8")
+    weights = tmp_path / "model.safetensors"
+    weights.write_bytes(b"first weights")
+    first = _base_weights_fingerprint(str(tmp_path))
+    weights.write_bytes(b"other weights")
+    second = _base_weights_fingerprint(str(tmp_path))
+    assert first["digest"] != second["digest"]
 
 
 class FakeTokenizer:
@@ -194,7 +205,7 @@ def _multi_turn_sample():
     The shape this round's samples have, and the shape that exposed the problem: an arm trained where
     only the final turn carries the loss learned to answer and never to look.
     """
-    return _sample(messages=[
+    sample = _sample(messages=[
         {"role": "system", "content": "You are on a track."},
         {"role": "user", "content": "Read the directory and say what is wrong."},
         {"role": "assistant", "content": None,
@@ -208,6 +219,22 @@ def _multi_turn_sample():
         {"role": "user", "content": "State the defect."},
         {"role": "assistant", "content": "It mutates the caller's rows."},
     ])
+    sample["teacher_turn_indices"] = [2, 4, 7]
+    return sample
+
+
+def test_all_assistant_refuses_student_prefix_even_with_teacher_tail() -> None:
+    sample = _multi_turn_sample()
+    sample["teacher_turn_indices"] = [7]
+    with pytest.raises(ValueError, match="student turns"):
+        build_example_all_assistant(NestedFakeTokenizer(), sample)
+
+
+def test_all_assistant_requires_explicit_teacher_provenance() -> None:
+    sample = _multi_turn_sample()
+    del sample["teacher_turn_indices"]
+    with pytest.raises(ValueError, match="teacher provenance"):
+        build_example_all_assistant(NestedFakeTokenizer(), sample)
 
 
 def test_every_assistant_turn_is_supervised() -> None:
@@ -265,6 +292,7 @@ def test_the_two_rules_agree_on_a_single_turn_sample() -> None:
     """
     tokenizer = NestedFakeTokenizer()
     sample = _sample()
+    sample["teacher_turn_indices"] = [2]
     last_only = build_example(tokenizer, sample)
     every = build_example_all_assistant(tokenizer, sample)
 

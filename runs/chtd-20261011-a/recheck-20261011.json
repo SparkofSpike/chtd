@@ -1,0 +1,541 @@
+{
+  "scope": "saved answers, current automatic gate, not human truth",
+  "arms": {
+    "base": {
+      "automatic_passes": 14,
+      "reported_passes": 13,
+      "rows": [
+        {
+          "task_id": "fix-string-case",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-sort-key",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-shallow-copy",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-ordinal-index",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-single-name",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-strip-whitespace",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-closure-late-binding",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-generator-exhaust",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-broad-except",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-none-cap",
+          "automatic_pass": false,
+          "reported_rescore": false,
+          "missing": [
+            "none"
+          ],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-enumerate-start",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-zip-truncates",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-or-default-falsy",
+          "automatic_pass": true,
+          "reported_rescore": false,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-row-alias",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-augmented-assign-mutates",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        }
+      ]
+    },
+    "experiment_19": {
+      "automatic_passes": 10,
+      "reported_passes": 10,
+      "rows": [
+        {
+          "task_id": "fix-string-case",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-sort-key",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-shallow-copy",
+          "automatic_pass": false,
+          "reported_rescore": false,
+          "missing": [
+            "table|blanked",
+            "copy|in.?place|mutat|changes the original|modifies the original"
+          ],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-ordinal-index",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-single-name",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-strip-whitespace",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-closure-late-binding",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-generator-exhaust",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-broad-except",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-none-cap",
+          "automatic_pass": false,
+          "reported_rescore": false,
+          "missing": [
+            "none"
+          ],
+          "forbidden": [
+            "no defect",
+            "appears to be correct",
+            "there is no"
+          ],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-enumerate-start",
+          "automatic_pass": false,
+          "reported_rescore": false,
+          "missing": [
+            "enumerate",
+            "start"
+          ],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-zip-truncates",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-or-default-falsy",
+          "automatic_pass": false,
+          "reported_rescore": false,
+          "missing": [],
+          "forbidden": [
+            "no defect"
+          ],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-row-alias",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-augmented-assign-mutates",
+          "automatic_pass": false,
+          "reported_rescore": false,
+          "missing": [
+            "caller|original|same list|mutat|in.?place",
+            "list|tags"
+          ],
+          "forbidden": [],
+          "invented_files": []
+        }
+      ]
+    },
+    "matched_chtd": {
+      "automatic_passes": 12,
+      "reported_passes": 12,
+      "rows": [
+        {
+          "task_id": "fix-string-case",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-sort-key",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-shallow-copy",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-ordinal-index",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-single-name",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-strip-whitespace",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-closure-late-binding",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-generator-exhaust",
+          "automatic_pass": false,
+          "reported_rescore": false,
+          "missing": [
+            "exhaust|consum|twice|already|reuse"
+          ],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-broad-except",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-none-cap",
+          "automatic_pass": false,
+          "reported_rescore": false,
+          "missing": [],
+          "forbidden": [
+            "there is no"
+          ],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-enumerate-start",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-zip-truncates",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-or-default-falsy",
+          "automatic_pass": false,
+          "reported_rescore": false,
+          "missing": [],
+          "forbidden": [
+            "correctly returns",
+            "no defect"
+          ],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-row-alias",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-augmented-assign-mutates",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        }
+      ]
+    },
+    "matched_baseline": {
+      "automatic_passes": 12,
+      "reported_passes": 13,
+      "rows": [
+        {
+          "task_id": "fix-string-case",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-sort-key",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-shallow-copy",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-ordinal-index",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-single-name",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-strip-whitespace",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-closure-late-binding",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-generator-exhaust",
+          "automatic_pass": false,
+          "reported_rescore": false,
+          "missing": [
+            "exhaust|consum|twice|already|reuse"
+          ],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-broad-except",
+          "automatic_pass": false,
+          "reported_rescore": true,
+          "missing": [
+            "bare|catches|swallow|blanket|indiscriminat"
+          ],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-none-cap",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-enumerate-start",
+          "automatic_pass": false,
+          "reported_rescore": false,
+          "missing": [
+            "start"
+          ],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-zip-truncates",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-or-default-falsy",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-row-alias",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        },
+        {
+          "task_id": "fix-augmented-assign-mutates",
+          "automatic_pass": true,
+          "reported_rescore": true,
+          "missing": [],
+          "forbidden": [],
+          "invented_files": []
+        }
+      ]
+    }
+  }
+}

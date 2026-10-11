@@ -329,7 +329,9 @@ def test_a_sample_carries_no_gate_evidence(tmp_path) -> None:
         "harness_prefix_digest",
         "messages",
         "tools",
+        "teacher_turn_indices",
     }
+    assert sample.teacher_turn_indices == (len(sample.messages) - 1,)
     assert "outcome" not in sample.to_json()
     assert "succeeded" not in sample.to_json()
 

@@ -1,0 +1,22 @@
+{
+  "source_samples_sha256": "65d35841b89658a26d400407ab25d568b14cf96fed8bafc61037bb6366f0bc1a",
+  "review_type": "manual diagnosis against the fixture and expected repair",
+  "accepted_task_ids": [
+    "fix-always-true-guard",
+    "fix-append-not-extend",
+    "fix-argument-order",
+    "fix-cli-flag",
+    "fix-empty-input",
+    "fix-integer-division",
+    "fix-json-trailing-comma",
+    "fix-missing-dict-default",
+    "fix-one-element-tuple",
+    "fix-slice-direction",
+    "fix-wrong-operator"
+  ],
+  "rejected": {
+    "fix-dict-mutation-while-iterating": "The label incorrectly describes silent skipping and says its test passes; mutation during dictionary iteration raises RuntimeError.",
+    "fix-iteration-mutation": "The label adds a false second defect in the check and gives an inaccurate failure mechanism."
+  },
+  "limitations": "One reviewer; no claim of independent adjudication. The first tool-call labels are student actions and are shared behavioral anchors, not teacher demonstrations."
+}

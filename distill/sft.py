@@ -156,19 +156,19 @@ class TrainingSample:
     harness_prefix_digest: str
     messages: tuple[Mapping[str, Any], ...]
     tools: tuple[Mapping[str, Any], ...]
+    teacher_turn_indices: tuple[int, ...] | None = None
 
     def to_json(self) -> str:
-        return json.dumps(
-            {
+        row = {
                 "task_id": self.task_id,
                 "prefix_digest": self.prefix_digest,
                 "harness_prefix_digest": self.harness_prefix_digest,
                 "messages": list(self.messages),
                 "tools": list(self.tools),
-            },
-            sort_keys=True,
-            ensure_ascii=False,
-        )
+            }
+        if self.teacher_turn_indices is not None:
+            row["teacher_turn_indices"] = list(self.teacher_turn_indices)
+        return json.dumps(row, sort_keys=True, ensure_ascii=False)
 
     def label(self) -> Mapping[str, Any]:
         """The last message, which is the teacher's turn."""
@@ -416,6 +416,7 @@ def build_samples(
                     harness_prefix_digest=prefix.digest(),
                     messages=messages,
                     tools=prefix.tools,
+                    teacher_turn_indices=(len(messages) - 1,),
                 )
             )
             if limit is not None and len(samples) >= limit:

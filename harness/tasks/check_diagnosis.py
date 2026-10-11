@@ -111,7 +111,7 @@ def _spells(phrase: str, text: str) -> bool:
                 index += 2
                 continue
             char = part[index]
-            pattern.append("." if char == "." else re.escape(char))
+            pattern.append(re.escape(char))
             index += 1
         if re.search("".join(pattern), text):
             return True
@@ -119,17 +119,17 @@ def _spells(phrase: str, text: str) -> bool:
 
 
 def answer_text(ledger_path: str, session_key: str) -> str:
-    """Every assistant message in the session, joined.
+    """The final assistant message, which is the answer the run actually leaves behind.
 
-    All of them, not just the last: a run that states the diagnosis and then restates it in a
-    closing sentence should not be judged on the order it happened to use.
+    Earlier guesses must not make a contradictory final diagnosis pass its gate.
     """
-    parts: list[str] = []
+    answer = ""
     with open_ledger(ledger_path) as ledger:
         for event in ledger.events(session_key):
             if event.type != "assistant/message":
                 continue
             data = event.data if isinstance(event.data, dict) else {}
+            parts: list[str] = []
             blocks = data.get("content")
             if isinstance(blocks, list):
                 for block in blocks:
@@ -137,7 +137,8 @@ def answer_text(ledger_path: str, session_key: str) -> str:
                         parts.append(block["text"])
             elif isinstance(data.get("text"), str):
                 parts.append(data["text"])
-    return "\n".join(parts)
+            answer = "\n".join(parts)
+    return answer
 
 
 def fixture_files(task_dir: str) -> set[str]:
