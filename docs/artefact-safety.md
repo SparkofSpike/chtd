@@ -22,6 +22,44 @@ NAT, so no direct path can be established) and it manages 100–200 KB/s, and in
 mid-transfer. That is why the local copy is made in 4 MB chunks with a stall detector rather than with
 one `scp` per file.
 
+## The box can disappear, and it has — twice, the same way
+
+The training boxes are Tailscale nodes, and **a node key that expires takes the machine off the
+network**. This is not hypothetical and it is not a one-off:
+
+| node | key expired | last reachable | gap |
+| --- | --- | --- | --- |
+| `cgpai-node3-2` (`100.113.249.5`) | 2026-10-08 22:56 | 2026-10-09 22:56 | 24 h |
+| `cgpai-node3-5` (`100.84.151.62`) | 2026-10-10 11:58 | 2026-10-11 11:58 | 24 h |
+
+The second one interrupted a local pull mid-transfer — after 41 of 64 chunks, at 164 MB of 264 MB — and
+from this end there is nothing to do about it: the machine is not on the tailnet, so no ssh, no scp, no
+reminder that it is about to go. The 24 hours of grace between expiry and disconnection are the whole
+warning, and they pass silently.
+
+**The fix is one setting.** In the Tailscale admin console, disable key expiry for the training node.
+A machine that is reached from a script rather than by a person logging in has no reason to carry an
+expiring key, and every reason not to: the failure is silent, delayed, and indistinguishable from the
+box being broken.
+
+### Recovering the box
+
+Requires someone at the machine (or with console access to it) to re-authenticate:
+
+```sh
+tailscale up          # prints a URL to open; the node rejoins under its own name and IP
+```
+
+Nothing on `/mnt/proj` or `/mnt/user` is affected — both are NFS mounts served by `172.25.70.4`, a
+different machine from the one that went offline. **Losing the node is not losing the data**, which is
+exactly what the redundancy above is for.
+
+### What a local pull does when this happens
+
+`tools/pull_artefacts.py` keeps every completed chunk and re-splits deterministically on the next run,
+so the 41 chunks already on disk are reused rather than re-fetched. An interruption costs the chunk in
+flight, not the transfer. The run above reported six failures and left 164 MB of usable work behind.
+
 ## What cannot be rebuilt, and what can
 
 Training is not deterministic. `docs/finetune.md` records the same plan against the same samples run
@@ -83,10 +121,30 @@ sustained. The capacity was never the problem — the long-lived connection was.
 ```sh
 # on the box
 cd /mnt/user/chtd-experiments-backup && sha256sum -c MANIFEST.sha256 --quiet
-
-# locally: every adapter, against the hash recorded in its own run.json
-python tools\pull_artefacts.py          # reports "already local and correct" per artefact
 ```
+
+```powershell
+# locally: does the copy rebuild the round, byte for byte?
+python tools\verify_local_rebuild.py --round data/chtd-round-20261011
+```
+
+The second one is the check that matters, because it tests what the copy is *for* rather than whether
+files are present. It runs the real rebuild — `distill.reviewed_forks` over the local ledger, forks,
+review and prefix — and compares the result to the digests that were trained on. Measured on
+2026-10-11, with the box already offline:
+
+```
+samples  rebuilt  79d29560a72ca8a9209e20af0f3c4e5a54dd5485dec90ec584e2440e0a339705
+         expected 79d29560a72ca8a9209e20af0f3c4e5a54dd5485dec90ec584e2440e0a339705  MATCH
+dataset  rebuilt  7694a265f7b22603bb62867b35d9bd5be923d5f426ba22055bbd5f6a79d83ba0
+         expected 7694a265f7b22603bb62867b35d9bd5be923d5f426ba22055bbd5f6a79d83ba0  MATCH
+```
+
+So the local copy is not merely a set of files: it is a restorable round. **Task order is part of the
+digest** — the first version of that check fed the raw collection manifest, got thirteen rows that were
+identical field for field, and a digest that did not match. A reproduction has to use the same manifest
+the round was built from (`student-filtered/`), and the tool documents that in its own docstring rather
+than in a footnote here.
 
 Each adapter's `run.json`, kept beside it in `runs/`, records the sha256 of the weights that run
 produced, so a local file can be checked against the record rather than against itself.
