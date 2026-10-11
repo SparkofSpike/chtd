@@ -17,6 +17,7 @@ from distill.finetune import (
     PrefixDrift,
     SampleTooLong,
     build_example,
+    build_example_all_assistant,
     load_sample_lines,
     render_chat,
     render_examples,
@@ -166,6 +167,143 @@ def test_a_sample_with_nothing_to_mask_is_refused() -> None:
     sample = _sample(messages=[{"role": "user", "content": "only a question"}])
     with pytest.raises(ValueError, match="the minimum"):
         build_example(FakeTokenizer(), sample)
+
+
+# ------------------------------------------------- every-turn supervision
+
+
+class NestedFakeTokenizer(FakeTokenizer):
+    """A tokenizer whose renderings nest, which per-message supervision requires.
+
+    `FakeTokenizer` ends a rendering with a single `<|end|>`, so appending a message moves that
+    terminator instead of extending the text — the render of two messages is not a prefix of the
+    render of three, and a per-message mask cannot be placed against it. The real Qwen template does
+    not have this problem because every message carries its own terminator; this class renders the
+    same way, so the nesting check passes for the reason it passes in production.
+    """
+
+    def apply_chat_template(self, messages, tokenize=False, add_generation_prompt=False, tools=None):
+        self.seen_tools = tools
+        text = "".join(f"<|{m['role']}|>{m.get('content') or ''}<|end|>" for m in messages)
+        return text + "<|assistant|>" if add_generation_prompt else text
+
+
+def _multi_turn_sample():
+    """A conversation with two assistant turns: a tool call, then a diagnosis.
+
+    The shape this round's samples have, and the shape that exposed the problem: an arm trained where
+    only the final turn carries the loss learned to answer and never to look.
+    """
+    return _sample(messages=[
+        {"role": "system", "content": "You are on a track."},
+        {"role": "user", "content": "Read the directory and say what is wrong."},
+        {"role": "assistant", "content": None,
+         "tool_calls": [{"id": "t0-1", "type": "function",
+                         "function": {"name": "ls", "arguments": "{}"}}]},
+        {"role": "tool", "content": "check.py table.py", "tool_call_id": "t0-1"},
+        {"role": "assistant", "content": None,
+         "tool_calls": [{"id": "t1-1", "type": "function",
+                         "function": {"name": "read", "arguments": '{"path":"table.py"}'}}]},
+        {"role": "tool", "content": "def blanked(table): ...", "tool_call_id": "t1-1"},
+        {"role": "user", "content": "State the defect."},
+        {"role": "assistant", "content": "It mutates the caller's rows."},
+    ])
+
+
+def test_every_assistant_turn_is_supervised() -> None:
+    """Both assistant turns carry the loss, and the tool results do not.
+
+    The measured reason this exists: the last-turn-only rule produced an arm that made **zero** tool
+    calls on fifteen held-out tasks, because it had never been shown the decision to look. Its whole
+    supervised experience was prose placed after a conversation somebody else had conducted.
+    """
+    example = build_example_all_assistant(NestedFakeTokenizer(), _multi_turn_sample())
+    labels = example["labels"]
+    spans = []
+    start = None
+    for index, value in enumerate(labels):
+        if value != -100 and start is None:
+            start = index
+        elif value == -100 and start is not None:
+            spans.append((start, index))
+            start = None
+    if start is not None:
+        spans.append((start, len(labels)))
+
+    # Two assistant turns, and a tool result between them that is masked: so at least two separate
+    # supervised runs, not one contiguous tail.
+    assert len(spans) >= 2, f"expected separate supervised turns, got {spans}"
+    assert any(value == -100 for value in labels[spans[0][1]:spans[1][0]]), \
+        "the tool result between two turns must stay masked"
+
+
+def test_every_turn_supervises_strictly_more_than_the_last_turn_rule() -> None:
+    """The two rules are not the same rule wearing two names."""
+    tokenizer = NestedFakeTokenizer()
+    sample = _multi_turn_sample()
+    last_only = build_example(tokenizer, sample)
+    every = build_example_all_assistant(tokenizer, sample)
+
+    def supervised(example):
+        return sum(1 for value in example["labels"] if value != -100)
+
+    assert supervised(every) > supervised(last_only)
+    # and the input is identical: only the mask differs, so a comparison between the two is a
+    # comparison of the supervision rule and not of the conversation.
+    assert every["input_ids"] == last_only["input_ids"]
+    assert every["attention_mask"] == last_only["attention_mask"]
+
+
+def test_the_two_rules_agree_on_a_single_turn_sample() -> None:
+    """On a one-turn sample the two rules supervise the same content, differing only at the boundary.
+
+    `build_example` starts where the generation prompt ends, because that is where the endpoint starts
+    asking the model to write. `build_example_all_assistant` starts at the message boundary, so it also
+    covers the assistant header token. Both supervise the answer; the difference is a few tokens of
+    framing, not a difference in what is learned — which is why the multi-turn case above is the one
+    that carries the argument.
+    """
+    tokenizer = NestedFakeTokenizer()
+    sample = _sample()
+    last_only = build_example(tokenizer, sample)
+    every = build_example_all_assistant(tokenizer, sample)
+
+    def supervised(example):
+        return sum(1 for value in example["labels"] if value != -100)
+
+    assert supervised(last_only) > 0 and supervised(every) > 0
+    # Both reach the end of the conversation: the answer itself is supervised either way.
+    assert last_only["labels"][-1] != -100
+    assert every["labels"][-1] != -100
+    # and the all-turns rule covers at least as much, since it starts a boundary earlier.
+    assert supervised(every) >= supervised(last_only)
+
+
+def test_the_nesting_check_refuses_a_template_that_cannot_place_a_mask() -> None:
+    """The plain FakeTokenizer terminates a rendering once, so its renderings do not nest.
+
+    A per-message mask cannot be located against it, and the code says so instead of placing the mask
+    against the wrong offsets — which would train on tokens it did not mean to and report a normal
+    loss while doing it.
+    """
+    with pytest.raises(PrefixDrift, match="does not extend"):
+        build_example_all_assistant(FakeTokenizer(), _multi_turn_sample())
+
+
+def test_render_examples_refuses_an_unknown_supervision_rule() -> None:
+    """`supervise` is a choice between two named rules; a typo must not silently mean the old one."""
+    with pytest.raises(ValueError, match="supervise must be"):
+        render_examples(FakeTokenizer(), [_sample()], limit=10_000, supervise="assitant",
+                        log=lambda *_: None)
+
+
+def test_render_examples_reports_the_supervised_count() -> None:
+    """The dry run prints this number, and it is how the change from one turn to every turn was
+    checked before a GPU-second was spent."""
+    lines = []
+    render_examples(NestedFakeTokenizer(), [_multi_turn_sample()], limit=10_000,
+                    supervise="assistant", log=lines.append)
+    assert lines and "supervise='assistant'" in lines[0], lines
 
 
 # ----------------------------------------------------------------- rendering

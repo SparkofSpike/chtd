@@ -131,6 +131,90 @@ def render_chat(
         )
 
 
+def message_bounds(tokenizer: Any, messages: Sequence[Mapping[str, Any]],
+                   tools: Sequence[Mapping[str, Any]] | None) -> list[int]:
+    """The token offset each message ends at, by rendering successively longer prefixes.
+
+    Needed to supervise more than the last turn. Rendering the whole conversation gives one run of
+    tokens with no map back to the messages that produced it, and guessing where a turn starts by
+    searching for its text is wrong the moment a tool result quotes that text.
+
+    The prefixes are required to nest: each render must extend the previous one token-for-token. If
+    it does not, a message boundary cannot be located this way, and the caller is told rather than
+    handed an offset that silently lands mid-token.
+    """
+    bounds = [0]
+    previous: list[int] = []
+    for index in range(1, len(messages) + 1):
+        text = render_chat(tokenizer, messages[:index], tools, add_generation_prompt=False)
+        ids = tokenizer(text, add_special_tokens=False)["input_ids"]
+        if ids[: len(previous)] != previous:
+            diverged = next((i for i, (a, b) in enumerate(zip(previous, ids)) if a != b),
+                            min(len(previous), len(ids)))
+            raise PrefixDrift(
+                f"message {index} does not extend the conversation before it: the renderings "
+                f"disagree at token {diverged}, so a per-message supervision mask cannot be "
+                f"placed reliably"
+            )
+        previous = ids
+        bounds.append(len(ids))
+    return bounds
+
+
+def build_example_all_assistant(tokenizer: Any, sample: Mapping[str, Any]) -> dict[str, list[int]]:
+    """One sample with **every** assistant turn supervised, not just the last one.
+
+    Why this exists, measured 2026-10-11. Supervising only the final turn is what this repository's
+design calls for: the label is the teacher's decision at a divergence, and the turns before it are the
+state. An arm trained that way learned to *answer* — and not to look. On fifteen held-out tasks it
+made **zero** tool calls across all fifteen (the base made three on each), and answered every task
+with the same sentence about no files being listed, because the only behaviour it had ever been shown
+was prose placed after a conversation somebody else had already conducted.
+
+    The turns before the divergence are the teacher's own decisions too — the same teacher, the same
+    track, the same fixtures. Supervising them teaches the trajectory rather than its last word, and
+    keeps what the method is for: every supervised turn is the teacher's, at a state the run actually
+    reached.
+
+    What is given up, stated plainly: this is no longer "only the divergence is learned". It is
+    demonstration learning over a teacher trajectory that happens to contain a divergence. The
+    comparison between arms still holds, because both arms' data is built the same way.
+    """
+    messages = list(sample["messages"])
+    tools = sample.get("tools")
+    if len(messages) < 2:
+        raise ValueError(f"sample {sample.get('task_id')!r} has {len(messages)} messages; a state "
+                         "and a label are the minimum")
+
+    full_text = render_chat(tokenizer, messages, tools, add_generation_prompt=False)
+    full_ids = tokenizer(full_text, add_special_tokens=False)["input_ids"]
+    bounds = message_bounds(tokenizer, messages, tools)
+    if bounds[-1] != len(full_ids):
+        raise PrefixDrift(
+            f"the final message boundary is {bounds[-1]} but the conversation renders to "
+            f"{len(full_ids)} tokens; the mask would be placed against the wrong text"
+        )
+
+    labels = [-100] * len(full_ids)
+    supervised_turns = 0
+    for index, message in enumerate(messages):
+        if message.get("role") != "assistant":
+            continue
+        start, end = bounds[index], bounds[index + 1]
+        if end <= start:
+            continue
+        labels[start:end] = full_ids[start:end]
+        supervised_turns += 1
+    if not supervised_turns:
+        raise ValueError(f"sample {sample.get('task_id')!r} has no assistant turn to supervise")
+
+    return {
+        "input_ids": list(full_ids),
+        "attention_mask": [1] * len(full_ids),
+        "labels": labels,
+    }
+
+
 def build_example(tokenizer: Any, sample: Mapping[str, Any]) -> dict[str, list[int]]:
     """One sample as ``input_ids``, ``attention_mask`` and ``labels``.
 
@@ -295,6 +379,7 @@ def render_examples(
     rows: Sequence[Mapping[str, Any]],
     *,
     limit: int,
+    supervise: str = "last",
     log=print,
 ) -> tuple[list[dict[str, list[int]]], list[int]]:
     """Render every sample, refusing a drifted one or one over the recipe's limit.
@@ -306,11 +391,19 @@ def render_examples(
     A sample over ``limit`` is refused rather than truncated. The label is the last thing in the
     conversation, so truncation does not shorten the input — it deletes the answer, and the run would
     report a healthy loss on a label that was not there.
+
+    ``supervise`` chooses which assistant turns carry the loss: ``last`` for the repository's
+    original rule (only the divergence), ``assistant`` for every turn in the conversation. See
+    :func:`build_example_all_assistant` for why the second one exists.
     """
+    if supervise not in ("last", "assistant"):
+        raise ValueError(f"supervise must be 'last' or 'assistant', not {supervise!r}")
+    build = build_example_all_assistant if supervise == "assistant" else build_example
     examples: list[dict[str, list[int]]] = []
     lengths: list[int] = []
+    supervised: list[int] = []
     for row in rows:
-        example = build_example(tokenizer, row)
+        example = build(tokenizer, row)
         if len(example["input_ids"]) > limit:
             raise SampleTooLong(
                 f"sample {row.get('task_id')!r} renders to {len(example['input_ids'])} tokens, "
@@ -320,7 +413,9 @@ def render_examples(
             )
         examples.append(example)
         lengths.append(len(example["input_ids"]))
-    log(f"rendered {len(examples)} samples: {min(lengths)}-{max(lengths)} tokens "
+        supervised.append(sum(1 for value in example["labels"] if value != -100))
+    log(f"rendered {len(examples)} samples: {min(lengths)}-{max(lengths)} tokens, "
+        f"{min(supervised)}-{max(supervised)} supervised, supervise={supervise!r} "
         f"(prefix drift check passed)")
     return examples, lengths
 
@@ -332,6 +427,7 @@ def train(
     base_model: str,
     output_dir: str | Path,
     max_length: int | None = None,
+    supervise: str = "last",
     log=print,
 ) -> dict[str, Any]:
     """Run the fine-tune the plan describes, and return the record of what ran.
@@ -371,7 +467,7 @@ def train(
         tokenizer.pad_token = tokenizer.eos_token
     log(f"tokenizer loaded, vocab={tokenizer.vocab_size}")
 
-    examples, lengths = render_examples(tokenizer, rows, limit=limit, log=log)
+    examples, lengths = render_examples(tokenizer, rows, limit=limit, supervise=supervise, log=log)
 
     model = AutoModelForCausalLM.from_pretrained(
         base_model,
@@ -489,6 +585,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="override the recipe's max_sequence_length (a deliberate change, recorded)",
     )
     parser.add_argument(
+        "--supervise",
+        choices=("last", "assistant"),
+        default="last",
+        help=("which assistant turns carry the loss: 'last' is the original rule (only the "
+              "divergence), 'assistant' supervises every turn in the conversation"),
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="render and check the samples without loading the model",
@@ -507,10 +610,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         limit = args.max_length or plan.recipe.max_sequence_length
         for line in row_lines:
             row = json.loads(line)
-            example = build_example(tokenizer, row)
+            build_one = (build_example_all_assistant if args.supervise == "assistant"
+                         else build_example)
+            example = build_one(tokenizer, row)
             supervised = sum(1 for value in example["labels"] if value != -100)
+            turns = sum(1 for m in row["messages"] if m.get("role") == "assistant")
             print(f"  task={row.get('task_id')} tokens={len(example['input_ids'])} "
-                  f"supervised={supervised} limit={limit}")
+                  f"supervised={supervised} assistant_turns={turns} limit={limit}")
         return 0
 
     if not args.output:
@@ -522,6 +628,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         base_model=args.base_model,
         output_dir=args.output,
         max_length=args.max_length,
+        supervise=args.supervise,
     )
     return 0
 
