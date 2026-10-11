@@ -27,7 +27,25 @@ hashes in `train-run.json`). The adapter SHA256 is
 `bb0388085bcc7e80fdb84d7081288ed4e3bb06bd3553c3c0897b809da0b095b9`; its 264 MB weight
 file stays on the cloud under the run directory.
 
-The paired serving evaluation is in progress; results will be recorded below when it finishes.
+## Diagnostic serving result
+
+The same 15 tasks were run sequentially against the unadapted base and this adapter, using the
+same bf16 server implementation and frozen task files. All 30 raw sessions are preserved at
+`/mnt/proj/chtd-experiments/aux-first-tool-20261011/eval-20261011-b/`. The corresponding archive
+SHA256 is `463fcae2d71e5f8b4786baaf67122c1ed0887398c4eed51e534d66f844276453`.
+
+The **automatic keyword proxy** passed 13/15 for the base and 12/15 for the adapter. The adapter
+made a malformed later `read` call on `fix-closure-late-binding` (exit 4), then diagnosed its own
+tool error instead of the Python defect. It also hallucinated a circular import on
+`fix-enumerate-start`. The compact per-task record is in `eval-summary.json`.
+
+Manual inspection exposed scorer errors in both directions: the adapter correctly diagnosed
+`fix-none-cap` but failed the gate because the phrase “there is no” appeared in an explanation;
+it passed `fix-or-default-falsy` by naming `0` and `8080` while wrongly advising that the test
+expectation be changed. The base passed `fix-enumerate-start` while concluding that the test was
+wrong, despite the implementation's default zero-based numbering. Several other answers mix a
+correct root cause with inconsistent repair advice. These counts are therefore not reliable human
+accuracy estimates. This first candidate has **no demonstrated performance gain**.
 
 ## Interpretation limits
 
