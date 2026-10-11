@@ -20,6 +20,7 @@ from distill.finetune import (
     build_example,
     build_example_all_assistant,
     load_sample_lines,
+    message_bounds,
     render_chat,
     render_examples,
     samples_digest_over,
@@ -279,6 +280,107 @@ def test_every_turn_supervises_strictly_more_than_the_last_turn_rule() -> None:
     # comparison of the supervision rule and not of the conversation.
     assert every["input_ids"] == last_only["input_ids"]
     assert every["attention_mask"] == last_only["attention_mask"]
+
+
+class ToolRunFakeTokenizer(NestedFakeTokenizer):
+    """The real template's treatment of several tool results from one assistant turn.
+
+    They share a block: the opener comes before the first result and the terminator after the last,
+    so a render that stops inside the run closes the block early and is not a prefix of the full
+    render. This is the shape two parallel `read`s from one turn produce on the box. Tool calls
+    are rendered into the body so the supervised text names what the turn decided to do.
+    """
+
+    @staticmethod
+    def body(message) -> str:
+        parts: list[str] = []
+        content = message.get("content")
+        if isinstance(content, str) and content:
+            parts.append(content)
+        for call in message.get("tool_calls") or []:
+            parts.append(json.dumps(call, sort_keys=True))
+        return "".join(parts)
+
+    def apply_chat_template(self, messages, tokenize=False, add_generation_prompt=False, tools=None):
+        self.seen_tools = tools
+        parts: list[str] = []
+        open_block = False
+        for index, message in enumerate(messages):
+            role = message.get("role")
+            body = self.body(message)
+            continues = (role == "tool" and index > 0
+                         and messages[index - 1].get("role") == "tool")
+            if continues:
+                parts.append(f"|{body}")
+                continue
+            if open_block:
+                parts.append("<|end|>")
+            parts.append(f"<|{role}|>{body}")
+            open_block = True
+        if open_block:
+            parts.append("<|end|>")
+        text = "".join(parts)
+        return text + "<|assistant|>" if add_generation_prompt else text
+
+
+def _parallel_reads_sample():
+    """One assistant turn with two tool calls, then a diagnosis.
+
+    The shape every collected teacher trace has: agnes-3.0-flash reads both files in one turn, and
+    the template renders the two results as a single block.
+    """
+    sample = _sample(messages=[
+        {"role": "system", "content": "You are on a track."},
+        {"role": "user", "content": "Read both files and say what is wrong."},
+        {"role": "assistant", "content": None,
+         "tool_calls": [
+             {"id": "t0-1", "type": "function",
+              "function": {"name": "read", "arguments": '{"path":"a.py"}'}},
+             {"id": "t0-2", "type": "function",
+              "function": {"name": "read", "arguments": '{"path":"b.py"}'}},
+         ]},
+        {"role": "tool", "content": "def a(): ...", "tool_call_id": "t0-1"},
+        {"role": "tool", "content": "def b(): ...", "tool_call_id": "t0-2"},
+        {"role": "assistant", "content": "The defect is in a.py."},
+    ])
+    sample["teacher_turn_indices"] = [2, 5]
+    return sample
+
+
+def test_a_parallel_tool_run_does_not_refuse_the_sample() -> None:
+    """Two results from one assistant turn: the interior boundary cannot be placed by prefix
+    rendering, and nothing consumes it, so the sample must render and mask rather than fail.
+
+    Measured on the box: every one of 32 collected teacher traces carries a parallel `read`, so a
+    check that refuses them refuses the entire dataset.
+    """
+    example = build_example_all_assistant(ToolRunFakeTokenizer(), _parallel_reads_sample())
+    supervised = "".join(chr(v) for v in example["labels"] if v != -100)
+
+    # The assistant turns carry the loss — the tool calls and the diagnosis —
+    assert '"name": "read"' in supervised
+    assert "The defect is in a.py." in supervised
+    # — and the tool results, which are state, stay masked.
+    assert "def a()" not in supervised
+    assert "def b()" not in supervised
+
+
+def test_the_interior_tool_boundary_is_a_placeholder_nobody_reads() -> None:
+    """The unplaceable boundary is carried forward, and the consumed ones are exact."""
+    tokenizer = ToolRunFakeTokenizer()
+    sample = _parallel_reads_sample()
+    messages = sample["messages"]
+    bounds = message_bounds(tokenizer, messages, sample["tools"])
+
+    # messages: system0 user1 assistant2 tool3 tool4 assistant5
+    # bounds[4] would be the second-of-two tool results' end — unplaceable, carried forward.
+    assert bounds[4] == bounds[3]
+    # The boundaries the mask reads are the renders' own lengths.
+    for consumed in (2, 3, 5, 6):
+        text = render_chat(tokenizer, messages[:consumed], sample["tools"],
+                           add_generation_prompt=False)
+        expected = len(tokenizer(text, add_special_tokens=False)["input_ids"])
+        assert bounds[consumed] == expected, consumed
 
 
 def test_the_two_rules_agree_on_a_single_turn_sample() -> None:
