@@ -55,7 +55,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from harness.ledger import open_ledger  # noqa: E402
+from harness.ledger import open_ledger
 
 #: A file name as an answer writes one: a bare name, or a path, with an extension a fixture uses.
 #: Deliberately narrow. Matching every token that contains a dot would flag `sorted()` — a function,

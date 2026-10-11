@@ -28,8 +28,17 @@ import tempfile
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-__all__ = ["EXPECT", "FINAL_HOLDOUT", "FORBID", "TASKS", "build", "self_check", "split",
-           "write_task_set", "main"]
+__all__ = [
+    "EXPECT",
+    "FINAL_HOLDOUT",
+    "FORBID",
+    "TASKS",
+    "build",
+    "main",
+    "self_check",
+    "split",
+    "write_task_set",
+]
 
 
 #: Each task: an id, the symptom a user would report, the files to write, the check that must fail
