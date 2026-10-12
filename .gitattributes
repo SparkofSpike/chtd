@@ -17,3 +17,13 @@ packages/chtd/presets/*.sha256 -text -diff
 # way — it is JSON — so this is about the record staying the record, not about
 # the file refusing to parse.)
 harness/prefix/*.json -text -diff
+
+# A collection profile's *bytes* decide the track. Measured 2026-10-12: the
+# harness records a `resolvedProfileHash` over the profile it loaded, and a track
+# digest is sha256 over that hash and the preset. Changing one URL — or only the
+# line endings — changes the hash, changes the track, and makes a dataset built
+# under the old profile refuse to mix with the new one (distill/dataset.py).
+# A checkout that rewrote line endings would therefore silently move every
+# collection onto its own private track, so these files are frozen like the
+# presets are.
+harness/profile/*.yaml -text -diff
