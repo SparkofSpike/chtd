@@ -51,3 +51,33 @@ state successfully, the claimed recovery comparison is not runnable.
 
 Credentials belong in local environment variables or a private file. The
 profile and experiment artifacts contain no credential value.
+
+## Status update, 2026-10-12
+
+Two facts measured since this freeze was written. Both bear on how a CHTD-arm
+collection can join this track, and neither was known when the values above were
+recorded.
+
+**The frozen student endpoint is unreachable.** `100.89.65.49:8000` does not
+accept TCP connections any more, so a collection that uses this profile as
+written has nowhere to send the student route. Restoring that endpoint is the
+only way to collect on this exact track with these bytes.
+
+**A profile's bytes decide the track, and nothing else does.** Measured on two
+throwaway AGH sessions with the local build: changing the student `baseUrl`
+changes the `resolvedProfileHash` the harness records, and changing only the
+line endings (LF vs CRLF) also changes it. The track digest is sha256 over that
+hash and the preset — both this file's `d403e1e1…` and the teacher-demo run's
+`bfe7424d…` reproduce exactly from their recorded values. So swapping in a
+different endpoint (or checking the file out on a platform that rewrites line
+endings) does not produce this track; it produces a new one, and
+`distill/dataset.py` will refuse to mix its rows with these.
+
+`harness/profile/paired-minimal-rl-node5.yaml` is this profile's structure with
+the student route pointed at the current training box (`100.84.151.62:8003`,
+the bf16 base endpoint), normalised to LF, and byte-frozen the same way. It is on
+a **different track by construction**. Using it means either the control arm is
+re-collected on that track too, or the two arms are compared without the
+pairing this document describes — an experiment-owner decision, not a
+substitution this file makes on its own. The profile the teacher-demo collection
+ran against is the same node5 variant, so its traces sit on `bfe7424d…`.
