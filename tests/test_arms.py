@@ -122,6 +122,24 @@ def test_a_task_missing_from_an_arm_is_named() -> None:
         )
 
 
+def test_duplicate_or_mislabeled_rollout_rows_are_rejected() -> None:
+    with pytest.raises(ValueError, match="duplicate tasks"):
+        compare(
+            _rows(BASELINE, {"t1": SUCCEEDED, "t2": SUCCEEDED}) +
+            (run("t1", BASELINE, outcome=FAILED),),
+            _rows(CHTD, {"t1": SUCCEEDED, "t2": SUCCEEDED}),
+            baseline_conditions=_conditions(BASELINE),
+            chtd_conditions=_conditions(CHTD),
+        )
+    with pytest.raises(ValueError, match="unexpected arm labels"):
+        compare(
+            _rows(BASELINE, {"t1": SUCCEEDED, "t2": SUCCEEDED}),
+            _rows(BASELINE, {"t1": SUCCEEDED, "t2": SUCCEEDED}),
+            baseline_conditions=_conditions(BASELINE),
+            chtd_conditions=_conditions(CHTD),
+        )
+
+
 def test_conditions_must_name_the_arms_they_describe() -> None:
     with pytest.raises(ValueError, match="baseline conditions name arm"):
         compare(

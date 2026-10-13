@@ -168,6 +168,22 @@ def compare(
     if chtd_conditions.arm != CHTD:
         raise ValueError(f"the CHTD conditions name arm {chtd_conditions.arm!r}")
     _assert_comparable(baseline_conditions, chtd_conditions)
+    baseline_rows = tuple(baseline_rows)
+    chtd_rows = tuple(chtd_rows)
+    for label, rows, expected_arm, expected_tasks in (
+        ("baseline", baseline_rows, BASELINE, set(baseline_conditions.tasks)),
+        ("CHTD", chtd_rows, CHTD, set(chtd_conditions.tasks)),
+    ):
+        task_ids = [row.task_id for row in rows]
+        duplicates = sorted({task for task in task_ids if task_ids.count(task) > 1})
+        if duplicates:
+            raise ValueError(f"{label} rows contain duplicate tasks: {duplicates}")
+        wrong_arm = sorted({row.arm for row in rows if row.arm != expected_arm})
+        if wrong_arm:
+            raise ValueError(f"{label} rows contain unexpected arm labels: {wrong_arm}")
+        unexpected = sorted(set(task_ids) - expected_tasks)
+        if unexpected:
+            raise ValueError(f"{label} rows contain tasks outside conditions: {unexpected}")
 
     by_task_baseline = {row.task_id: row for row in baseline_rows}
     by_task_chtd = {row.task_id: row for row in chtd_rows}
@@ -208,6 +224,8 @@ def conditions_from_records(
         raise IncomparableArms(
             f"arm {arm} has {len(tracks)} distinct tracks; a single condition cannot describe it"
         )
+    if any(not track for track in tracks):
+        raise IncomparableArms(f"arm {arm} contains a missing track digest")
     tasks = tuple(sorted({getattr(record, "task_id") for record in records if getattr(record, "arm", None) == arm}))
     return ArmConditions(
         arm=arm,
