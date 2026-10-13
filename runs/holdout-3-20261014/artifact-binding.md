@@ -12,8 +12,9 @@ for the whole batch, h1, h2 and h3, as far as it can be closed after the fact.
 The hashes below were computed on cgpai-node3 on 2026-10-14, **after every run closed**, from the
 adapter directories the box served. Three things support them as the bytes each run used:
 
-- every `adapter_model.safetensors` mtime precedes the serve start and the sweep that used it
-  (mtime column below), so no adapter was rewritten between its run and this hash;
+- every `adapter_model.safetensors` mtime precedes the serve start of the window that used it —
+  and, since the adversarial review pointed out this ordering was asserted rather than evidenced,
+  the serve-log first-request timestamps now sit beside every mtime in the table below;
 - the switch command for every arm is in the run's session records on this machine (e.g.
   `bash /tmp/switch_generic.sh chtd-seed1-adapter serve-8003-chtd1.log` for h3's seed 1), naming
   the adapter and the serve log the box wrote;
@@ -23,6 +24,28 @@ adapter directories the box served. Three things support them as the bytes each 
 They are **not** a run-time record, and they cannot detect a box-side edit that preserved mtimes.
 They are the strongest binding available after the fact. From this batch forward, the hash is
 recorded at run time — see "For future runs".
+
+## Serve-window timestamps (added 2026-10-14, after the adversarial review)
+
+The review of this file (SpikeBot 003, comment on PR #8) made the one fair hit: the mtime leg said
+"mtime precedes the serve start" without putting a serve start anywhere in evidence. The serve
+logs the box wrote carry their first-request timestamps; both are below, read on 2026-10-14.
+
+| arm window | serve log | first request in log | adapter mtime | ordering |
+| --- | --- | --- | --- | --- |
+| h3 chtd-seed0 | `serve-8003-chtd0.log` | 2026-10-14 03:33:34 | 2026-10-13 14:52:27 | mtime first, by 12h41m |
+| h3 chtd-seed1 | `serve-8003-chtd1.log` | 2026-10-14 04:10:26 | 2026-10-14 03:39:40 | mtime first, by 30m46s |
+| h3 chtd-seed2 | `serve-8003-chtd2.log` | 2026-10-14 04:31:49 | 2026-10-14 04:08:01 | mtime first, by 23m48s |
+| h3 ctrl-seed0 | `serve-8003-ctrl0.log` | 2026-10-14 03:57:27 | 2026-10-14 01:38:27 | mtime first, by 2h19m |
+| h3 ctrl-seed1 | `serve-8003-ctrl1.log` | 2026-10-14 04:54:25 | 2026-10-14 02:03:13 | mtime first, by 2h51m |
+| h3 v5 | `serve-8003-v5.log` | 2026-10-14 05:06:21 | 2026-10-14 00:19:18 | mtime first, by 4h47m |
+| h3 base | `serve-8003-base.log` | 2026-10-14 05:18:38 | — (unadapted) | n/a |
+
+The windows also tile the evening without gaps (chtd1 ends 04:31:19, chtd2 starts 04:31:49;
+ctrl1 04:54; v5 05:06; base 05:18), which is what the arm-by-arm switching sequence in
+`switch-commands.txt` predicts. What this still cannot exclude, stated plainly: a rewrite that
+preserved mtimes, or a switch that happened mid-window and then back. The chain is now
+mtime-and-log evidence rather than assertion, and it is still post-hoc.
 
 ## The adapters
 
@@ -54,6 +77,13 @@ All paths under `/mnt/proj/chtd-experiments/` on cgpai-node3. `sha256` is over t
 
 ## What each run record carries today
 
+The honest summary: the h1 flow records artifact identity when the run script sets it; the
+per-task-home flow (h2, h3) recorded **nothing** — the script predates the
+`CHTD_MODEL_ARTIFACT_*` fields (confirmed by diffing the pre-change `run_arm_h3.py` against the
+checked-in `eval/run_arm_h3.py`: the only functional change is the added fields). Everything in
+this file is therefore post-hoc binding for h2/h3, and two of the seven hashes (the controls)
+have an independent training-side value.
+
 | run | record | artifact_id | artifact_sha256 |
 | --- | --- | --- | --- |
 | ctrl-assistant-h1-20261014 | `data/rollouts/…/run.json` | `matched-v2-baseline-assistant-adapter` | `e0cd4d74…` (at run time) |
@@ -69,6 +99,29 @@ right-hand column is its state on 2026-10-14, and this file is the durable copy.
 One h1 run does carry the complete pair: `ctrl-assistant-h1-20261014` was swept with both
 variables set, and its `e0cd4d74…` matches the hash computed for this file two days later — the
 path works when the script sets it.
+
+## Load-bearing vs decoration, stated plainly
+
+The adversarial review asked which legs of this chain would actually hold if challenged. The
+honest ranking:
+
+- **Load-bearing, independent:** the two control hashes reproduce the training-side values in the
+  control-recovery record. The training side and this file were produced by different runs of
+  different scripts; the match is mutual corroboration.
+- **Load-bearing, one-sided, corroborated only here:** the five remaining hashes (chtd ×3, v5) are
+  correct descriptions of the adapter directories *as they exist now*. Nothing independent
+  reproduces them; their claim is "the directory that was served still hashes to this", backed by
+  the serve-window table above (mtime before first request, windows tiled against the switch
+  sequence).
+- **Decoration:** the h1 `artifact_id` strings on the three runs whose hashes are null — an id
+  without a hash binds nothing; the `/health` responses observed at switch time, which were read
+  by eye and are not durable.
+- **Not excluded, and not excludable after the fact:** a box-side rewrite preserving mtimes; a
+  switch away and back inside one arm's window.
+
+For any result this file is cited for, the size of the claim should match the load-bearing list:
+the control arms' identity is independently checked; the experimental arms' identity rests on the
+box's own filesystem history, which is what the box is, not what it can prove.
 
 ## For future runs
 
@@ -88,9 +141,10 @@ ssh root@100.84.151.62 "sha256sum /mnt/proj/chtd-experiments/<adapter>/adapter_m
 
 The server's `/health` response also names the adapter path it loaded, so the run-time
 confirmation can be checked against the record by eye — but the record is what persists.
-Checked end-to-end on 2026-10-14: one h3 task (`h3-counter-most-common`) run through
-`eval/run_arm_h3.py` with both variables set; the record carries id and hash, and the existing
-scorer reads it unchanged.
+Verified on 2026-10-14: one h3 task (`h3-counter-most-common`) run through the checked-in
+`eval/run_arm_h3.py` with both variables set; the smoke record carries id and hash and the
+existing scorer reads it unchanged. That smoke record lives under `data/` (gitignored) — it is
+**not** in this file, and the h2/h3 records of this batch do not carry the fields.
 
 ## 署名
 
