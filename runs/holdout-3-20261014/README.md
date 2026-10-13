@@ -104,9 +104,10 @@ has now been read by humans; and 30 tasks still resolve only ~15-point differenc
 ## Files
 
 ```
+harness/tasks/holdout-3.jsonl                the 30 tasks, checked in
+harness/tasks/holdout-3/<id>/                the fixture sources, checked in (check.py + module)
 data/holdout-3-20261014/
-  tasks.jsonl                              the 30 tasks, expect phrases and rationale
-  workspaces/<id>/{check.py,<module>.py}   the fixtures; all verified failing
+  workspaces/<id>/{check.py,<module>.py}   the working copies; all verified failing
   arm-*/                                   per-task workspaces and ledgers
   records-*.json                           raw sweeps (session, ledger, workspace)
   scores-*.json                            gate results per arm
