@@ -1,7 +1,17 @@
 # Run `teacher-demo-20261012` — the arm that beats its base
 
+> **Correction, 2026-10-13.** The claim below was measured by a phrase gate. Every answer behind
+> it has since been read by hand: **on human reading the adapter and the base are level**, and the
+> gate's lead for the adapter is mostly the gate's own error in both directions. The withdrawal
+> and the full per-task adjudication are in
+> [`human-adjudication-20261013.md`](human-adjudication-20261013.md). What survives from this
+> record is the infrastructure (the `message_bounds` fix, the collection provenance rules, the
+> supervision-mode observation) and a narrow, real improvement on value-semantics traps — not the
+> headline.
+
 The first fine-tune in this repository that scores **above the unadapted base model** on the
-held-out set, and the first that solves tasks the base cannot solve at all.
+held-out set, and the first that solves tasks the base cannot solve at all. *(Withdrawn as
+stated — see the correction above.)*
 
 ```
 arm                                    held-out score, every sweep run
