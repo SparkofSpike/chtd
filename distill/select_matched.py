@@ -22,13 +22,28 @@ def _write_rows(path: Path, rows: list[dict]) -> str:
 
 
 def select(baseline_samples: Path, baseline_manifest: Path, chtd_samples: Path,
-           chtd_manifest: Path, output: Path, *, epochs: int = 30) -> dict:
+           chtd_manifest: Path, output: Path, *, epochs: int = 30,
+           output_root: str = "/mnt/proj/chtd-experiments/node4-recollection-20261012/matched-v1") -> dict:
     base = json.loads(baseline_manifest.read_text(encoding="utf-8"))
     chtd = json.loads(chtd_manifest.read_text(encoding="utf-8"))
     if base["track_sha256"] != chtd["track_sha256"]:
         raise ValueError("arm tracks differ")
     baseline_rows = _rows(baseline_samples)
     chtd_rows = _rows(chtd_samples)
+    if samples_digest([line for line in baseline_samples.read_text(encoding="utf-8").splitlines()
+                       if line.strip()]) != base["samples_sha256"]:
+        raise ValueError("baseline samples do not match their source manifest digest")
+    if samples_digest([line for line in chtd_samples.read_text(encoding="utf-8").splitlines()
+                       if line.strip()]) != chtd["samples_sha256"]:
+        raise ValueError("CHTD samples do not match their source manifest digest")
+    base_tasks, chtd_tasks = set(base["task_ids"]), set(chtd["task_ids"])
+    base_holdout, chtd_holdout = set(base["holdout_ids"]), set(chtd["holdout_ids"])
+    if base_tasks != chtd_tasks or base_holdout != chtd_holdout:
+        raise ValueError("arm source manifests have different train or holdout splits")
+    if base_tasks & base_holdout:
+        raise ValueError("source manifest overlaps its training and holdout tasks")
+    if any(row["task_id"] not in base_tasks for row in baseline_rows + chtd_rows):
+        raise ValueError("a sample names a task outside the frozen training split")
     prefix_digests = {row["harness_prefix_digest"] for row in baseline_rows + chtd_rows}
     if len(prefix_digests) != 1 or base["harness_prefix_digest"] not in prefix_digests:
         raise ValueError("captured harness prefixes differ")
@@ -65,7 +80,7 @@ def select(baseline_samples: Path, baseline_manifest: Path, chtd_samples: Path,
     baseline_digest = _write_rows(output / "baseline-samples.jsonl", chosen_baseline)
     chtd_digest = _write_rows(output / "chtd-samples.jsonl", chosen_chtd)
     recipe = LoraRecipe(epochs=epochs)
-    root = "/mnt/proj/chtd-experiments/matched-20261010-a"
+    root = output_root.rstrip("/")
     for arm, digest in (("baseline", baseline_digest), ("chtd", chtd_digest)):
         plan = TrainingPlan(
             arm=arm, base_model="Qwen/Qwen3-4B-Instruct-2507",
@@ -107,9 +122,10 @@ def main() -> int:
     parser.add_argument("--chtd-manifest", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--epochs", type=int, default=30)
+    parser.add_argument("--output-root", default="/mnt/proj/chtd-experiments/node4-recollection-20261012/matched-v1")
     args = parser.parse_args()
     report = select(args.baseline_samples, args.baseline_manifest, args.chtd_samples,
-                    args.chtd_manifest, args.out, epochs=args.epochs)
+                    args.chtd_manifest, args.out, epochs=args.epochs, output_root=args.output_root)
     print(f"frozen {len(report['task_ids'])} common tasks, one label per arm per task")
     return 0
 

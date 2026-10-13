@@ -404,6 +404,38 @@ def _logical_parameter_count(config: Any) -> int:
     )
 
 
+def _supervised_suffix_window(labels: Any) -> tuple[int, int, Any]:
+    """Return the logits window and next-token label suffix for a single-example batch."""
+    if labels.shape[0] != 1:
+        raise ValueError("suffix-only logits currently require per_device_train_batch_size=1")
+    supervised = labels[0].ne(-100).nonzero(as_tuple=False).flatten()
+    if not len(supervised):
+        raise ValueError("training example has no supervised answer tokens")
+    first_target = int(supervised[0].item())
+    if first_target == 0:
+        raise ValueError("the first supervised token has no preceding prediction position")
+    if not labels[0, first_target:].ne(-100).all():
+        raise ValueError("supervised labels must be one contiguous suffix")
+    start = first_target - 1  # include the token position that predicts the first answer token
+    keep = labels.shape[1] - start
+    return start, keep, labels[:, -keep:]
+
+
+def _is_single_supervised_span(labels: Sequence[int]) -> bool:
+    """Whether the supervised positions form one unbroken run ending at the last token.
+
+    This is the precondition the suffix-only logits path places its window under, checked on a
+    plain label list so the trainer choice can be made before any GPU work. ``supervise='last'``
+    produces this shape; ``supervise='assistant'`` supervises every assistant turn, so its labels
+    carry one span per turn and the window has no single place to sit.
+    """
+    supervised = [index for index, value in enumerate(labels) if value != -100]
+    if not supervised or supervised[0] == 0:
+        # No supervised token at all, or the first one left no position to predict it from.
+        return False
+    return supervised[-1] == len(labels) - 1 and len(supervised) == len(labels) - supervised[0]
+
+
 def render_examples(
     tokenizer: Any,
     rows: Sequence[Mapping[str, Any]],
@@ -555,7 +587,41 @@ def train(
         remove_unused_columns=False,
     )
 
-    trainer = Trainer(
+    class SuffixLogitsTrainer(Trainer):
+        """Compute vocabulary logits only where labels can contribute to the loss.
+
+        Qwen3's 151k vocabulary makes full-sequence float32 logits dominate memory (about 4 GB
+        for an 8k-token sample). When every supervised label sits in one final span — what
+        ``supervise='last'`` produces — ask Qwen3 to project only that suffix. The full prefix
+        still participates in attention. This relies on Qwen3ForCausalLM's ``logits_to_keep``
+        argument and batch size one, both fixed by this experiment's model and recipe.
+
+        When the labels carry several supervised spans (``supervise='assistant'``, which puts the
+        loss on every assistant turn) there is no single window to keep, so :func:`train` selects
+        the stock trainer for that shape instead; the memory saving is not available there.
+        """
+        def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
+            import torch.nn.functional as functional
+
+            labels = inputs.pop("labels")
+            _, keep, suffix_labels = _supervised_suffix_window(labels)
+            outputs = model(**inputs, logits_to_keep=keep)
+            loss = functional.cross_entropy(
+                outputs.logits[:, :-1, :].reshape(-1, outputs.logits.shape[-1]).float(),
+                suffix_labels[:, 1:].reshape(-1),
+                ignore_index=-100,
+            )
+            return (loss, outputs) if return_outputs else loss
+
+    # The window has one place to sit only when the supervised labels are a single final span.
+    # Choosing by the labels themselves rather than by the mode name keeps the two in step: a
+    # future supervision rule that produces several spans falls back to the stock trainer rather
+    # than failing on the first step.
+    suffix_ok = all(_is_single_supervised_span(example["labels"]) for example in examples)
+    trainer_cls = SuffixLogitsTrainer if suffix_ok else Trainer
+    log(f"trainer: {trainer_cls.__name__} (labels are "
+        f"{'a single final span' if suffix_ok else 'not a single final span'})")
+    trainer = trainer_cls(
         model=model,
         args=arguments,
         train_dataset=dataset,

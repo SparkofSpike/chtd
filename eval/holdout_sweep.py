@@ -36,19 +36,20 @@ from pathlib import Path
 CHTD = Path(__file__).resolve().parent.parent
 AGNES = os.environ.get("CHTD_AGNES_CLI", r"E:\Coding\agnes-harness\packages\cli\dist\local\agnes.mjs")
 NODE = os.environ.get("CHTD_NODE", "node")
-TASKS_JSONL = CHTD / "harness" / "tasks" / "final-holdout.jsonl"
+TASKS_JSONL = Path(os.environ.get("CHTD_TASKS_JSONL", str(CHTD / "harness" / "tasks" / "final-holdout.jsonl")))
+COLLECTION_MANIFEST = Path(os.environ.get(
+    "CHTD_COLLECTION_MANIFEST",
+    str(CHTD / "data" / "chtd-student-20261012" / "prepared" / "matched" / "selection-manifest.json"),
+))
 PROFILE_SRC = Path(os.environ.get("CHTD_PROFILE_SRC", str(
     CHTD / "data" / "agh_home" / "profiles" / "local-dev" / "profile.yaml")))
 TASKS_DIR = Path(os.environ.get("CHTD_TASKS_DIR", str(CHTD / "data" / "tasks")))
 
-HOST = os.environ.get("CHTD_EVAL_HOST", "100.84.151.62")
-ARMS = [("adapter", 8000), ("base", 8001)]
-# `CHTD_ARMS=name:port,name:port` overrides the pair, so the same sweep can run a different
-# serving configuration without editing the file that produced the recorded numbers.
-if os.environ.get("CHTD_ARMS"):
-    ARMS = [(part.split(":")[0], int(part.split(":")[1]))
-            for part in os.environ["CHTD_ARMS"].split(",") if part.strip()]
+HOST = os.environ.get("CHTD_EVAL_HOST", "127.0.0.1")
+PORT = int(os.environ.get("CHTD_EVAL_PORT", "8006"))
+ARM = os.environ.get("CHTD_EVAL_ARM", "base")
 RUN_ROOT = Path(os.environ.get("CHTD_RUN_ROOT", str(CHTD / "data" / "rollouts")))
+SHARED_HOME = Path(os.environ.get("CHTD_SHARED_AGH_HOME", str(RUN_ROOT / "_paired-holdout-home")))
 STUDENT_MODEL = "primary=student/qwen3-4b-instruct-2507"
 PRESET = "minimal-rl"
 # A held-out diagnosis is three or four tool calls; a healthy run finishes in ~20 s. A run
@@ -78,14 +79,20 @@ def profile_for(port: int) -> str:
     return text.replace(old, new)
 
 
-def session_key(ledger: Path) -> str:
+def session_keys(ledger: Path) -> set[str]:
     sys.path.insert(0, str(CHTD))
     from harness.ledger import open_ledger
+    if not ledger.exists():
+        return set()
     with open_ledger(str(ledger)) as book:
-        sessions = book.sessions()
-    if not sessions:
-        raise RuntimeError(f"no session in {ledger}")
-    return sessions[-1].session_key
+        return {session.session_key for session in book.sessions()}
+
+
+def new_session_key(ledger: Path, before: set[str]) -> str:
+    created = session_keys(ledger) - before
+    if len(created) != 1:
+        raise RuntimeError(f"expected exactly one new session in {ledger}, found {len(created)}")
+    return created.pop()
 
 
 def score(ledger: Path, key: str, expect: list[str], forbid: list[str],
@@ -102,7 +109,8 @@ def score(ledger: Path, key: str, expect: list[str], forbid: list[str],
     return r.returncode == 0, (r.stdout or "").strip()
 
 
-def run_one(arm: str, port: int, task: dict, root: Path) -> dict:
+def run_one(arm: str, port: int, task: dict, root: Path,
+            shared_home: Path | None = None) -> dict:
     """One task, one arm, its own workspace and its own ledger.
 
     Both directory choices matter and both were got wrong once:
@@ -116,15 +124,21 @@ def run_one(arm: str, port: int, task: dict, root: Path) -> dict:
     task_id = task["id"]
     base_dir = root / arm / task_id
     work = base_dir / "student"
-    home = base_dir / "_agh_home"
+    home = shared_home or SHARED_HOME
     if base_dir.exists():
         raise FileExistsError(
             f"{base_dir} already exists; choose a new run name to preserve its raw ledger"
         )
     work.mkdir(parents=True)
-    (home / "profiles" / "local-dev").mkdir(parents=True)
-    (home / "profiles" / "local-dev" / "profile.yaml").write_text(
-        profile_for(port), encoding="utf-8")
+    profile_dir = home / "profiles" / "local-dev"
+    profile_dir.mkdir(parents=True, exist_ok=True)
+    profile_path = profile_dir / "profile.yaml"
+    intended_profile = profile_for(port)
+    if profile_path.exists():
+        if profile_path.read_text(encoding="utf-8") != intended_profile:
+            raise ValueError(f"shared AGH profile {profile_path} differs; refusing a track change")
+    else:
+        profile_path.write_text(intended_profile, encoding="utf-8", newline="\n")
     for src in (TASKS_DIR / task_id).iterdir():
         if src.is_file():
             shutil.copy2(src, work / src.name)
@@ -139,6 +153,8 @@ def run_one(arm: str, port: int, task: dict, root: Path) -> dict:
 
     argv = [NODE, AGNES, "-p", "--standalone", "--preset", PRESET, "--model", STUDENT_MODEL,
             task["prompt"]]
+    ledger = home / "data" / "sessions.db"
+    before = session_keys(ledger)
     started = time.time()
     timed_out = False
     try:
@@ -154,8 +170,6 @@ def run_one(arm: str, port: int, task: dict, root: Path) -> dict:
         out = (exc.stdout or b"").decode("utf-8", "replace") if isinstance(exc.stdout, bytes) else (exc.stdout or "")
         err = f"timed out after {TASK_TIMEOUT}s"
     elapsed = time.time() - started
-    ledger = home / "data" / "sessions.db"
-
     record = {
         "arm": arm, "task_id": task_id, "exit": exit_code, "timed_out": timed_out,
         "seconds": round(elapsed, 1),
@@ -164,8 +178,21 @@ def run_one(arm: str, port: int, task: dict, root: Path) -> dict:
         "workspace": str(work),
     }
     try:
-        key = session_key(ledger)
+        key = new_session_key(ledger, before)
         record["session_key"] = key
+        sys.path.insert(0, str(CHTD))
+        from harness.ledger import open_ledger
+        from harness.round import observed_track
+        from harness.trajectory import read_trajectory
+        track, preset = observed_track(ledger, key)
+        with open_ledger(ledger) as book:
+            trajectory = read_trajectory(book, key)
+        record["track_sha256"] = track
+        record["preset"] = preset
+        record["resolved_profile_hash"] = trajectory.resolved_profile_hash
+        expected_track = os.environ.get("CHTD_EXPECTED_TRACK")
+        if expected_track and track != expected_track:
+            raise ValueError(f"observed track {track} differs from expected {expected_track}")
         from harness.tasks.build_workspaces import FORBID
         forbidden = task.get("forbid", list(FORBID.get(task_id, ())))
         passed, output = score(ledger, key, task["expect"], forbidden, work)
@@ -192,14 +219,29 @@ def main() -> int:
         raise FileExistsError(f"{root} already contains a run; choose a new name")
     root.mkdir(parents=True, exist_ok=True)
     tasks = load_tasks()
+    task_ids = [t["id"] for t in tasks]
+    if len(task_ids) != len(set(task_ids)):
+        raise ValueError("holdout task list contains duplicate ids")
+    manifest = json.loads(COLLECTION_MANIFEST.read_text(encoding="utf-8"))
+    expected_holdout = set(manifest["holdout_ids"])
+    if set(task_ids) != expected_holdout:
+        raise ValueError(
+            "holdout tasks differ from the frozen selection manifest "
+            f"(missing={sorted(expected_holdout - set(task_ids))}, "
+            f"unexpected={sorted(set(task_ids) - expected_holdout)})"
+        )
+    train_ids = set(manifest["task_ids"])
+    if train_ids & set(task_ids):
+        raise ValueError(f"training/holdout leakage: {sorted(train_ids & set(task_ids))}")
     if only:
         tasks = [t for t in tasks if t["id"] == only]
         if not tasks:
             raise SystemExit(f"no task {only!r} in {TASKS_JSONL}")
-    arms = ARMS if not only else [ARMS[0]]
+    arms = [(ARM, PORT)]
     print(f"run root : {root}")
     print(f"tasks    : {[t['id'] for t in tasks]}")
-    print(f"arms     : {arms}")
+    print(f"arm      : {arms[0]}")
+    print(f"AGH home : {SHARED_HOME}")
     print()
 
     records = []
@@ -207,7 +249,7 @@ def main() -> int:
         for arm, port in arms:
             print(f"--- arm {arm} (port {port})")
             for task in tasks:
-                record = run_one(arm, port, task, root)
+                record = run_one(arm, port, task, root, SHARED_HOME)
                 records.append(record)
                 journal.write(json.dumps(record, ensure_ascii=False) + "\n")
                 journal.flush()
@@ -222,19 +264,37 @@ def main() -> int:
                        for r in rows))
     print("=" * 74)
 
+    tracks = {r.get("track_sha256") for r in records if r.get("track_sha256")}
+    if len(tracks) != 1:
+        raise RuntimeError(f"evaluation arm has {len(tracks)} observed tracks; refusing to summarize")
+    track = tracks.pop()
+
     (root / "run.json").write_text(json.dumps({
         "run": run_name,
         "host": HOST,
-        "arms": [{"arm": a, "port": p} for a, p in ARMS],
+        "arms": [{"arm": a, "port": p} for a, p in arms],
         "tasks": [t["id"] for t in tasks],
         "expect": {t["id"]: t["expect"] for t in tasks},
         "preset": PRESET,
+        "track_sha256": track,
+        "shared_agh_home": str(SHARED_HOME),
+        "profile_sha256": __import__("hashlib").sha256(
+            (SHARED_HOME / "profiles" / "local-dev" / "profile.yaml").read_bytes()
+        ).hexdigest(),
         "student_model": STUDENT_MODEL,
+        "artifact_id": os.environ.get("CHTD_MODEL_ARTIFACT_ID"),
+        "artifact_sha256": os.environ.get("CHTD_MODEL_ARTIFACT_SHA256"),
+        "holdout_task_count": len(tasks),
+        "score_type": "automatic_expected_forbidden_phrase_proxy",
+        "collection_manifest_sha256": __import__("hashlib").sha256(
+            COLLECTION_MANIFEST.read_bytes()
+        ).hexdigest(),
         "results": {a: {"passed": sum(1 for r in records if r["arm"] == a and r["passed"]),
                         "of": len(tasks)} for a, _ in arms},
         "records": [{"arm": r["arm"], "task_id": r["task_id"], "exit": r["exit"],
                      "passed": r["passed"], "seconds": r["seconds"],
-                     "session_key": r["session_key"]} for r in records],
+                     "session_key": r["session_key"], "track_sha256": r.get("track_sha256"),
+                     "resolved_profile_hash": r.get("resolved_profile_hash")} for r in records],
     }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"wrote {root / 'records.jsonl'} and {root / 'run.json'}")
     return 0

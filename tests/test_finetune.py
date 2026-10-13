@@ -17,6 +17,8 @@ from distill.finetune import (
     PrefixDrift,
     SampleTooLong,
     _base_weights_fingerprint,
+    _is_single_supervised_span,
+    _supervised_suffix_window,
     build_example,
     build_example_all_assistant,
     load_sample_lines,
@@ -26,6 +28,50 @@ from distill.finetune import (
     samples_digest_over,
 )
 from distill.sft import samples_digest
+
+
+def test_suffix_logits_window_keeps_predecessor_for_first_target_token() -> None:
+    torch = pytest.importorskip("torch")
+    labels = torch.tensor([[-100, -100, -100, 11, 12, 13]])
+    start, keep, suffix = _supervised_suffix_window(labels)
+    assert start == 2
+    assert keep == 4
+    # Position 2's logit predicts target 11 at position 3 after the standard causal shift.
+    assert suffix[:, 1:].tolist() == [[11, 12, 13]]
+
+
+def test_suffix_logits_window_rejects_non_suffix_labels() -> None:
+    torch = pytest.importorskip("torch")
+    labels = torch.tensor([[-100, 7, -100, 8]])
+    with pytest.raises(ValueError, match="contiguous suffix"):
+        _supervised_suffix_window(labels)
+
+
+def test_single_span_check_agrees_with_the_window_on_single_span_labels() -> None:
+    """The trainer choice and the window must agree: what one admits, the other places an
+    offset for. Checked against the window itself rather than a second opinion about the shape."""
+    torch = pytest.importorskip("torch")
+    admitted = [-100, -100, 5, 6, 7]
+    refused = [-100, 7, -100, 8]
+    assert _is_single_supervised_span(admitted) is True
+    assert _is_single_supervised_span(refused) is False
+    _supervised_suffix_window(torch.tensor([admitted]))  # must not raise
+    with pytest.raises(ValueError):
+        _supervised_suffix_window(torch.tensor([refused]))
+
+
+def test_single_span_check_refuses_the_shapes_the_window_cannot_place() -> None:
+    """Every shape the window would raise on is refused here too, before any GPU work.
+
+    supervise='assistant' labels are the case that matters: one span per assistant turn.
+    """
+    assert _is_single_supervised_span([-100, 21, 22, -100, 31, 32]) is False  # two spans
+    assert _is_single_supervised_span([11, 12, 13]) is False  # no position predicts the first
+    assert _is_single_supervised_span([-100, -100, -100]) is False  # nothing supervised
+    assert _is_single_supervised_span([-100, -100, 11, 12]) is True  # the one placeable shape
+    # A span that stops before the end leaves positions unsupervised, so the window has no single
+    # suffix to keep either.
+    assert _is_single_supervised_span([-100, 11, 12, -100]) is False
 
 
 def test_base_fingerprint_changes_when_weight_bytes_change(tmp_path) -> None:

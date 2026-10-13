@@ -163,6 +163,11 @@ def serve(model_path: str, model_id: str, host: str, port: int,
                     self.wfile.write(body)
                 else:
                     self._send(200, response)
+                # Keep the usage counts above available until after the response is sent, then
+                # release per-request KV/activation tensors. The allocator otherwise retains
+                # blocks across different prompt lengths during a multi-arm holdout sweep.
+                del output, encoded, generated
+                torch.cuda.empty_cache()
             except (KeyError, TypeError, ValueError) as error:
                 self._send(400, {"error": str(error)[:250]})
 
