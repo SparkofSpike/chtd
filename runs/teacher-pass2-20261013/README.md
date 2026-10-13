@@ -56,7 +56,7 @@ h2-dict-mutation-view    pass / FAIL      partial  ← blind spot improved      
 h2-unbound-local         pass / pass      partial             partial
 h2-class-attr-shared     pass / pass      correct             correct
 h2-finally-return        pass / pass      correct             partial  (misses that the success path is also swallowed)
-h2-min-key-string        pass / pass      partial             partial
+h2-min-key-string        timeout / pass   partial (v5b; this sweep timed out)   partial
                          -------------    ----------------    ----------------
                          gate 10/12 vs 9  correct 8           correct 4
                                           partial 4           partial 5
@@ -64,8 +64,10 @@ h2-min-key-string        pass / pass      partial             partial
 ```
 
 **v5 clears the base with a margin that survives the scoring the gate cannot do**: 8 correct
-answers against 4, and no failed answer against 3. Every v5 answer is at minimum actionable; three
-of the base's twelve conclude wrongly. This is the opposite pattern from v4's withdrawal, where
+answers against 4, and no failed answer against 3. Every v5 answer is at minimum actionable, with
+exactly one exception: `h2-min-key-string`'s first sweep timed out at 180 s and produced no answer
+at all (the partial cells above for that row are the second sweep's); three of the base's twelve
+conclude wrongly. This is the opposite pattern from v4's withdrawal, where
 the gate said +2 and the answers said −1.
 
 The blind-spot task that fully transferred is `strip`-as-charset — v5 says "removes *any*
@@ -103,7 +105,13 @@ wrongly".
 **Does not establish.** Generality beyond these fixtures. The two sets are 27 tasks of Python
 defect diagnosis, both have now been read by a human, and the next honest test is a set nobody has
 looked at. The scorer still errs both ways (one false negative each way in these very sweeps), so
-any future gate-only comparison inherits this document's uncertainty.
+any future gate-only comparison inherits this document's uncertainty. Three further caveats: the
+base fingerprint recorded here (`e36d2f38…`) verifies v5 against the `aux-*` runs' base, not
+against v4's own digest, so the "same base as v4" identity is carried from the plans rather than
+evidenced by this material; `h2-naive-aware` on base2 ran 178 s against the 180 s timeout — the
+arm that lost a task to a timeout is the one whose score a re-draw could most easily move; and two
+of the eight v5 `correct` cells and two of the base's five `partial` cells are elastic calls rather
+than clear ones, so the 8-vs-4 is a margin whose edges are judgement, not arithmetic.
 
 ## Files
 
