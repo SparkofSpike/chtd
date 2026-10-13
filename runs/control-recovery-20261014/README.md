@@ -92,6 +92,13 @@ byte-identical across all five arms in this window (sha256 `b299083a…`), and t
 Prior batches, same adjudication rubric: v5 8/4/0 (two sweeps, identical); base 4/5/3. The control
 as previously trained: 0/12.
 
+The v5 row was re-read in full on 2026-10-14 against the **h2b draw** sketched above. It lands on
+the same totals as the two earlier draws — 8/4/0 — but not on the same cells: h2b's
+`h2-strip-charset` fell from *correct* to *partial* (it says `strip('N/A')` removes characters that
+"appear together at the start/end" — a substring story the earlier draws did not tell), while
+`h2-naive-aware` held as correct. The per-draw difference is a real property of this arm at this
+scale, and the paragraph below now names which draw it describes.
+
 ## What this establishes, and what it does not
 
 > **Correction, 2026-10-14 (later the same night).** Two findings landed after this record was
@@ -157,8 +164,11 @@ The phrase gate is a proxy, and this batch produced a clean specimen set:
   the gate with wrong mechanisms; the chtd arm's `class-attr-shared` passed with "there is no
   defect".
 - **True failures all five arms share:** `h2-join-absolute` (nobody in this batch got the
-  absolute-second-argument mechanism fully right) and `h2-strip-charset` (best answer names the
-  character-set mechanism; every arm here regressed to a substring story).
+  absolute-second-argument mechanism fully right; v5's h2b answer says `join` "returns just
+  `/srv/www`", which is wrong in the same way the control's is wrong — it returns the *second*,
+  absolute argument) and `h2-strip-charset` (every arm in the h2b draw tells a substring story;
+  the earlier v5 draws had cleared this task by naming the character-set mechanism, so v5 is the
+  one arm whose answer to this fixture moved between draws — down, not up).
 
 ## Files
 
