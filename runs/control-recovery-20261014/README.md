@@ -94,19 +94,32 @@ as previously trained: 0/12.
 
 ## What this establishes, and what it does not
 
+> **Correction, 2026-10-14 (later the same night).** Two findings landed after this record was
+> written, and both cut against claim 2 as stated. First, an adversarial review of this document
+> found that on holdout-2 the phrase gate and the answer read point in **opposite directions** for
+> this very pair (gate: control 11/12 vs chtd 10/12; answers: chtd 7 vs control 5), and that all
+> three gate cells producing the reversal are gate errors — the corrected gate reads 9 vs 9, which
+> agrees with the answers. The h2 gate table printed above therefore should be read with the
+> reversal in mind, and the record should have said so. Second, the claim was re-tested on 30 fresh
+> tasks with the student-state arm trained at **three seeds**: `runs/holdout-3-20261014/`. There the
+> student-state seeds (24/26/27 of 30) overlap the teacher-own seeds (23/25), and the mean gap
+> (~1.5 tasks) is smaller than the student-state arm's own seed spread (3 tasks). **The h1/h2
+> advantage does not replicate; it is consistent with noise.** Claim 2 below stands only as "on the
+> 12–15-task sets, at these seeds" — not as a general statement.
+
 **Establishes.**
 
 1. **The control arm's zero was a supervision-mode collapse.** Same rows, same recipe, same
    budget; the only change is which turns carry the loss. 0/15 → 11/15, 0/12 → 11/12, zero tool
    calls → normal exploration (20–40 s/task). The claim "both our fine-tunes regress" is dead:
    by the answer read the repaired control sits in the base's band on both sets (h1 10–12 correct
-   of 15 against the base's 11; h2 5-correct to the base's 5, seed 0), and the student-state arms
-   are above the base on holdout-2.
-2. **On the paired design, the student-state arm beats the teacher-own arm on both sets.**
-   Nine rows each, same nine tasks, same recipe, same seed, same budgets: h1 14/15 vs 11/15,
-   h2 7-correct vs 5-correct (and 2 failed against the control's 2 at seed 0, 4 at seed 1). The
-   control arm's rows even carry *more* supervised tokens (240–533 vs 140–357), so the margin is
-   not "the other arm got more gradient".
+   of 15 against the base's 11; h2 5-correct to the base's 5, seed 0), and on holdout-3 every
+   adapted arm clears the base by 3–7 tasks.
+2. *(As stated for the h1/h2 sets, superseded as a general claim by the correction above.)* On the
+   paired design at these seeds, the student-state arm leads the teacher-own arm on both small
+   sets: h1 14/15 vs 11/15, h2 7-correct vs 5-correct. The control arm's rows even carry *more*
+   supervised tokens (240–533 vs 140–357), so the margin is not "the other arm got more
+   gradient". The 30-task re-test did not reproduce the gap.
 3. **The experimental arm's lead over the base reproduces on holdout-2 for the third time** —
    v5 8-correct/0-failed against the base's 5/5/2 in this batch, in the same direction and shape
    as the two earlier sweeps, with the repaired control landing exactly where the base lands.
@@ -117,13 +130,15 @@ as previously trained: 0/12.
 
 **Does not establish.** A general capability claim. Twelve and fifteen tasks are small; both sets
 have been read by humans in earlier rounds; the h1 screen is saturated for the base (13/15, and
-the same two failures every sweep), so it can show a loss but barely a gain. The pairing above is
-real but n=1 seed for the student-state arm; the control's two seeds agree with each other, the
-student-state arm has not yet been given a second seed. One caveat on the comparison itself: the
-two paired arms use the supervision mode each data shape calls for (`last` for a student-state
-label, `assistant` for a complete trajectory — the trainer's provenance gate refuses the
-alternatives), so the pair varies data source and supervision mode together; the design cannot
-separate them, and does not claim to.
+the same two failures every sweep), so it can show a loss but barely a gain. On seed variance: the
+control's two seeds agree on totals but **disagree on four of fifteen per-task cells**, so a single
+seed's h1 total carries roughly ±2 tasks of noise — the adversarial review measured this, and
+holdout-3's three student-state seeds (24–27) confirm the magnitude. One caveat on the comparison
+itself: the two paired arms use the supervision mode each data shape calls for (`last` for a
+student-state label, `assistant` for a complete trajectory — the trainer's provenance gate refuses
+the alternatives), so the pair varies data source and supervision mode together. The mode is fixed
+at `assistant` for every teacher-own arm; the isolating cell (student-state rows under `assistant`)
+is empty *by construction*, not merely unrun.
 
 ## Scorer errors recorded this batch
 
