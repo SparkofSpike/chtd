@@ -44,28 +44,42 @@ endpoint home — observed track `187df3c9…` on every record, `CHTD_EXPECTED_T
 covers the expanded `dataDir`/`cacheDir`, so the home path is part of the track. Reused the base
 arm's home; recorded here because it cost an hour to find.)
 
-| arm | gate | genuine failures | gate false negatives |
-| --- | ---: | --- | --- |
-| base | 13/15 | none-cap, or-default-falsy | — |
-| v5 (experimental, 93 rows) | 13/15 | none-cap, or-default-falsy | — |
-| **chtd arm (9 student-state rows, `last`)** | **14/15** | none-cap | — |
-| control seed 0 (9 teacher-own rows, `assistant`) | 11/15 | none-cap, enumerate-start | closure-late-binding, row-alias |
-| control seed 1 (same, seed 1) | 11/15 | none-cap, or-default-falsy | ordinal-index, closure-late-binding |
-| control, as previously trained (`last`) | 0/15 | all (zero tool calls) | — |
+| arm | gate |
+| --- | ---: |
+| base | 13/15 |
+| v5 (experimental, 93 rows) | 13/15 |
+| **chtd arm (9 student-state rows, `last`)** | **14/15** |
+| control seed 0 (9 teacher-own rows, `assistant`) | 11/15 |
+| control seed 1 (same, seed 1) | 11/15 |
+| control, as previously trained (`last`) | 0/15 (zero tool calls) |
 
-The control's four gate losses at seed 0 read as two genuine and two false: `closure-late-binding`
-says "captures the *same* variable, not a copy bound to each iteration" and `row-alias` says "the
-**same sublist** repeated rows times, so modifying one cell affects all rows" — both correct, both
-missed by the phrase list (`same variable` vs `*same* variable`; the list has `same (inner )?list`,
-not `sublist`). Read against the answers, the repaired control is 13/15 at both seeds, one task
-behind the base — and the 0/15 that started this exercise was the supervision mode, not the data.
+Read against the answers, the gate scores move in both directions — the three arms whose fifteen
+answers were each read in full grade like this on the same rubric, correct / partial / failed:
+
+| arm | gate | answers (correct / partial / failed) |
+| --- | ---: | --- |
+| base | 13/15 | 11 / 1 / 3 |
+| control seed 0 | 11/15 | 10 / 4 / 1 |
+| control seed 1 | 11/15 | 12 / 1 / 2 |
+
+The v5 and chtd rows above are gate-only; their holdout-1 passes were not each re-read for this
+table. The per-answer deltas are named in "Scorer errors recorded this batch" below — e.g. the
+control's `fix-closure-late-binding` and `fix-row-alias` are correct diagnoses a phrase spelling
+missed, while base's `fix-zip-truncates` concludes "the test case is incorrect" and the control's
+`fix-generator-exhaust` concludes "there is no defect". What the h1 set supports is the claim this
+run is about: the 0/15 that started it was the supervision mode, not the data — and by the answer
+read the repaired control sits in the same band as the base (10–12 correct of 15) at both seeds.
 
 ## holdout-2 (12 tasks) — gate plus human adjudication
 
 Every arm was scored by the task's own phrase gate, then answers were read in full and graded
 **correct** (names the fixture's mechanism) / **partial** (right direction, material error) /
-**failed** (concludes wrongly). All five arms below ran in the same window against the same
-server-side configuration.
+**failed** (concludes wrongly). All five arms below ran in the same window, through the per-task-home
+flow (`run_arm_h2.py`: one workspace and one ledger per task, the student route on port 8003). That
+flow records no track digest — a per-task home is a per-task resolved profile — so its
+configuration-identity check is the profile itself: the twelve per-task profile files are
+byte-identical across all five arms in this window (sha256 `b299083a…`), and the older `arm-v5` /
+`arm-v5b` directories on disk, which are not part of this table, carry a different one.
 
 | arm | gate | correct | partial | failed |
 | --- | ---: | ---: | ---: | ---: |
@@ -85,9 +99,9 @@ as previously trained: 0/12.
 1. **The control arm's zero was a supervision-mode collapse.** Same rows, same recipe, same
    budget; the only change is which turns carry the loss. 0/15 → 11/15, 0/12 → 11/12, zero tool
    calls → normal exploration (20–40 s/task). The claim "both our fine-tunes regress" is dead:
-   the repaired control reads at the base's level (h1 13/15 by answers at both seeds — 11 by gate
-   plus two phrase-list misses; h2 within one task of the base), and the student-state arms are
-   above the base on holdout-2.
+   by the answer read the repaired control sits in the base's band on both sets (h1 10–12 correct
+   of 15 against the base's 11; h2 5-correct to the base's 5, seed 0), and the student-state arms
+   are above the base on holdout-2.
 2. **On the paired design, the student-state arm beats the teacher-own arm on both sets.**
    Nine rows each, same nine tasks, same recipe, same seed, same budgets: h1 14/15 vs 11/15,
    h2 7-correct vs 5-correct (and 2 failed against the control's 2 at seed 0, 4 at seed 1). The
@@ -115,9 +129,13 @@ separate them, and does not claim to.
 
 The phrase gate is a proxy, and this batch produced a clean specimen set:
 
-- **False negatives (h1, control):** `closure-late-binding` twice, `row-alias`, `ordinal-index` —
-  correct mechanisms whose wording missed the phrase list (`*same*` with markdown, `sublist`,
-  1-based/0-based without the word "index").
+- **False negatives (h1):** the control's `closure-late-binding` (both seeds), `row-alias` and
+  `ordinal-index` — correct mechanisms whose wording missed the phrase list (`*same*` with
+  markdown, `sublist`, 1-based/0-based without the word "index").
+- **False positives (h1):** the control's `fix-generator-exhaust` (seed 0) passes the gate while
+  concluding "there is no defect"; it is the only answer in that arm's fifteen that a full read
+  fails outright. Base's `fix-zip-truncates` and `fix-enumerate-start` also pass while pointing at
+  the test rather than the implementation — partial-to-failed on the read, gate-passed.
 - **False positives (h2):** the control's `min-key-string` ("there is no defect … for positive
   integers the function is correct") and `unbound-local` passed the gate while concluding wrongly;
   seed 1's `join-absolute`, `dict-mutation-view`, `unbound-local` and `min-key-string` all passed

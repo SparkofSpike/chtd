@@ -254,7 +254,7 @@ Not central, but the paper will look incomplete without acknowledging them.
 
 - **Tan, Zhang, Li, Cui, Geng, Zhang, Zhang, Chen, Wang, Wang, Yin, Hu, Zhang, Bai, "SKT: Skill-Use
   Training at Scale via Verified Synthetic Data Generation"**
-  ([2608.02287](https://arxiv.org/abs/2608.02287), v2 2026-10-07) — verified data synthesis for
+  ([2608.02287](https://arxiv.org/abs/2608.02287), v1 2026-08-03, v2 updated 2026-10-07) — verified data synthesis for
   skill use: rule-based and agent-based verification with feedback-guided repair, retaining only
   trajectories that substantially use every required skill; 27,164 verified trajectories from 2,000
   public skills. Two of its findings are directly on CHTD's axes: gains **extend beyond a single
