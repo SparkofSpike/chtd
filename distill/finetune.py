@@ -137,25 +137,46 @@ def message_bounds(tokenizer: Any, messages: Sequence[Mapping[str, Any]],
     tokens with no map back to the messages that produced it, and guessing where a turn starts by
     searching for its text is wrong the moment a tool result quotes that text.
 
-    The prefixes are required to nest: each render must extend the previous one token-for-token. If
-    it does not, a message boundary cannot be located this way, and the caller is told rather than
-    handed an offset that silently lands mid-token.
+    **Each prefix is checked against the full render**, because that is the property the mask
+    needs: ``bounds[i]`` is an offset into the full token stream, so the render of ``messages[:i]``
+    must be a token-for-token prefix of the full render. (Adjacent nesting is not enough: a render
+    can extend the one before it and still not sit on the full stream — measured on the box, the
+    render that stops inside a run of tool results does exactly that.) A boundary that is not a
+    prefix of the full render cannot be placed, and the caller is told rather than handed an
+    offset that silently lands mid-token.
+
+    **One boundary is unplaceable by construction, and untouched by the mask.** When one assistant
+    turn carries several tool calls, the template renders the results as a single block and closes
+    the turn only at the last one. A render that stops inside that run therefore emits a turn end
+    the full render does not have there. That interior boundary is never read: the per-turn mask
+    reads ``bounds[assistant]`` and ``bounds[assistant + 1]``, and the message after an assistant
+    is either prose or the *first* result of the run — both are placeable. So the interior
+    boundary is carried forward as a placeholder, and the check stays strict everywhere else.
     """
+    full_text = render_chat(tokenizer, messages, tools, add_generation_prompt=False)
+    full_ids = tokenizer(full_text, add_special_tokens=False)["input_ids"]
     bounds = [0]
-    previous: list[int] = []
     for index in range(1, len(messages) + 1):
         text = render_chat(tokenizer, messages[:index], tools, add_generation_prompt=False)
         ids = tokenizer(text, add_special_tokens=False)["input_ids"]
-        if ids[: len(previous)] != previous:
-            diverged = next((i for i, (a, b) in enumerate(zip(previous, ids)) if a != b),
-                            min(len(previous), len(ids)))
-            raise PrefixDrift(
-                f"message {index} does not extend the conversation before it: the renderings "
-                f"disagree at token {diverged}, so a per-message supervision mask cannot be "
-                f"placed reliably"
-            )
-        previous = ids
-        bounds.append(len(ids))
+        if ids == full_ids[: len(ids)]:
+            bounds.append(len(ids))
+            continue
+        interior_tool = (
+            messages[index - 1].get("role") == "tool"
+            and index < len(messages)
+            and messages[index].get("role") == "tool"
+        )
+        if interior_tool:
+            bounds.append(bounds[-1])
+            continue
+        diverged = next((i for i, (a, b) in enumerate(zip(full_ids, ids)) if a != b),
+                        min(len(full_ids), len(ids)))
+        raise PrefixDrift(
+            f"message {index} does not extend the conversation before it: the renderings "
+            f"disagree at token {diverged}, so a per-message supervision mask cannot be "
+            f"placed reliably"
+        )
     return bounds
 
 
