@@ -26,7 +26,7 @@ student-state arm's own seed spread. The earlier +2–3 was consistent with nois
   iteration, text encoding, class/property semantics, integer division, ordering, and the
   "empty case" traps.
 - The prompt is the same one h1/h2 use; the flow is the same per-task-home flow
-  (`run_arm_h3.py`, one workspace and one ledger per task).
+  (`eval/run_arm_h3.py`, one workspace and one ledger per task).
 
 ## The arms
 
@@ -106,6 +106,9 @@ has now been read by humans; and 30 tasks still resolve only ~15-point differenc
 ```
 harness/tasks/holdout-3.jsonl                the 30 tasks, checked in
 harness/tasks/holdout-3/<id>/                the fixture sources, checked in (check.py + module)
+artifact-binding.md                          adapter sha256s for every arm of this batch,
+                                             with the evidence fixing each to its run
+eval/run_arm_h3.py                           the per-task-home sweep script, checked in
 data/holdout-3-20261014/
   workspaces/<id>/{check.py,<module>.py}   the working copies; all verified failing
   arm-*/                                   per-task workspaces and ledgers
