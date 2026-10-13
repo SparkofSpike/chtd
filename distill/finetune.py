@@ -404,6 +404,23 @@ def _logical_parameter_count(config: Any) -> int:
     )
 
 
+def _supervised_suffix_window(labels: Any) -> tuple[int, int, Any]:
+    """Return the logits window and next-token label suffix for a single-example batch."""
+    if labels.shape[0] != 1:
+        raise ValueError("suffix-only logits currently require per_device_train_batch_size=1")
+    supervised = labels[0].ne(-100).nonzero(as_tuple=False).flatten()
+    if not len(supervised):
+        raise ValueError("training example has no supervised answer tokens")
+    first_target = int(supervised[0].item())
+    if first_target == 0:
+        raise ValueError("the first supervised token has no preceding prediction position")
+    if not labels[0, first_target:].ne(-100).all():
+        raise ValueError("supervised labels must be one contiguous suffix")
+    start = first_target - 1  # include the token position that predicts the first answer token
+    keep = labels.shape[1] - start
+    return start, keep, labels[:, -keep:]
+
+
 def render_examples(
     tokenizer: Any,
     rows: Sequence[Mapping[str, Any]],
@@ -555,7 +572,29 @@ def train(
         remove_unused_columns=False,
     )
 
-    trainer = Trainer(
+    class SuffixLogitsTrainer(Trainer):
+        """Compute vocabulary logits only where labels can contribute to the loss.
+
+        Qwen3's 151k vocabulary makes full-sequence float32 logits dominate memory (about 4 GB
+        for an 8k-token sample). The samples supervise only the final assistant answer, so ask
+        Qwen3 to project only that suffix. The full prefix still participates in attention.
+        This relies on Qwen3ForCausalLM's ``logits_to_keep`` argument and batch size one, both
+        fixed by this experiment's model and recipe.
+        """
+        def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
+            import torch.nn.functional as functional
+
+            labels = inputs.pop("labels")
+            _, keep, suffix_labels = _supervised_suffix_window(labels)
+            outputs = model(**inputs, logits_to_keep=keep)
+            loss = functional.cross_entropy(
+                outputs.logits[:, :-1, :].reshape(-1, outputs.logits.shape[-1]).float(),
+                suffix_labels[:, 1:].reshape(-1),
+                ignore_index=-100,
+            )
+            return (loss, outputs) if return_outputs else loss
+
+    trainer = SuffixLogitsTrainer(
         model=model,
         args=arguments,
         train_dataset=dataset,

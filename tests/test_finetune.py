@@ -17,6 +17,7 @@ from distill.finetune import (
     PrefixDrift,
     SampleTooLong,
     _base_weights_fingerprint,
+    _supervised_suffix_window,
     build_example,
     build_example_all_assistant,
     load_sample_lines,
@@ -26,6 +27,23 @@ from distill.finetune import (
     samples_digest_over,
 )
 from distill.sft import samples_digest
+
+
+def test_suffix_logits_window_keeps_predecessor_for_first_target_token() -> None:
+    torch = pytest.importorskip("torch")
+    labels = torch.tensor([[-100, -100, -100, 11, 12, 13]])
+    start, keep, suffix = _supervised_suffix_window(labels)
+    assert start == 2
+    assert keep == 4
+    # Position 2's logit predicts target 11 at position 3 after the standard causal shift.
+    assert suffix[:, 1:].tolist() == [[11, 12, 13]]
+
+
+def test_suffix_logits_window_rejects_non_suffix_labels() -> None:
+    torch = pytest.importorskip("torch")
+    labels = torch.tensor([[-100, 7, -100, 8]])
+    with pytest.raises(ValueError, match="contiguous suffix"):
+        _supervised_suffix_window(labels)
 
 
 def test_base_fingerprint_changes_when_weight_bytes_change(tmp_path) -> None:
