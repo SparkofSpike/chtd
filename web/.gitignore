@@ -9,5 +9,9 @@ __pycache__/
 node_modules/
 *.tsbuildinfo
 
+# Per-machine endpoint config (start.ps1 loads it). The template is tracked; the real one carries
+# this machine's addresses and stays out of the repository.
+.env
+
 # The demo ships its own data (demo-data/) and a prebuilt frontend (dist/) so a fresh clone can
 # run offline without Node or a full data/ tree; both are tracked on purpose.

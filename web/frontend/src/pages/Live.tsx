@@ -514,6 +514,11 @@ export default function Live() {
                       if (r) {
                         setModel(r.model)
                         setBaseUrl(r.base_url)
+                        // 选了一条显示未就绪的路由就当场重测一次。能力结果是缓存过的
+                        // （失败 45 秒 / 成功 10 秒），所以“未就绪”常常只是上次探测的旧值 ——
+                        // 让读者自己去找重测按钮，然后看到“未就绪却跑通了”那种矛盾，不如
+                        // 在这里自动消除。
+                        if (!r.ready) refreshCaps()
                       }
                     }}
                   >

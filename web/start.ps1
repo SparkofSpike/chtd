@@ -2,6 +2,27 @@
 $ErrorActionPreference = "Stop"
 $web = Split-Path -Parent $MyInvocation.MyCommand.Path
 $be  = Join-Path $web "backend"
+
+# Optional local overrides. `web/.env` holds KEY=VALUE lines and is git-ignored, so a machine can
+# point the student route at a model it actually serves without editing any code:
+#
+#   CHTD_STUDENT_URL=http://100.84.151.62:8003/v1
+#   CHTD_STUDENT_MODEL_ID=qwen3-4b-instruct-2507
+#
+# Values already present in the environment win, so a shell can still override the file.
+$envFile = Join-Path $web ".env"
+if (Test-Path $envFile) {
+    Write-Host "[start] loading $envFile"
+    foreach ($line in Get-Content $envFile) {
+        $t = $line.Trim()
+        if (-not $t -or $t.StartsWith("#") -or -not $t.Contains("=")) { continue }
+        $i = $t.IndexOf("=")
+        $k = $t.Substring(0, $i).Trim()
+        $v = $t.Substring($i + 1).Trim().Trim('"').Trim("'")
+        if ($k -and -not (Test-Path "Env:$k")) { Set-Item -Path "Env:$k" -Value $v }
+    }
+}
+
 Set-Location $be
 
 if (-not (Test-Path "$be\.venv\Scripts\python.exe")) {
