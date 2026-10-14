@@ -8,10 +8,11 @@ env/
 
 # Training artifacts
 #
-data/ holds generated artifacts. It does not hold the training records: a run that happened is
+# data/ holds generated artifacts. It does not hold the training records: a run that happened is
 # evidence, not output, so `runs/` is ignored by *contents* and `runs/<run>/` keeps the small text
-the run needs to be checkable. The weights themselves stay out either way — `*.safetensors` below.
-data/
+# the run needs to be checkable. The weights themselves stay out either way — `*.safetensors` below.
+# 注意前导斜杠：web/backend/data/ 是演示端导出的只读 JSON，需要入库。
+/data/
 outputs/
 checkpoints/
 *.safetensors

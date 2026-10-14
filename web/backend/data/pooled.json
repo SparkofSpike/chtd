@@ -1,0 +1,87 @@
+{
+  "tasks": 57,
+  "ordinal_diff": {
+    "chtd_minus_base": {
+      "h1": 0.267,
+      "h2": 0.083,
+      "h3": 0.156,
+      "pooled": 0.17,
+      "test": "t=1.29, p=0.20; sign p=0.60; bootstrap CI [-0.08,+0.43]"
+    },
+    "chtd_minus_ctrl": {
+      "pooled": -0.05,
+      "test": "t=-0.49, p=0.62"
+    }
+  },
+  "failure_rate": {
+    "base": {
+      "h1": 33.3,
+      "h2": 8.3,
+      "h3": 40.0,
+      "pooled": 31.6,
+      "of": "18/57"
+    },
+    "chtd": {
+      "h1": 13.3,
+      "h2": 8.3,
+      "h3": 23.3,
+      "pooled": 17.5,
+      "of": "10/57"
+    },
+    "ctrl": {
+      "h1": 13.3,
+      "h2": 25.0,
+      "h3": 30.0,
+      "pooled": 24.6,
+      "of": "14/57"
+    },
+    "v5": {
+      "h1": 13.3,
+      "h2": 0.0,
+      "h3": 3.3,
+      "pooled": 5.3,
+      "of": "3/57"
+    }
+  },
+  "paired_flips": {
+    "h1": "4:1",
+    "h2": "1:1",
+    "h3": "7:2",
+    "pooled": "12:4",
+    "mcnemar_exact_p": 0.077
+  },
+  "pooled_bar": [
+    {
+      "family": "base",
+      "fail_rate": 31.6,
+      "of": "18/57"
+    },
+    {
+      "family": "chtd",
+      "fail_rate": 17.5,
+      "of": "10/57"
+    },
+    {
+      "family": "ctrl",
+      "fail_rate": 24.6,
+      "of": "14/57"
+    },
+    {
+      "family": "v5",
+      "fail_rate": 5.3,
+      "of": "3/57"
+    }
+  ],
+  "_meta": {
+    "generated_at": "2026-10-14T17:48:16.995298+00:00",
+    "chtd_root": "E:\\Coding\\chtd",
+    "sources": [
+      "runs/holdout-4-20261014/pooled-analysis-20261014.md",
+      "eval/failure_rate.py",
+      "eval/pooled_effect.py"
+    ],
+    "loader_version": "0.1.0",
+    "status": "ok",
+    "note": ""
+  }
+}

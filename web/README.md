@@ -1,0 +1,219 @@
+# CHTD Web Console（Web 演示端）
+
+为 **CHTD（Co-Harness Targeted Distillation，同轨定向蒸馏）** 提供可运行、可现场演示、可复现的
+Web 端。它真实呈现「**任务规划 → 工具调用 → 执行反馈 → 结果验证 → 异常处理**」完整闭环，并用
+`runs/`、`data/` 中的**真实数据**可视化已完成的对照实验。
+
+> 本目录是给比赛评委与开源读者的作品本体。所有实验数字均可溯源到具体文件；找不到的标「暂无数据」，
+> 不编造、不 mock 假轨迹。实施契约见 [PLAN.md](PLAN.md)；5 分钟逐页讲稿见 [DEMO_SCRIPT.md](DEMO_SCRIPT.md)。
+
+---
+
+## 1. 两种运行模式
+
+| 模式 | 何时用 | 数据来源 | 界面标注 |
+| --- | --- | --- | --- |
+| **Replay（默认）** | 无 GPU / 不启动模型 / 现场离线 | 读取 `runs/`、`data/` 真实 ledger（records.jsonl + sessions.db） | 顶栏 Replay 徽标 |
+| **Live** | 已启动两个 `serve_openai` 端点，且机器装有可运行的 Agnes CLI | 经 Agnes Harness 实时驱动真实 rollout，SSE 推流 | 顶栏 Live 徽标 |
+
+- **Live 不可用时自动降级 Replay**：事件流会发 `mode_fallback` 说明原因，界面徽标保持 Replay。
+- 顶栏右侧的 **base / adapter 健康灯** 每 5 秒探测两端点的 `/health` 与 `/v1/models`。
+
+---
+
+## 2. 目录结构
+
+```
+web/
+├── PLAN.md              # 冻结契约（信息架构 / 数据来源 / API / 轨迹重建 / Live）
+├── README.md            # 本文件
+├── DEMO_SCRIPT.md       # 5 分钟逐页讲稿
+├── start.ps1 / stop.ps1 # 一键启动 / 停止
+├── demo-data/           # 随仓库附带的 Replay 数据（真实 ledger 快照，见 §7）
+├── backend/             # FastAPI（独立 venv，只读解析 + HTTP 转发，不加载模型）
+│   ├── app/             # 主程序、loaders、routers、live
+│   ├── data/            # export_data.py 导出的只读 JSON
+│   └── tests/           # pytest
+└── frontend/            # Vite + React + TS + Tailwind + Recharts（构建产物 dist/）
+```
+
+页面（5 个）：**Overview**（问题→三承诺自绘 SVG→数字卡）、**Arena / Replay**（任意两臂同题并排、
+逐步轨迹、错误恢复标记、track hash）、**Experiments**（真实数据图表，每图来源脚注 + 支持/不支持）、
+**Reproduce**（端点/rollout/eval 复现命令）。
+
+### Arena 的臂选择
+
+左、右两臂可任选，默认 `base` ↔ `CHTD · seed1`：
+
+| 臂（`arm_group`） | 通过率 | 说明 |
+| --- | ---: | --- |
+| `base` | 34/48 | 未微调基线 |
+| **`chtd-seed1`** | **38/48** | 学生状态臂（seed1 的两个分片已合并） |
+| `chtd-seed0` | 7/48 | **该种子在本任务集出现策略退化**，见下 |
+| `control-seed0` / `control-seed1` | 34/48 | 教师自轨迹对照臂 |
+
+`chtd-seed0` 的退化是本项目记录在案的发现（`runs/holdout-4-20261014/README.md`）：它始终以
+`find test*.py` 开局而不先列目录，假设了不存在的 `src/`，48 题中 29 题因此回答"目录不存在"。
+选到该臂时界面会给出提示条 —— 它保留在可选列表里正是因为它是一个真实结果，不是因为它是代表结果。
+
+---
+
+## 3. 环境要求
+
+- Windows + PowerShell。
+- **Python 3.14.7**（后端建独立 venv；仅装轻量 Web 包，不装 torch/transformers）。
+- **Node v22.23.2 + npm 10.9.8**（前端依赖本地打包）。
+- 后端服务端口 **8088**；模型端点默认 base **127.0.0.1:8000**、adapter **127.0.0.1:8001**。
+
+---
+
+## 4. 一键启动（推荐）
+
+在 PowerShell 中：
+
+```powershell
+cd <repo>\web
+.\start.ps1
+```
+
+`start.ps1` 会：① 建后端 venv 并安装轻量依赖；② 若 `backend/data/*.json` 缺失则运行
+`export_data.py` 导出真实数据；③ 若前端 `dist/` 缺失则 `npm install` + `npm run build`；
+④ 启动 uvicorn（托管前端 dist）。
+
+启动后浏览器打开： **http://127.0.0.1:8088**
+
+停止：
+
+```powershell
+.\stop.ps1
+```
+
+---
+
+## 5. 手动启动（分步）
+
+### 5.1 后端
+
+```powershell
+cd <repo>\web\backend
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python export_data.py            # 生成 data/*.json，终端逐项打印来源
+uvicorn app.main:app --host 127.0.0.1 --port 8088
+```
+
+### 5.2 前端
+
+```powershell
+cd <repo>\web\frontend
+npm install
+npm run build                    # 产物 dist/，由后端静态托管
+# 开发模式（可选，热更新；/api 代理到 127.0.0.1:8088）：
+npm run dev
+```
+
+> 前端 dist 由后端在根路由 `/` 托管（含 SPA fallback）。若 dist 尚未构建，后端仍正常启动并给占位页，
+> 不影响 API 与 Replay 数据接口。
+
+---
+
+## 6. 镜像 / 离线排错
+
+- **pip 慢或失败**：用清华镜像
+  ```powershell
+  pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+  ```
+- **npm 慢或失败**：`frontend/.npmrc` 已设 `registry=https://registry.npmmirror.com`；也可手动：
+  ```powershell
+  npm config set registry https://registry.npmmirror.com
+  ```
+- **PATH 里的 npm 损坏/缺失**（如报找不到 `cache/policy.js`）：给 start.ps1 指定可用的 npm 绝对路径：
+  ```powershell
+  $env:CHTD_NPM = "D:\keyapp\npm.cmd"   # 换成你机器上的 npm.cmd 路径
+  .\start.ps1
+  ```
+- **离线演示**：前端所有依赖（含 Recharts、字体）均本地打包，**无外网 CDN/字体外链**；
+  后端只读本地文件。首次完成 `export_data.py` 与 `npm run build` 后，断网可完整演示。
+- **执行策略阻止脚本**（如 `无法加载 start.ps1，因为在此系统上禁止运行脚本`）：
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File .\start.ps1
+  ```
+- **端口被占用**：确认没有其它进程占用 8088（或先 `.\stop.ps1`）。
+
+---
+
+## 7. 数据来源（可溯源）
+
+**Replay 所需的数据随仓库附带**在 `web/demo-data/holdout-4-20261014-v3/`（约 3.4 MB 压缩 / 19 MB
+展开），因此克隆仓库即可离线演示，无需先准备完整工作副本。后端路径解析优先用这份快照，
+找不到时回落 `data/holdout-4-20261014-v3/`。
+
+后端在启动时只读解析（不重跑、不修改）：
+
+| 内容 | 位置 |
+| --- | --- |
+| 逐步任务汇总 records.jsonl（11 个臂目录） | `web/demo-data/holdout-4-20261014-v3/rollouts/<arm>/` |
+| 精细事件流（规划/工具/结果/恢复） | `web/demo-data/holdout-4-20261014-v3/agh_home/data/sessions.db`（表 events） |
+| 实验汇总（剂量/失败率/池化/确定性） | `runs/holdout-4-20261014/` |
+| 评分/校准/功效 | `runs/holdout-3-20261014/` |
+| 工具健康（教师态） | `runs/teacher-state-20261014/tool-call-census.json` |
+| 预置任务定义 | `harness/tasks/*.jsonl` |
+
+导出的每个 `backend/data/*.json` 顶层含 `_meta`（生成时间、CHTD_ROOT、来源文件 `sources`、加载器版本），
+每个数字因此可在其所在模块的 `_meta.sources` 与来源脚注中溯源到来源文件 + 复现脚本。
+
+### 7.1 交付前的三处修正（2026-10-15）
+
+本次接入仓库时对回放做了三项修正，均可在界面上验证：
+
+1. **模型名按实际执行显示。** 账本的 `session/start` 声明的是 profile 默认 route（`teacher/agnes-3.0-flash`），
+   但 harness 随即发出 `x/core/model-switch` 切到 `student/qwen3-4b-instruct-2507` —— 真正作答的是后者。
+   现在回放会跟踪该事件并显示实际模型，同时保留初始声明供对照。
+2. **第三方机器路径脱敏。** 工具结果里的 ENOENT 会带上完整路径，现在统一折叠为 `<workspace>` / `<home>`，
+   保留有意义的尾部（仍能看到是哪个相对路径失败）。
+3. **分片合并。** seed1 臂由两个互不重叠的分片组成（33 + 15 题），现在按 `arm_group` 合并为一个臂，
+   同一任务在任一臂缺失时仍能找到配对的另一臂。
+
+---
+
+## 8. Live 模式现状（重要，诚实说明）
+
+- Live 复用现有 Agnes Harness：经子进程驱动 `harness/` 的 rollout/round/fork 与 `packages/chtd`
+  冻结轨道，**不自写 agent loop**；模型只指向本地两个 `serve_openai`（Agnes Qwen，无第三方）。
+  启动 Live 的两个端点：
+  ```powershell
+  # base（无 adapter）
+  python serve_openai.py --model-path <Qwen模型路径> --port 8000
+  # adapter（带 LoRA）
+  python serve_openai.py --model-path <Qwen模型路径> --adapter-path <LoRA适配器路径> --port 8001
+  ```
+- **当前机器没有可执行的 Agnes CLI 构建产物（`agnes.mjs`）与 agnes-harness 源码**，因此本机
+  Live 完整 AGH rollout 无法跑通，会稳定走 `mode_fallback` → 真实 Replay。
+- 在**装有 agnes-harness 构建**（`CHTD_AGNES_CLI` 指向 `packages/cli/dist/local/agnes.mjs`）并启动
+  两端点的机器上，Live 即可实时并排跑。相关环境变量：`CHTD_AGNES_CLI`、`CHTD_NODE`、
+  `CHTD_BASE_PORT`、`CHTD_ADAPTER_PORT`、`CHTD_PROFILE_TEMPLATE`。
+- 后端运行 Live 时的临时产物只写到 `web/backend/.live/`，不会修改 `runs/`、`data/`。
+
+---
+
+## 9. 测试
+
+```powershell
+cd backend
+.\.venv\Scripts\Activate.ps1
+pytest -q
+```
+
+覆盖：加载器（存在文件解析、缺失文件标「暂无数据」、provenance 非空）、轨迹重建（工具调用/结果配对、
+错误恢复正例/反例）、API（TestClient 校验 health/experiments/sessions/tasks 与 Arena SSE 帧）。
+
+---
+
+## 10. 合规与红线
+
+- 只新增 `web/`；**不修改** `distill/eval/harness/packages` 与 `runs/`、`data/`；不重跑训练评测。
+- 不接入 OpenAI/Claude/Gemini 等第三方模型，前端无任何 key。
+- 页面并列「证据支持 / 证据不支持」，不夸大（例如不写「全面优于其他方法」；p=0.077 标注为
+  「强提示而非证实」；v5 为完整教师演示，不作为 CHTD 形态证据）。
+- 改动走 fork-branch → PR → review，不直接 push main。

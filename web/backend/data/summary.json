@@ -1,0 +1,53 @@
+{
+  "diagnosis_tasks": {
+    "n": 15,
+    "base_failures": "4-5",
+    "trained_failures": "0-2",
+    "joint_p_max": "3.4e-9",
+    "joint_p_conservative": "2.6e-5"
+  },
+  "pooled": {
+    "n": 57,
+    "base_failure_rate": "31.6%",
+    "chtd_failure_rate": "17.5%",
+    "mcnemar_p": 0.077
+  },
+  "data_efficiency": {
+    "student_state_rows": 9,
+    "teacher_demo_rows": 33,
+    "note": "quarter of data, one-cell margin, suggestive"
+  },
+  "determinism": {
+    "base_evals": 6,
+    "adapter_differing": "9/15",
+    "ordinal_gap": 0.33
+  },
+  "scorer": {
+    "gate_human_pct": 75.0,
+    "human_human_pct": 84.0,
+    "mde_30_pp": 26.6
+  },
+  "supports": [
+    "15-task endpoint: fine-tuning cuts failures 4-5 -> 0-2, joint p <= 3.4e-9",
+    "57 pooled failure rate 31.6% -> 17.5% (McNemar p=0.077, strong hint not proof)",
+    "Data efficiency: 9 student-state rows ~= 33 teacher-demo rows (one-cell margin)",
+    "Measurement floor quantified: base deterministic, adapter +-0.33 ordinal points"
+  ],
+  "does_not_support": [
+    "No claim that CHTD beats alternatives; p=0.077 not <0.05, ordinal not beyond noise",
+    "9-rows-equals-33 is a single-cell margin on single 15-task evals, suggestive",
+    "33-93 dose curve is flat at this n; do not claim 'more data is better'",
+    "v5 is full teacher demos (10x rows), not CHTD shape evidence"
+  ],
+  "_meta": {
+    "generated_at": "2026-10-14T17:48:16.995298+00:00",
+    "chtd_root": "E:\\Coding\\chtd",
+    "sources": [
+      "runs/holdout-4-20261014/dose-ladder-20261014.md (15-task failures, joint p)",
+      "runs/holdout-4-20261014/pooled-analysis-20261014.md (57 pooled 31.6->17.5, McNemar p=0.077)"
+    ],
+    "loader_version": "0.1.0",
+    "status": "ok",
+    "note": "Overview headline cards; see supports / does_not_support for evidence bounds."
+  }
+}

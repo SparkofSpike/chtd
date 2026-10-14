@@ -1,29 +1,16 @@
-# Byte-level freezing is the point of harness/presets/: a preset that drifts
-# measures a different experiment. Git must never rewrite these bytes, so they
-# are marked non-text and the recorded hash is checked against the raw file.
-harness/presets/*.yaml -text -diff
-harness/presets/*.sha256 -text -diff
+# Binary files must never be line-ending converted.
+*.db binary
+*.db-shm binary
+*.db-wal binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.safetensors binary
+*.gz binary
 
-# Same reason, for the delivered form of the same track. These are the bytes a
-# run actually loads and the bytes packages/chtd/index.mjs checks its hash
-# against, so a checkout that rewrote line endings would refuse to load.
-packages/chtd/presets/*.mjs -text -diff
-packages/chtd/presets/*.sha256 -text -diff
-
-# The captured harness prefix is a record of bytes a live run sent, and the
-# project treats it as one: `docs/finetune.md` points a reader at it to check what
-# the harness disclosed. A checkout that rewrote its line endings would hand that
-# reader different bytes from the ones recorded. (Its semantics survive either
-# way — it is JSON — so this is about the record staying the record, not about
-# the file refusing to parse.)
-harness/prefix/*.json -text -diff
-
-# A collection profile's *bytes* decide the track. Measured 2026-10-12: the
-# harness records a `resolvedProfileHash` over the profile it loaded, and a track
-# digest is sha256 over that hash and the preset. Changing one URL — or only the
-# line endings — changes the hash, changes the track, and makes a dataset built
-# under the old profile refuse to mix with the new one (distill/dataset.py).
-# A checkout that rewrote line endings would therefore silently move every
-# collection onto its own private track, so these files are frozen like the
-# presets are.
-harness/profile/*.yaml -text -diff
+# Built frontend assets are shipped as-is; a line-ending rewrite would change the bytes the
+# demo actually serves and invalidate the hashed file names.
+web/frontend/dist/** -text

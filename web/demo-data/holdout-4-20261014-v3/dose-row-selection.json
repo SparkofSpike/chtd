@@ -1,0 +1,802 @@
+{
+  "source": "teacher-demo-20261012/samples-v5.jsonl",
+  "source_sha256": "3336de8cf676959b450700f896957e0b79d3b7a7c27c19f2136d3f552ed0df2c",
+  "source_rows": 93,
+  "source_unique_tasks": 44,
+  "selection_seed": "holdout4-dose-order-v1-20261014",
+  "algorithm": "deterministic task-stratified round-robin: SHA256-seed order over task IDs, then SHA256 row order within each task; first n rows form nested subsets",
+  "subsets": {
+    "9": {
+      "count": 9,
+      "unique_tasks": 9,
+      "rows": [
+        {
+          "rank": 1,
+          "task_id": "tp2-hex-without-base",
+          "prefix_digest": "591bae151407feeb2e6c7373ebff07084df2f6c6a8a16914cd5ccafdc843f687",
+          "row_sha256": "3d55437b3908ce84451c0572a6aa19cceea052af2f0cb9c9259e235d5d9e6191"
+        },
+        {
+          "rank": 2,
+          "task_id": "fix-silent-truncation",
+          "prefix_digest": "02a94948f9bd5034897e4a109157e6cb74f205906d312d0fd190a7263a5de1e4",
+          "row_sha256": "e0770719cf5658ccf6acdb73a4152ce7cf401656a82653333986c65ec8b906b2"
+        },
+        {
+          "rank": 3,
+          "task_id": "fix-regex",
+          "prefix_digest": "1a29fa68a782b8e25387f6bc22a567d8eb4a040eb3604f47f782f192ddb88c9f",
+          "row_sha256": "7cdc87412a9da632ab2289ee133489efb371fc66c3a081724d0e1141c48ab1cb"
+        },
+        {
+          "rank": 4,
+          "task_id": "fix-division-by-zero",
+          "prefix_digest": "de2a16d3cd41358525c2116d178562131aff05fa48bc70fc6c3c2e5a7c68a19c",
+          "row_sha256": "0be62be8f54309b2a1895a31c6d4f334baddd1b5e17e2916a38b42674b696a45"
+        },
+        {
+          "rank": 5,
+          "task_id": "fix-type-error",
+          "prefix_digest": "931d57531b928fcaebc2665605413ba91be421273cbc77d1babad84bdbb62ff0",
+          "row_sha256": "f99424996ad74d0f9d497b72cf27120037b21042c86e9534301e7cea01dc653c"
+        },
+        {
+          "rank": 6,
+          "task_id": "fix-dict-get-chain",
+          "prefix_digest": "640cb5c3a19d8160524b36f94383b5adf779aba1d83d56d34552167e0e3f9fb0",
+          "row_sha256": "25d8af72a07945d84b69933c953cdaa071bf269f1ef2fea1a9af1cbda00957e9"
+        },
+        {
+          "rank": 7,
+          "task_id": "fix-config-key",
+          "prefix_digest": "6bb066361a4f75c7f1c72fc9b6899523ec588298f8f481764305a7db02e9a176",
+          "row_sha256": "9d488fa89e6854f7fc6092189ed669b7413b3525e59a3f9e5cf7d6e2c5e0f688"
+        },
+        {
+          "rank": 8,
+          "task_id": "fix-max-returns-key",
+          "prefix_digest": "b8d339a16c3dc7503c8f851bf4600a25640338cabe537001aba502a90317dbf2",
+          "row_sha256": "e0ad860ec3ce61648fece00b04265ae81091172e8cf5f72b88d5cc12eb03220f"
+        },
+        {
+          "rank": 9,
+          "task_id": "tp2-round-half-even-format",
+          "prefix_digest": "de1bbc21327e66c2c43fed6e97ae0ada9ff3338ac83f2d2e2b144b434fd33488",
+          "row_sha256": "2ea46340ab237db85ef0de50323e0022d51ec4d92cc2bbd69b0032311798a861"
+        }
+      ]
+    },
+    "30": {
+      "count": 30,
+      "unique_tasks": 30,
+      "rows": [
+        {
+          "rank": 1,
+          "task_id": "tp2-hex-without-base",
+          "prefix_digest": "591bae151407feeb2e6c7373ebff07084df2f6c6a8a16914cd5ccafdc843f687",
+          "row_sha256": "3d55437b3908ce84451c0572a6aa19cceea052af2f0cb9c9259e235d5d9e6191"
+        },
+        {
+          "rank": 2,
+          "task_id": "fix-silent-truncation",
+          "prefix_digest": "02a94948f9bd5034897e4a109157e6cb74f205906d312d0fd190a7263a5de1e4",
+          "row_sha256": "e0770719cf5658ccf6acdb73a4152ce7cf401656a82653333986c65ec8b906b2"
+        },
+        {
+          "rank": 3,
+          "task_id": "fix-regex",
+          "prefix_digest": "1a29fa68a782b8e25387f6bc22a567d8eb4a040eb3604f47f782f192ddb88c9f",
+          "row_sha256": "7cdc87412a9da632ab2289ee133489efb371fc66c3a081724d0e1141c48ab1cb"
+        },
+        {
+          "rank": 4,
+          "task_id": "fix-division-by-zero",
+          "prefix_digest": "de2a16d3cd41358525c2116d178562131aff05fa48bc70fc6c3c2e5a7c68a19c",
+          "row_sha256": "0be62be8f54309b2a1895a31c6d4f334baddd1b5e17e2916a38b42674b696a45"
+        },
+        {
+          "rank": 5,
+          "task_id": "fix-type-error",
+          "prefix_digest": "931d57531b928fcaebc2665605413ba91be421273cbc77d1babad84bdbb62ff0",
+          "row_sha256": "f99424996ad74d0f9d497b72cf27120037b21042c86e9534301e7cea01dc653c"
+        },
+        {
+          "rank": 6,
+          "task_id": "fix-dict-get-chain",
+          "prefix_digest": "640cb5c3a19d8160524b36f94383b5adf779aba1d83d56d34552167e0e3f9fb0",
+          "row_sha256": "25d8af72a07945d84b69933c953cdaa071bf269f1ef2fea1a9af1cbda00957e9"
+        },
+        {
+          "rank": 7,
+          "task_id": "fix-config-key",
+          "prefix_digest": "6bb066361a4f75c7f1c72fc9b6899523ec588298f8f481764305a7db02e9a176",
+          "row_sha256": "9d488fa89e6854f7fc6092189ed669b7413b3525e59a3f9e5cf7d6e2c5e0f688"
+        },
+        {
+          "rank": 8,
+          "task_id": "fix-max-returns-key",
+          "prefix_digest": "b8d339a16c3dc7503c8f851bf4600a25640338cabe537001aba502a90317dbf2",
+          "row_sha256": "e0ad860ec3ce61648fece00b04265ae81091172e8cf5f72b88d5cc12eb03220f"
+        },
+        {
+          "rank": 9,
+          "task_id": "tp2-round-half-even-format",
+          "prefix_digest": "de1bbc21327e66c2c43fed6e97ae0ada9ff3338ac83f2d2e2b144b434fd33488",
+          "row_sha256": "2ea46340ab237db85ef0de50323e0022d51ec4d92cc2bbd69b0032311798a861"
+        },
+        {
+          "rank": 10,
+          "task_id": "fix-sort-returns-none",
+          "prefix_digest": "6f3af659254e95ba9e90a7816001171cc976ad9a2605158fdf4791ce70db0b1f",
+          "row_sha256": "eced1408b6de21dab03379fff509e33ab9b760d79a3d7cdf4a9c786934fa5d26"
+        },
+        {
+          "rank": 11,
+          "task_id": "fix-always-true-guard",
+          "prefix_digest": "4e53cb2deca4f8349d72966598e5e9ca26cb9058ece00f26989d974bcbfcece3",
+          "row_sha256": "5813784c515ed687700dfdc875b041ce1db614dcef0d8620b4aaf2e8a53533e4"
+        },
+        {
+          "rank": 12,
+          "task_id": "fix-default-mutable",
+          "prefix_digest": "d2b49fb68030fc2e6fdcdb04c2d23f71c5db62987325d7a6f402242f8c9045d3",
+          "row_sha256": "2fe4fff04be01f2de41678c0f3f3683a4c9ebc3b0d168caee65646038edf49f0"
+        },
+        {
+          "rank": 13,
+          "task_id": "fix-missing-return",
+          "prefix_digest": "93d5f8f78aedddc2de53da579d9952b8549911d4776ea8d4d447714a7320e7f5",
+          "row_sha256": "b7514eebcdcf3ee26f202514255801ff449b862dafb6cf8495362bbd3aed0c67"
+        },
+        {
+          "rank": 14,
+          "task_id": "fix-append-not-extend",
+          "prefix_digest": "0c39ccf096b0e9506258096f9911fd62ae3f4b83fabbb87e9a7d6f9785e693aa",
+          "row_sha256": "85e07ee1e6e34e8e7f14cf641e4629ec01ab5589987ee47c57dc5ce2a5ab7973"
+        },
+        {
+          "rank": 15,
+          "task_id": "fix-missing-prefix",
+          "prefix_digest": "111f2362491b468d1be22214ce894d75144da9bb437eca895dd386cc65d81e8c",
+          "row_sha256": "9adbbdcd5ec584e95392dc7c7975f6a9c7e5be6455d749496a8d0be538115355"
+        },
+        {
+          "rank": 16,
+          "task_id": "tp2-default-mutable",
+          "prefix_digest": "59355bd4f3c008585cb07b3f265a411af01903cea9d3027db596c8cd50fab74f",
+          "row_sha256": "d74f0353c04580b8cffa6484bde0af299ff70ed4d07e940a132045506ea7b4d9"
+        },
+        {
+          "rank": 17,
+          "task_id": "fix-import-name",
+          "prefix_digest": "bae2c870fe3d3a9bd2f4805893296a12f40faa01664bbf8bb669f77655e84459",
+          "row_sha256": "7239b5c6a9210dc87f80f45155d53055603d7c186959fb982c2a444df6f404ab"
+        },
+        {
+          "rank": 18,
+          "task_id": "fix-loop-continue",
+          "prefix_digest": "46bd6822eb8aa71244458d31222bf7df5fc8c2ede910651efca928e4f7a943cb",
+          "row_sha256": "cd0e088c80359796277ed1e4da11f96359c50facfa5c06daa5d6af4f58c48186"
+        },
+        {
+          "rank": 19,
+          "task_id": "fix-assertion",
+          "prefix_digest": "4ed0fd5a81189129aefc17646f190a161c7fef3f83a26c6f1f9d7c7993508806",
+          "row_sha256": "3afdc13bb7e84c39f129f3be1abad72a37647e4447ef1c357b602ed3282f3c4f"
+        },
+        {
+          "rank": 20,
+          "task_id": "fix-off-by-one",
+          "prefix_digest": "46c76b1b72ab7e9963efca485521fa9533790b68933fcc785ab48e5b8f1e279c",
+          "row_sha256": "7cea2462f9a20b4d4cd47735b05adebca7fefb72fb72943610e1f088cb6c14d3"
+        },
+        {
+          "rank": 21,
+          "task_id": "fix-one-element-tuple",
+          "prefix_digest": "08e3552951eb71b74eb9b7c771f1e809b67b8b08319db4f6b957be0813ef1ef9",
+          "row_sha256": "c6eba80b0d92ae0d4003e12ad7443f0c97c44504ba6f19126e6b446c4dfb1d18"
+        },
+        {
+          "rank": 22,
+          "task_id": "fix-parity-test",
+          "prefix_digest": "5bfc608f825242413146258250bbc9a3ea2b89b4d963ab6404d9b4ec3cade56d",
+          "row_sha256": "b0a58abeec17af7feb12d1b9b15aee3243241f4669c30a0cceb2435c2336f11f"
+        },
+        {
+          "rank": 23,
+          "task_id": "fix-argument-order",
+          "prefix_digest": "3dfcce7744dc5d5450b951d17322285d46a5990e5ff12515a3b597dfa8072876",
+          "row_sha256": "c3efda03b26a4243c2e33db937350657b086f395b710c3bdb65ff1dfc2c5b37c"
+        },
+        {
+          "rank": 24,
+          "task_id": "fix-empty-input",
+          "prefix_digest": "abd1bfbd6584c57b85712d8b6ec589d334139ee486e2276b0380d3d6425eeb51",
+          "row_sha256": "4e9b6693587c89ce631ff4c03aad81aa0ca778b5a6932eab143f9066ef196238"
+        },
+        {
+          "rank": 25,
+          "task_id": "fix-dict-mutation-while-iterating",
+          "prefix_digest": "ba3217bdc988023b55fd5aaac93c36f7637b378a3773aa17da99e74c2cb339cf",
+          "row_sha256": "adcd707a21e419fe2cf4820ba279f817d69fcb470b484a58aeb11769dcf806e4"
+        },
+        {
+          "rank": 26,
+          "task_id": "tp2-bool-key-collision",
+          "prefix_digest": "d58422ef807b3138ec2e97d973e408341ef1842d62f42cba7f8aed45aa8a2236",
+          "row_sha256": "a3e40c55a293788cffa62fa44664ad6282ed64269afe0f48499714c053085b22"
+        },
+        {
+          "rank": 27,
+          "task_id": "fix-min-max-clamp",
+          "prefix_digest": "2a38858d0b65155817a71af573783ac58c2f4aba7b09359bf4d28de7e16f25f2",
+          "row_sha256": "3904a457af94d458116b57488d0279fc066011eb59336e0dfbbc2c8d9af231e3"
+        },
+        {
+          "rank": 28,
+          "task_id": "tp2-join-log-path",
+          "prefix_digest": "20a09c0eed45bb6ff7a50ee65465f0f080632d01e1c68ddbc019a50cd9d300e9",
+          "row_sha256": "7d7c58394b8ba95635f0deca90f77ff5fc87166e11622728bb1ead3b890e4621"
+        },
+        {
+          "rank": 29,
+          "task_id": "fix-cli-flag",
+          "prefix_digest": "722fd225d337d532acfcc554ca33ef33f3bb2e6da7d205386317d42daeb8d3f2",
+          "row_sha256": "c5020422e853b55df33c25d57c09bdb268ddcd20baad90d33add1a0805405cae"
+        },
+        {
+          "rank": 30,
+          "task_id": "fix-wrong-operator",
+          "prefix_digest": "0b9a988f83d5af1a5649404f9c3b3578171d3fb00f69233fa99691169833a748",
+          "row_sha256": "a1bff80e7b7791c084eb952c3ceedc6e6423c775c78dd2b0e749ec0e45cf97de"
+        }
+      ]
+    },
+    "90": {
+      "count": 90,
+      "unique_tasks": 44,
+      "rows": [
+        {
+          "rank": 1,
+          "task_id": "tp2-hex-without-base",
+          "prefix_digest": "591bae151407feeb2e6c7373ebff07084df2f6c6a8a16914cd5ccafdc843f687",
+          "row_sha256": "3d55437b3908ce84451c0572a6aa19cceea052af2f0cb9c9259e235d5d9e6191"
+        },
+        {
+          "rank": 2,
+          "task_id": "fix-silent-truncation",
+          "prefix_digest": "02a94948f9bd5034897e4a109157e6cb74f205906d312d0fd190a7263a5de1e4",
+          "row_sha256": "e0770719cf5658ccf6acdb73a4152ce7cf401656a82653333986c65ec8b906b2"
+        },
+        {
+          "rank": 3,
+          "task_id": "fix-regex",
+          "prefix_digest": "1a29fa68a782b8e25387f6bc22a567d8eb4a040eb3604f47f782f192ddb88c9f",
+          "row_sha256": "7cdc87412a9da632ab2289ee133489efb371fc66c3a081724d0e1141c48ab1cb"
+        },
+        {
+          "rank": 4,
+          "task_id": "fix-division-by-zero",
+          "prefix_digest": "de2a16d3cd41358525c2116d178562131aff05fa48bc70fc6c3c2e5a7c68a19c",
+          "row_sha256": "0be62be8f54309b2a1895a31c6d4f334baddd1b5e17e2916a38b42674b696a45"
+        },
+        {
+          "rank": 5,
+          "task_id": "fix-type-error",
+          "prefix_digest": "931d57531b928fcaebc2665605413ba91be421273cbc77d1babad84bdbb62ff0",
+          "row_sha256": "f99424996ad74d0f9d497b72cf27120037b21042c86e9534301e7cea01dc653c"
+        },
+        {
+          "rank": 6,
+          "task_id": "fix-dict-get-chain",
+          "prefix_digest": "640cb5c3a19d8160524b36f94383b5adf779aba1d83d56d34552167e0e3f9fb0",
+          "row_sha256": "25d8af72a07945d84b69933c953cdaa071bf269f1ef2fea1a9af1cbda00957e9"
+        },
+        {
+          "rank": 7,
+          "task_id": "fix-config-key",
+          "prefix_digest": "6bb066361a4f75c7f1c72fc9b6899523ec588298f8f481764305a7db02e9a176",
+          "row_sha256": "9d488fa89e6854f7fc6092189ed669b7413b3525e59a3f9e5cf7d6e2c5e0f688"
+        },
+        {
+          "rank": 8,
+          "task_id": "fix-max-returns-key",
+          "prefix_digest": "b8d339a16c3dc7503c8f851bf4600a25640338cabe537001aba502a90317dbf2",
+          "row_sha256": "e0ad860ec3ce61648fece00b04265ae81091172e8cf5f72b88d5cc12eb03220f"
+        },
+        {
+          "rank": 9,
+          "task_id": "tp2-round-half-even-format",
+          "prefix_digest": "de1bbc21327e66c2c43fed6e97ae0ada9ff3338ac83f2d2e2b144b434fd33488",
+          "row_sha256": "2ea46340ab237db85ef0de50323e0022d51ec4d92cc2bbd69b0032311798a861"
+        },
+        {
+          "rank": 10,
+          "task_id": "fix-sort-returns-none",
+          "prefix_digest": "6f3af659254e95ba9e90a7816001171cc976ad9a2605158fdf4791ce70db0b1f",
+          "row_sha256": "eced1408b6de21dab03379fff509e33ab9b760d79a3d7cdf4a9c786934fa5d26"
+        },
+        {
+          "rank": 11,
+          "task_id": "fix-always-true-guard",
+          "prefix_digest": "4e53cb2deca4f8349d72966598e5e9ca26cb9058ece00f26989d974bcbfcece3",
+          "row_sha256": "5813784c515ed687700dfdc875b041ce1db614dcef0d8620b4aaf2e8a53533e4"
+        },
+        {
+          "rank": 12,
+          "task_id": "fix-default-mutable",
+          "prefix_digest": "d2b49fb68030fc2e6fdcdb04c2d23f71c5db62987325d7a6f402242f8c9045d3",
+          "row_sha256": "2fe4fff04be01f2de41678c0f3f3683a4c9ebc3b0d168caee65646038edf49f0"
+        },
+        {
+          "rank": 13,
+          "task_id": "fix-missing-return",
+          "prefix_digest": "93d5f8f78aedddc2de53da579d9952b8549911d4776ea8d4d447714a7320e7f5",
+          "row_sha256": "b7514eebcdcf3ee26f202514255801ff449b862dafb6cf8495362bbd3aed0c67"
+        },
+        {
+          "rank": 14,
+          "task_id": "fix-append-not-extend",
+          "prefix_digest": "0c39ccf096b0e9506258096f9911fd62ae3f4b83fabbb87e9a7d6f9785e693aa",
+          "row_sha256": "85e07ee1e6e34e8e7f14cf641e4629ec01ab5589987ee47c57dc5ce2a5ab7973"
+        },
+        {
+          "rank": 15,
+          "task_id": "fix-missing-prefix",
+          "prefix_digest": "111f2362491b468d1be22214ce894d75144da9bb437eca895dd386cc65d81e8c",
+          "row_sha256": "9adbbdcd5ec584e95392dc7c7975f6a9c7e5be6455d749496a8d0be538115355"
+        },
+        {
+          "rank": 16,
+          "task_id": "tp2-default-mutable",
+          "prefix_digest": "59355bd4f3c008585cb07b3f265a411af01903cea9d3027db596c8cd50fab74f",
+          "row_sha256": "d74f0353c04580b8cffa6484bde0af299ff70ed4d07e940a132045506ea7b4d9"
+        },
+        {
+          "rank": 17,
+          "task_id": "fix-import-name",
+          "prefix_digest": "bae2c870fe3d3a9bd2f4805893296a12f40faa01664bbf8bb669f77655e84459",
+          "row_sha256": "7239b5c6a9210dc87f80f45155d53055603d7c186959fb982c2a444df6f404ab"
+        },
+        {
+          "rank": 18,
+          "task_id": "fix-loop-continue",
+          "prefix_digest": "46bd6822eb8aa71244458d31222bf7df5fc8c2ede910651efca928e4f7a943cb",
+          "row_sha256": "cd0e088c80359796277ed1e4da11f96359c50facfa5c06daa5d6af4f58c48186"
+        },
+        {
+          "rank": 19,
+          "task_id": "fix-assertion",
+          "prefix_digest": "4ed0fd5a81189129aefc17646f190a161c7fef3f83a26c6f1f9d7c7993508806",
+          "row_sha256": "3afdc13bb7e84c39f129f3be1abad72a37647e4447ef1c357b602ed3282f3c4f"
+        },
+        {
+          "rank": 20,
+          "task_id": "fix-off-by-one",
+          "prefix_digest": "46c76b1b72ab7e9963efca485521fa9533790b68933fcc785ab48e5b8f1e279c",
+          "row_sha256": "7cea2462f9a20b4d4cd47735b05adebca7fefb72fb72943610e1f088cb6c14d3"
+        },
+        {
+          "rank": 21,
+          "task_id": "fix-one-element-tuple",
+          "prefix_digest": "08e3552951eb71b74eb9b7c771f1e809b67b8b08319db4f6b957be0813ef1ef9",
+          "row_sha256": "c6eba80b0d92ae0d4003e12ad7443f0c97c44504ba6f19126e6b446c4dfb1d18"
+        },
+        {
+          "rank": 22,
+          "task_id": "fix-parity-test",
+          "prefix_digest": "5bfc608f825242413146258250bbc9a3ea2b89b4d963ab6404d9b4ec3cade56d",
+          "row_sha256": "b0a58abeec17af7feb12d1b9b15aee3243241f4669c30a0cceb2435c2336f11f"
+        },
+        {
+          "rank": 23,
+          "task_id": "fix-argument-order",
+          "prefix_digest": "3dfcce7744dc5d5450b951d17322285d46a5990e5ff12515a3b597dfa8072876",
+          "row_sha256": "c3efda03b26a4243c2e33db937350657b086f395b710c3bdb65ff1dfc2c5b37c"
+        },
+        {
+          "rank": 24,
+          "task_id": "fix-empty-input",
+          "prefix_digest": "abd1bfbd6584c57b85712d8b6ec589d334139ee486e2276b0380d3d6425eeb51",
+          "row_sha256": "4e9b6693587c89ce631ff4c03aad81aa0ca778b5a6932eab143f9066ef196238"
+        },
+        {
+          "rank": 25,
+          "task_id": "fix-dict-mutation-while-iterating",
+          "prefix_digest": "ba3217bdc988023b55fd5aaac93c36f7637b378a3773aa17da99e74c2cb339cf",
+          "row_sha256": "adcd707a21e419fe2cf4820ba279f817d69fcb470b484a58aeb11769dcf806e4"
+        },
+        {
+          "rank": 26,
+          "task_id": "tp2-bool-key-collision",
+          "prefix_digest": "d58422ef807b3138ec2e97d973e408341ef1842d62f42cba7f8aed45aa8a2236",
+          "row_sha256": "a3e40c55a293788cffa62fa44664ad6282ed64269afe0f48499714c053085b22"
+        },
+        {
+          "rank": 27,
+          "task_id": "fix-min-max-clamp",
+          "prefix_digest": "2a38858d0b65155817a71af573783ac58c2f4aba7b09359bf4d28de7e16f25f2",
+          "row_sha256": "3904a457af94d458116b57488d0279fc066011eb59336e0dfbbc2c8d9af231e3"
+        },
+        {
+          "rank": 28,
+          "task_id": "tp2-join-log-path",
+          "prefix_digest": "20a09c0eed45bb6ff7a50ee65465f0f080632d01e1c68ddbc019a50cd9d300e9",
+          "row_sha256": "7d7c58394b8ba95635f0deca90f77ff5fc87166e11622728bb1ead3b890e4621"
+        },
+        {
+          "rank": 29,
+          "task_id": "fix-cli-flag",
+          "prefix_digest": "722fd225d337d532acfcc554ca33ef33f3bb2e6da7d205386317d42daeb8d3f2",
+          "row_sha256": "c5020422e853b55df33c25d57c09bdb268ddcd20baad90d33add1a0805405cae"
+        },
+        {
+          "rank": 30,
+          "task_id": "fix-wrong-operator",
+          "prefix_digest": "0b9a988f83d5af1a5649404f9c3b3578171d3fb00f69233fa99691169833a748",
+          "row_sha256": "a1bff80e7b7791c084eb952c3ceedc6e6423c775c78dd2b0e749ec0e45cf97de"
+        },
+        {
+          "rank": 31,
+          "task_id": "tp2-suffix-boundary",
+          "prefix_digest": "01dbe1cd8960fc732c3ab03f754f78bcf56d75165c700033af5607656334bc21",
+          "row_sha256": "a7d040fa0497b94c9ae8f4f2805436b252db123bcb8c586930b6ba7cfe5dd81f"
+        },
+        {
+          "rank": 32,
+          "task_id": "fix-string-concat-int",
+          "prefix_digest": "60644375b0028ad8b57af1cea2fda7c46a943cdf1dd36918709877d393fd2669",
+          "row_sha256": "090aff3c26cb4a0e7826a5cc3d5d18dbeaa4b359885b62b5f2f1aaf1860d3465"
+        },
+        {
+          "rank": 33,
+          "task_id": "tp2-rstrip-charset",
+          "prefix_digest": "1f45ff34af4c831e14b38e5b576b409a8027435bd9c520d201385400742f9c4c",
+          "row_sha256": "66400087a61823d0499c6a28f7f70a9459ac46745a98f43eecb42916d2b2a4bf"
+        },
+        {
+          "rank": 34,
+          "task_id": "fix-iteration-mutation",
+          "prefix_digest": "e27fc9153c153bcafab95f6b8e8117148dd165be7353a0c627463a9d789b1fb7",
+          "row_sha256": "29c0cbfee733f255b574a8217f0f39db05b03f4c5fac2a5442ba807a18d308ec"
+        },
+        {
+          "rank": 35,
+          "task_id": "fix-integer-division",
+          "prefix_digest": "b8c5dbefcd42755f84942ccac705981edf59d4cf2c561947e34d11c52fc1722e",
+          "row_sha256": "f4459d1391cfe715444f46c70292dd0b950fc9d4a196f78d68b79982396b838d"
+        },
+        {
+          "rank": 36,
+          "task_id": "fix-float-equal",
+          "prefix_digest": "c3588cae4a6416bdd5462ce25ce4fb804d8eb3c73140c6c314cff664364b7354",
+          "row_sha256": "770ad6b5ce84a96890e720e6e83e38c70cad0fd09acf2e88c8075422a3952781"
+        },
+        {
+          "rank": 37,
+          "task_id": "tp2-loop-remove-skips",
+          "prefix_digest": "b878c4b641e9869fccb81d36099305a07350f7a4ddbdfece811832cc8e35e1ee",
+          "row_sha256": "550613a6a7449778591cfe0a23bb819c06c18d0beaef59a75e1c5be5223d8217"
+        },
+        {
+          "rank": 38,
+          "task_id": "tp2-find-missing-index",
+          "prefix_digest": "4d44b6e175085462348007a7866f2a38d8d507921b79b73b93b135120273d6f0",
+          "row_sha256": "24b8e4727a5c9bc27c79b00a8a5ac1847424068f018966dab60f5f1d05de6e71"
+        },
+        {
+          "rank": 39,
+          "task_id": "fix-shadowed-total",
+          "prefix_digest": "311a7c427591a027d8b5bcd2002084294d393eeee501a23271903223b9319c23",
+          "row_sha256": "2c49ec6c27692644646daeb1068463994026f449a29e35124b1bb9fafb136c60"
+        },
+        {
+          "rank": 40,
+          "task_id": "fix-accumulator-reset",
+          "prefix_digest": "ec474f558e61b42571418eba0ddbcea2e2a9cc514cb9316cf7b8a4bebd2c1f53",
+          "row_sha256": "a15eef30ab21beeae9ecba9bceba3f9a875b5d5dcd480de82b30245daa740f13"
+        },
+        {
+          "rank": 41,
+          "task_id": "tp2-sort-returns-none",
+          "prefix_digest": "d3692f8f82b5496c72d9c7f026829afb663792d79808e00b6157b820f3c5e4f9",
+          "row_sha256": "08ea273618524813d5dfb514c608a0e0c336fd2a409a0fb82e7955dc2f57830d"
+        },
+        {
+          "rank": 42,
+          "task_id": "fix-slice-direction",
+          "prefix_digest": "7b9e81f1334913615c12df85f2d2c87213cfc050e180cf287033f53c1624ea5d",
+          "row_sha256": "88eecb9d4b2a443f2c723d85378a0b830e3b4162e17b762fe7bc647318fbb882"
+        },
+        {
+          "rank": 43,
+          "task_id": "fix-json-trailing-comma",
+          "prefix_digest": "8267f7c79a6f24f7097da987f2380d0a17985a2b55835dfcfe04444285a81682",
+          "row_sha256": "dc784ec4cb1076f91567c69e7e06c5cccb0ff0f73b8dd074b9b1da827771ebf6"
+        },
+        {
+          "rank": 44,
+          "task_id": "fix-missing-dict-default",
+          "prefix_digest": "92c9403bf21a0d16d1236df134e1eb760081e2ac18f556bf78ee0727fd704fa7",
+          "row_sha256": "bcda0a4f720e8eb901a3537beab2a63a5fcab9dc62043b6e1c63daa83bf9dc40"
+        },
+        {
+          "rank": 45,
+          "task_id": "fix-silent-truncation",
+          "prefix_digest": "f05fc14fe722cc89d0ce065846c093bf3789d84c9181fed1d11b3369716f43cf",
+          "row_sha256": "fb3f0087d4b4b3588fd45f0bd2db59698eed7f4b95ee2d38489e8b6ddb99bd15"
+        },
+        {
+          "rank": 46,
+          "task_id": "fix-regex",
+          "prefix_digest": "1ba9de3c76d9d608496ecc1b4c4ad4949fd7e248f09afec46e7056c0982dd976",
+          "row_sha256": "47f90757a64a2c1aca41556a03693738947ea163d60ab028443596e3f1ca1783"
+        },
+        {
+          "rank": 47,
+          "task_id": "fix-division-by-zero",
+          "prefix_digest": "daa571e8f512dafab0fee0909cd40860aab297bd8fb7029aec2fa832f96ca740",
+          "row_sha256": "df064fe3b2bd33349294d60cbf18d21ca04a230081d9995b9aa1b6f5cd32a70d"
+        },
+        {
+          "rank": 48,
+          "task_id": "fix-type-error",
+          "prefix_digest": "b24fc7c5cbcad04362cb15bf8b5359cf9693242ca45d3c1648d6d35981902730",
+          "row_sha256": "e26001e90436565e4d7cd2e5a0ce7a66fe801753be7957ba2ba00e0bc8461ddf"
+        },
+        {
+          "rank": 49,
+          "task_id": "fix-dict-get-chain",
+          "prefix_digest": "6daf70cbc9108a411c679fdd8a8785e9e17dc2eece8c16a2112ffb83f412200a",
+          "row_sha256": "f07fbe08300466f1545d0fab2332405e0f55eec5d3ca5956880e120bc8a49757"
+        },
+        {
+          "rank": 50,
+          "task_id": "fix-config-key",
+          "prefix_digest": "3f40d5b5fb944996aed490e75948418537ae792a6d0c37736be5a70b3962b687",
+          "row_sha256": "c4b91384e63131c57fa28223341fc63735750c3c0385ffb55355ba22f8138650"
+        },
+        {
+          "rank": 51,
+          "task_id": "fix-max-returns-key",
+          "prefix_digest": "470f35427f85d64b80098f895048d29c31cc8784c64a80d0f75b081473374cdb",
+          "row_sha256": "069a7fbb31e433249d061d41db79ee25822cbb036f89a1172d6f2094f51ed987"
+        },
+        {
+          "rank": 52,
+          "task_id": "fix-sort-returns-none",
+          "prefix_digest": "2c6826befbdaf5786a9506026ef9bfebb104ff31d776229f3b0d35afa4308e07",
+          "row_sha256": "265454dde586e6299efa388d759f808c2c173d70c7389a082c59488e0616b611"
+        },
+        {
+          "rank": 53,
+          "task_id": "fix-always-true-guard",
+          "prefix_digest": "2a0e8309065bbf09f8941adc0180904930985fa386ba4120da8a148e0a6d90d2",
+          "row_sha256": "80dd03a357166deaa90feae4a5ddc767f92177ff9c5eb3bd71c62ff21dccd390"
+        },
+        {
+          "rank": 54,
+          "task_id": "fix-default-mutable",
+          "prefix_digest": "09e00a992185d77af3611145db279608a8227e58b6268a5f8a4ee99169302aa0",
+          "row_sha256": "e72b11901a4be718aae5aa952064954edef2dc7c30ae7bfdfa2ce51820f48a6b"
+        },
+        {
+          "rank": 55,
+          "task_id": "fix-missing-return",
+          "prefix_digest": "9b9eee1a258e61fd7297ff6c356116935591225c4c1924c63680e22e0ce91a35",
+          "row_sha256": "5fb846db79933d5c87f85eeeed2cd69ec8b48c9921ef6b52fdf800786a9d47e5"
+        },
+        {
+          "rank": 56,
+          "task_id": "fix-append-not-extend",
+          "prefix_digest": "54fe195b28a65026a6c13c2e0d382cd70eb16e82d33b9d6d9f41b6ea209d88f5",
+          "row_sha256": "fb397e17f2afa3007bc63115463a199083b1c02688e974d6cf000fa5451730cf"
+        },
+        {
+          "rank": 57,
+          "task_id": "fix-missing-prefix",
+          "prefix_digest": "08021fb72f767f001e58b0ddac08d976901e7c118cf50b41ce11d4ddce4a4af8",
+          "row_sha256": "df98f92be972f2156239386b7ff66b14b5efcd7878f5d8a7bec507b7eb37c836"
+        },
+        {
+          "rank": 58,
+          "task_id": "fix-import-name",
+          "prefix_digest": "34dc067e60e779311b41c1e38f8960f3e833d614348f1b9d70ff1113cef71701",
+          "row_sha256": "63b9cd124fdc96d63d57da988aad97cbe007ec8a114e14841e28f623a91ceb77"
+        },
+        {
+          "rank": 59,
+          "task_id": "fix-loop-continue",
+          "prefix_digest": "48cfc1680cd6ca8ff0a69b9117a3eb2e333a9d34f69f94e90f3e7348039547e1",
+          "row_sha256": "67859bde32cfe1ebcd1bf346d79a9e4ea3d00dbd18eb08134739153a7bd9f12c"
+        },
+        {
+          "rank": 60,
+          "task_id": "fix-assertion",
+          "prefix_digest": "48dee34a61a1b86d5e8f15fed34a5de2678456cec773358d1ac63cf4e92fa99b",
+          "row_sha256": "d55c42c72f1720987ee78cf7833aa052e0e98c2a7a783a28f3943c9f6388b36f"
+        },
+        {
+          "rank": 61,
+          "task_id": "fix-one-element-tuple",
+          "prefix_digest": "bcb729f6e7637328af15b0fa149b25803808820a7daf9a07229045d1b61dadf6",
+          "row_sha256": "aee57a6b01bb95752e90091a89a0c67d7a558c961cdcdf2e166c46d58b76080b"
+        },
+        {
+          "rank": 62,
+          "task_id": "fix-parity-test",
+          "prefix_digest": "a0ec0813192773ba49818c0d641ba865195ca28b55347a5b8e783865ab956b8c",
+          "row_sha256": "6c4fd39f0359e7fcb7bbb5c3e1bef4073b2e06f8c0f76ac807469489528bec18"
+        },
+        {
+          "rank": 63,
+          "task_id": "fix-argument-order",
+          "prefix_digest": "b1f7dce2f3ca55352069402651235166cae0db4ba125043fabf4a5454309efbd",
+          "row_sha256": "dd2f49fdc771755436315af811358903df0abb25a87443ac396cb93864e38c5d"
+        },
+        {
+          "rank": 64,
+          "task_id": "fix-empty-input",
+          "prefix_digest": "f581ade5cb41929544d806ff18e0386660fa1a13ef4c825460a0a23eeede1f3f",
+          "row_sha256": "4850e40c33afacd5bb4ca4ce0275edbe1362dc11ef7b67840b8420ce0694c53b"
+        },
+        {
+          "rank": 65,
+          "task_id": "fix-dict-mutation-while-iterating",
+          "prefix_digest": "8bf7680e4126cb57e2b56fc0beb1300bcc6821cb31eb9deaf668684b9e3f6849",
+          "row_sha256": "f42ed222b90f0849e15bbbcfdc0d31d1ce7c0677f5d414249ab9e379cdb3cd8d"
+        },
+        {
+          "rank": 66,
+          "task_id": "fix-min-max-clamp",
+          "prefix_digest": "b28689757f7af2ba8d36f83261179d3d2f214ec28eb2721d71172bb0dbd133cd",
+          "row_sha256": "84b4815a471cf7e463cc8a887afc7590b44208157d43e0bbf5a256dc22fc7265"
+        },
+        {
+          "rank": 67,
+          "task_id": "fix-cli-flag",
+          "prefix_digest": "1ca2e1aa39cb326e1547a8aaeadac9f64857ed1af149d71d9c76033f7f307d99",
+          "row_sha256": "c2901fcfb4fedbc6374d9cbfa6b11a7671012550ec3f91039bc08fc35c9a12be"
+        },
+        {
+          "rank": 68,
+          "task_id": "fix-wrong-operator",
+          "prefix_digest": "010f96c9cb255aecaa1c81bc82d0f7d69d7a78df79a63a2c60dd1c630d4c8e4b",
+          "row_sha256": "76e66653b56f5e8d2f2d33599c541ce62bfb4fb5f90275a857eb6d0097711f57"
+        },
+        {
+          "rank": 69,
+          "task_id": "fix-string-concat-int",
+          "prefix_digest": "e97e922c705756f3a0dce313aa547b82cffb817ead2512567d19b20b96a7d43c",
+          "row_sha256": "dbe80ab0e04982be209ca00f9008202c1cb0043a0cc985d25d0b59711cfe029d"
+        },
+        {
+          "rank": 70,
+          "task_id": "fix-iteration-mutation",
+          "prefix_digest": "250fdde5d3d4a19df62feaddb4bb662425ef7574478038e325fb5ac4bfee3d24",
+          "row_sha256": "214a73094bb9ba782145cc9fc242d2cb626f0bd49d642455f318dc2bfe1e8414"
+        },
+        {
+          "rank": 71,
+          "task_id": "fix-integer-division",
+          "prefix_digest": "a43488e303c63838a292407baced1f0f0f78e2c801cb9e4267d81259cd63f433",
+          "row_sha256": "fbced44ecd4f5eae0387e8d39fdbb3e0859c214ea0c416b85379583e51ee7bbf"
+        },
+        {
+          "rank": 72,
+          "task_id": "fix-float-equal",
+          "prefix_digest": "bf47a517abb3c8830b2a139f7c5714a04032cfff33d5578c563dda6005d2bff0",
+          "row_sha256": "6a4ae8105a3d51be9ac063d00110ef5e752cf787522458934bff07e5e1eae59c"
+        },
+        {
+          "rank": 73,
+          "task_id": "fix-shadowed-total",
+          "prefix_digest": "cc8d855d0209ec8cb364e1a2c5a49a63ca8b5a35236f5671842b07363b9e20cc",
+          "row_sha256": "60ba0b5a61ca11f5f71f09c961996d93a2d6febb1149d1b305bd2ee8c184c997"
+        },
+        {
+          "rank": 74,
+          "task_id": "fix-accumulator-reset",
+          "prefix_digest": "0f7e973552016faeb34151931ad557f28855a3d3d874f8830c377b116025e6ba",
+          "row_sha256": "f97f5551470b944bc6fb8ed2f79a6dca870b92ab971bce60a13bb8e9d271caa1"
+        },
+        {
+          "rank": 75,
+          "task_id": "fix-slice-direction",
+          "prefix_digest": "3463cc3556c61f2648885e65cab1bd2059fd59edc1edc2bba84b8639ee920019",
+          "row_sha256": "7084878aec55e4f9c7c3dc6a5b9f4460f6e12377c25df928ddb50cc835f4911b"
+        },
+        {
+          "rank": 76,
+          "task_id": "fix-json-trailing-comma",
+          "prefix_digest": "fc9e39c8f39c2db9419be6c9e64148ac3c1d3af9743d96ed0ceebc2aebbb9e38",
+          "row_sha256": "afa445313268cb3ad8d990f43e3e1a13e5c17720ce28a75acecc03a92740bb63"
+        },
+        {
+          "rank": 77,
+          "task_id": "fix-missing-dict-default",
+          "prefix_digest": "51842f6647866582d8be2966773637e302db7f4387dd790b80b5ea71c8b26955",
+          "row_sha256": "759687ee066be9a6a5ce36fba2b35fb0886329eaf21e0d1aa1b07130d1ef8915"
+        },
+        {
+          "rank": 78,
+          "task_id": "fix-type-error",
+          "prefix_digest": "f2e52b4ea8bd1d638a821ad316af1221c9334a036e4e69cbc15cac5f40e2de11",
+          "row_sha256": "6d8689f5d27b58a6eb896dea0eb6f478c90d96066208948f882bc35412bdeae3"
+        },
+        {
+          "rank": 79,
+          "task_id": "fix-dict-get-chain",
+          "prefix_digest": "bfafd70c837b61e124fa315e843802f68b361f2c9a0f1161f5a5871a02c171ff",
+          "row_sha256": "b6150589f69840ea443298c7e1ade6b6ac28d5f172e23036f6d4c9083e5975ab"
+        },
+        {
+          "rank": 80,
+          "task_id": "fix-config-key",
+          "prefix_digest": "ccacca15cc3586b10f89096ee114df5758dd3a2b58c6a399f858ca3f9a21a464",
+          "row_sha256": "10ebb7a696b5a3d3de872ee468aed25616dd44734f71c5333ee75dadbffa0d25"
+        },
+        {
+          "rank": 81,
+          "task_id": "fix-always-true-guard",
+          "prefix_digest": "dfacdb906a49fb5ae65a99ebae641cbe6061da506aede814f31f1156987e20b8",
+          "row_sha256": "0d279a9029e0246d54367fb1f1641d5d246120f328d1ada133d9d77eedc7188e"
+        },
+        {
+          "rank": 82,
+          "task_id": "fix-missing-return",
+          "prefix_digest": "1ea37ee667973b1a4200047a188097efb3660acbe60cdc55b59c0965b4626e03",
+          "row_sha256": "70251a8ae5b00b3d4f1b0038d49a8ba7927b83e4035d43c18ee310199a2b5fd0"
+        },
+        {
+          "rank": 83,
+          "task_id": "fix-append-not-extend",
+          "prefix_digest": "066165d2fd7b1a58853778206cede54b081a610bf35b9e52d2af72c6d03e55db",
+          "row_sha256": "55ecdf68a452278d109bb5957f9221d0b9d0478c6b9927a66ed94d8ed4ac677f"
+        },
+        {
+          "rank": 84,
+          "task_id": "fix-loop-continue",
+          "prefix_digest": "170e1ee27d3cddfac7906923b2559d3d8698e94432aeffd193422db92e59bcc1",
+          "row_sha256": "f66c086f69da346253d239033a4fabffe6a81ceabd8ad37663ac9c2c34a1d975"
+        },
+        {
+          "rank": 85,
+          "task_id": "fix-one-element-tuple",
+          "prefix_digest": "643a0016981e74a31eec36537c429c6b1ffd5d4234ed4117c4793909986dbc3f",
+          "row_sha256": "68edc36d5aec47b1281b0cf2a8b98694631b2903fbb326211b74b987b40bf478"
+        },
+        {
+          "rank": 86,
+          "task_id": "fix-parity-test",
+          "prefix_digest": "f4861cdddd8a2e56987b261d48c90c47aaad37eb771762e88b0b72ddbca7846b",
+          "row_sha256": "ce4186fcb39f271391d5298c037deb8fbcb99b3d5c32539a53263af42c1e7e4e"
+        },
+        {
+          "rank": 87,
+          "task_id": "fix-argument-order",
+          "prefix_digest": "2e9b4f9018506f5556b58743719721ab5e833e15c9d71d8803b464a0c930fb35",
+          "row_sha256": "4040f0e24204d061a1bfbe33bc078e0e9ac345312c9322f9d78df8ef2cc9a03f"
+        },
+        {
+          "rank": 88,
+          "task_id": "fix-empty-input",
+          "prefix_digest": "63e3b324940c7ebfb73a51909d8cb61eaa06ed2ffe401295c8b2bb82d7073975",
+          "row_sha256": "c393a8122b952477657de0745e890450bde493261f18b0edb562de16b90dfa0d"
+        },
+        {
+          "rank": 89,
+          "task_id": "fix-dict-mutation-while-iterating",
+          "prefix_digest": "6fcbeefa1f347d85f697cea61669a5d7a9546d520cca7aada83dea634dcde7a5",
+          "row_sha256": "8c50aee59b3e72d31ece8e35df55860caeeb84b91c04517e46af39be0947cac3"
+        },
+        {
+          "rank": 90,
+          "task_id": "fix-integer-division",
+          "prefix_digest": "2ffe77114b10b74d9e0262adc8802612de035df5134dea8eafbbd14cd1c054d5",
+          "row_sha256": "a772de3e5b34e51d07929543125ca10d415f9977ee5b4cb8a897a2ef16ecf6bb"
+        }
+      ]
+    }
+  }
+}

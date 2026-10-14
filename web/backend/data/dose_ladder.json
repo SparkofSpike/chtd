@@ -1,0 +1,192 @@
+{
+  "rows": [
+    {
+      "arm": "base",
+      "training_rows": 0,
+      "ordinal_mean": "1.333-1.400",
+      "cpf": "10/0/5 ...",
+      "failures": "4-5/15",
+      "gate": "13/15",
+      "note": "six readings, byte-identical answers"
+    },
+    {
+      "arm": "chtd-student-state",
+      "training_rows": 9,
+      "ordinal_mean": 1.6,
+      "cpf": "11/2/2",
+      "failures": "2/15",
+      "gate": "14/15"
+    },
+    {
+      "arm": "v1",
+      "training_rows": 33,
+      "ordinal_mean": 1.667,
+      "cpf": "12/1/2",
+      "failures": "2/15",
+      "gate": "13/15"
+    },
+    {
+      "arm": "v2",
+      "training_rows": 63,
+      "ordinal_mean": 1.867,
+      "cpf": "13/2/0",
+      "failures": "0/15",
+      "gate": "14/15"
+    },
+    {
+      "arm": "v2b",
+      "training_rows": 63,
+      "ordinal_mean": 1.533,
+      "cpf": "8/7/0",
+      "failures": "0/15",
+      "gate": "15/15",
+      "note": "v2 re-evaluated; 9/15 answers differ"
+    },
+    {
+      "arm": "v4",
+      "training_rows": 63,
+      "ordinal_mean": 1.733,
+      "cpf": "12/2/1",
+      "failures": "1/15",
+      "gate": "14/15",
+      "note": "v2 data, seed1"
+    },
+    {
+      "arm": "v3",
+      "training_rows": 83,
+      "ordinal_mean": 1.667,
+      "cpf": "11/3/1",
+      "failures": "1/15",
+      "gate": "12/15"
+    },
+    {
+      "arm": "v5",
+      "training_rows": 93,
+      "ordinal_mean": 1.6,
+      "cpf": "10/4/1",
+      "failures": "1/15",
+      "gate": "14/15"
+    },
+    {
+      "arm": "v5b",
+      "training_rows": 93,
+      "ordinal_mean": 1.467,
+      "cpf": "9/4/2",
+      "failures": "2/15",
+      "gate": "13/15"
+    }
+  ],
+  "joint_probability": [
+    {
+      "assumed_base_rate": "40%",
+      "p": "4.8e-14"
+    },
+    {
+      "assumed_base_rate": "33%",
+      "p": "1.1e-10"
+    },
+    {
+      "assumed_base_rate": "30%",
+      "p": "3.4e-9"
+    },
+    {
+      "assumed_base_rate": "27%",
+      "p": "8.1e-8"
+    },
+    {
+      "assumed_base_rate": "20%",
+      "p": "2.6e-5"
+    }
+  ],
+  "task_set_size": 15,
+  "fifteen_bar": [
+    {
+      "arm": "base",
+      "failures": 5,
+      "note": "4-5/15 (upper bound; 6 byte-identical readings)"
+    },
+    {
+      "arm": "chtd-student-state",
+      "failures": 2
+    },
+    {
+      "arm": "v1",
+      "failures": 2
+    },
+    {
+      "arm": "v2",
+      "failures": 0
+    },
+    {
+      "arm": "v2b",
+      "failures": 0
+    },
+    {
+      "arm": "v4",
+      "failures": 1
+    },
+    {
+      "arm": "v3",
+      "failures": 1
+    },
+    {
+      "arm": "v5",
+      "failures": 1
+    },
+    {
+      "arm": "v5b",
+      "failures": 2
+    }
+  ],
+  "efficiency": [
+    {
+      "arm": "chtd-student-state",
+      "rows": 9,
+      "failures": 2,
+      "note": "1/4 data, one-cell margin"
+    },
+    {
+      "arm": "v1",
+      "rows": 33,
+      "failures": 2
+    }
+  ],
+  "dose_curve": [
+    {
+      "rows": 0,
+      "ordinal_mean": 1.37,
+      "note": "base; range 1.333-1.400 over 6 readings"
+    },
+    {
+      "rows": 9,
+      "ordinal_mean": 1.6
+    },
+    {
+      "rows": 33,
+      "ordinal_mean": 1.667
+    },
+    {
+      "rows": 63,
+      "ordinal_mean": 1.867
+    },
+    {
+      "rows": 83,
+      "ordinal_mean": 1.667
+    },
+    {
+      "rows": 93,
+      "ordinal_mean": 1.6
+    }
+  ],
+  "_meta": {
+    "generated_at": "2026-10-14T17:48:16.995298+00:00",
+    "chtd_root": "E:\\Coding\\chtd",
+    "sources": [
+      "runs/holdout-4-20261014/dose-ladder-20261014.md",
+      "runs/holdout-4-20261014/dose-cells.json"
+    ],
+    "loader_version": "0.1.0",
+    "status": "ok",
+    "note": "ladder table transcribed verbatim from the md; chart arrays derived."
+  }
+}

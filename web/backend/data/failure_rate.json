@@ -1,0 +1,90 @@
+{
+  "fifteen_task": [
+    {
+      "arm": "base",
+      "failures": "4-5/15",
+      "training_rows": 0
+    },
+    {
+      "arm": "chtd-student-state",
+      "failures": "2/15",
+      "training_rows": 9
+    },
+    {
+      "arm": "v1",
+      "failures": "2/15",
+      "training_rows": 33
+    },
+    {
+      "arm": "v2",
+      "failures": "0/15",
+      "training_rows": 63
+    },
+    {
+      "arm": "v2b",
+      "failures": "0/15",
+      "training_rows": 63
+    },
+    {
+      "arm": "v4",
+      "failures": "1/15",
+      "training_rows": 63
+    },
+    {
+      "arm": "v3",
+      "failures": "1/15",
+      "training_rows": 83
+    },
+    {
+      "arm": "v5",
+      "failures": "1/15",
+      "training_rows": 93
+    },
+    {
+      "arm": "v5b",
+      "failures": "2/15",
+      "training_rows": 93
+    }
+  ],
+  "pooled_failure_rate": {
+    "base": {
+      "h1": 33.3,
+      "h2": 8.3,
+      "h3": 40.0,
+      "pooled": 31.6,
+      "of": "18/57"
+    },
+    "chtd": {
+      "h1": 13.3,
+      "h2": 8.3,
+      "h3": 23.3,
+      "pooled": 17.5,
+      "of": "10/57"
+    },
+    "ctrl": {
+      "h1": 13.3,
+      "h2": 25.0,
+      "h3": 30.0,
+      "pooled": 24.6,
+      "of": "14/57"
+    },
+    "v5": {
+      "h1": 13.3,
+      "h2": 0.0,
+      "h3": 3.3,
+      "pooled": 5.3,
+      "of": "3/57"
+    }
+  },
+  "_meta": {
+    "generated_at": "2026-10-14T17:48:16.995298+00:00",
+    "chtd_root": "E:\\Coding\\chtd",
+    "sources": [
+      "dose-ladder-20261014.md",
+      "pooled-analysis-20261014.md"
+    ],
+    "loader_version": "0.1.0",
+    "status": "ok",
+    "note": ""
+  }
+}

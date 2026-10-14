@@ -1,0 +1,88 @@
+{
+  "gate_vs_author_pct": 75.7,
+  "gate_vs_double_reader_pct": 75.0,
+  "human_human_pct": 84.0,
+  "judge_three_way_pct": 85.0,
+  "judge_binary_pct": 89.0,
+  "mde_30tasks_pp": 26.6,
+  "tasks_for_10pp": "~227/arm",
+  "confirmatory_14pp": "~110/arm",
+  "ordinal_power_need": "~268",
+  "machine_scores": [
+    {
+      "label": "base-h3a",
+      "passed": 20,
+      "total": 30,
+      "n_results": 30,
+      "_src": "scores-base-h3a.json"
+    },
+    {
+      "label": "chtd-seed0-h3a",
+      "passed": 26,
+      "total": 30,
+      "n_results": 30,
+      "_src": "scores-chtd-seed0-h3a.json"
+    },
+    {
+      "label": "chtd-seed1-h3a",
+      "passed": 27,
+      "total": 30,
+      "n_results": 30,
+      "_src": "scores-chtd-seed1-h3a.json"
+    },
+    {
+      "label": "chtd-seed2-h3a",
+      "passed": 24,
+      "total": 30,
+      "n_results": 30,
+      "_src": "scores-chtd-seed2-h3a.json"
+    },
+    {
+      "label": "ctrl-seed0-h3a",
+      "passed": 25,
+      "total": 30,
+      "n_results": 30,
+      "_src": "scores-ctrl-seed0-h3a.json"
+    },
+    {
+      "label": "ctrl-seed1-h3a",
+      "passed": 23,
+      "total": 30,
+      "n_results": 30,
+      "_src": "scores-ctrl-seed1-h3a.json"
+    },
+    {
+      "label": null,
+      "passed": null,
+      "total": null,
+      "n_results": 0,
+      "_src": "scores-denyfix-20261014.json"
+    },
+    {
+      "label": null,
+      "passed": null,
+      "total": null,
+      "n_results": 0,
+      "_src": "scores-rescored-20261014.json"
+    },
+    {
+      "label": "v5-h3a",
+      "passed": 27,
+      "total": 30,
+      "n_results": 30,
+      "_src": "scores-v5-h3a.json"
+    }
+  ],
+  "_meta": {
+    "generated_at": "2026-10-14T17:48:16.998442+00:00",
+    "chtd_root": "E:\\Coding\\chtd",
+    "sources": [
+      "runs/holdout-3-20261014/machine-scores/scores-*.json",
+      "eval/scorer_benchmark_holdout3.py",
+      "eval/power_holdout3.py"
+    ],
+    "loader_version": "0.1.0",
+    "status": "ok",
+    "note": "MVP: machine-scores parsed; handread/llm-judge deferred."
+  }
+}

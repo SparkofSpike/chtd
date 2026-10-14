@@ -1,0 +1,13 @@
+{
+  "status": "暂无数据",
+  "_meta": {
+    "generated_at": "2026-10-14T17:48:16.998442+00:00",
+    "chtd_root": "E:\\Coding\\chtd",
+    "sources": [
+      "runs/chtd-20261011-a/eval-4arms.json (deferred)"
+    ],
+    "loader_version": "0.1.0",
+    "status": "ok",
+    "note": "deferred for MVP."
+  }
+}

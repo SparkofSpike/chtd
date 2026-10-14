@@ -1,0 +1,71 @@
+{
+  "instrument": "holdout-4 sessions.db tool/result census",
+  "arms": {
+    "chtd-seed0": {
+      "sessions": 48,
+      "passed": 7,
+      "first_tool_counts": {
+        "find": 48
+      },
+      "read_results": {
+        "ok": 13,
+        "error": 96,
+        "ok_rate": 0.119
+      },
+      "sessions_ever_read": 13,
+      "answers_directory_does_not_exist": 29
+    },
+    "chtd-seed1": {
+      "sessions": 33,
+      "passed": 25,
+      "first_tool_counts": {
+        "ls": 33
+      },
+      "read_results": {
+        "ok": 37,
+        "error": 0,
+        "ok_rate": 1.0
+      },
+      "sessions_ever_read": 33,
+      "answers_directory_does_not_exist": 0
+    },
+    "base": {
+      "sessions": 48,
+      "passed": 34,
+      "first_tool_counts": {
+        "ls": 48
+      },
+      "read_results": {
+        "ok": 48,
+        "error": 0,
+        "ok_rate": 1.0
+      },
+      "sessions_ever_read": 48,
+      "answers_directory_does_not_exist": 0
+    },
+    "control-seed0": {
+      "sessions": 48,
+      "passed": 34,
+      "first_tool_counts": {
+        "ls": 48
+      },
+      "read_results": {
+        "ok": 48,
+        "error": 0,
+        "ok_rate": 1.0
+      },
+      "sessions_ever_read": 48,
+      "answers_directory_does_not_exist": 0
+    }
+  },
+  "_meta": {
+    "generated_at": "2026-10-14T17:48:16.995835+00:00",
+    "chtd_root": "E:\\Coding\\chtd",
+    "sources": [
+      "runs/holdout-4-20261014/tool-call-census.json"
+    ],
+    "loader_version": "0.1.0",
+    "status": "ok",
+    "note": "first-tool / read ok_rate / ever_read / passed per arm."
+  }
+}

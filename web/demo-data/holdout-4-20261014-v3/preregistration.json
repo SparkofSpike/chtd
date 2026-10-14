@@ -1,0 +1,22 @@
+{
+  "experiment": "teacher-demo dose ladder on holdout-4",
+  "arms": [
+    "base",
+    "teacher-demo-v5 rows=9",
+    "teacher-demo-v5 rows=30",
+    "teacher-demo-v5 rows=90"
+  ],
+  "holdout_task_count": 48,
+  "mechanism_cluster_count": 24,
+  "variants_per_cluster": 2,
+  "primary_metric": "blind human-adjudicated answer correctness",
+  "secondary_metric": "phrase gate, descriptive only",
+  "grader": "DeepSeek Flash; credentials not configured",
+  "grader_gate": "30-40 fresh cells, blinded model plus two humans; require model-human binary agreement >= human-human agreement",
+  "read_protocol": "double-read a stratified 30% sample and every grader-human disagreement; a third human vote resolves disputes",
+  "inference": "paired task-level results with cluster-aware intervals at 24 mechanisms; do not claim iid n=48 power",
+  "task_sha256": "9eee2477f354509ef57805b31aad2d60ff7e0622a23db15cfd8420695eb2e74e",
+  "training_samples_sha256": "3336de8cf676959b450700f896957e0b79d3b7a7c27c19f2136d3f552ed0df2c",
+  "status": "taskset and nested dose-row selection frozen; grader calibration pending; do not train or score",
+  "dose_row_selection_sha256": "97402f6db2b04264143602c45707e8e315d70eccb3426a9ab2fe1a403a790df8"
+}
