@@ -458,6 +458,28 @@ export default function Live() {
             </>
           )}
 
+          {/* 主要动作放在任务选定之后、模型配置之前。它原本在卡片最底部，在 1280×720
+              的视口里落在 y≈676 —— 浏览器占掉地址栏就看不全了，而录屏与投影多半如此。
+              换自己的模型是次要设置（默认折叠），不该把主要按钮挤到它后面。 */}
+          <div className="mt-4 flex items-center gap-2">
+            <button
+              className="rounded bg-accent/20 px-3 py-1.5 text-sm font-medium text-accent hover:bg-accent/30 disabled:opacity-40"
+              disabled={running || !liveReady || (source === 'task' ? !taskId : !prompt.trim())}
+              onClick={start}
+            >
+              {running ? '运行中…' : '运行'}
+            </button>
+            {running && (
+              <button
+                className="rounded border border-bad/50 px-3 py-1.5 text-sm text-bad hover:bg-bad/10"
+                onClick={stop}
+              >
+                停止
+              </button>
+            )}
+            {running && <span className="text-xs text-ink-faint">真实执行，通常 10–60 秒</span>}
+          </div>
+
           <div className="mt-4 border-t border-line pt-3" ref={configRef}>
             {/* 这里曾经是一行 72×16 的暗色小字，藏在任务选择器下面 —— 读者被指到「模型配置」
                 却找不到它。改成整宽的正式按钮，并把当前选中的路由写在右侧，
@@ -602,25 +624,6 @@ export default function Live() {
                 })()}
               </div>
             )}
-          </div>
-
-          <div className="mt-4 flex items-center gap-2">
-            <button
-              className="rounded bg-accent/20 px-3 py-1.5 text-sm font-medium text-accent hover:bg-accent/30 disabled:opacity-40"
-              disabled={running || !liveReady || (source === 'task' ? !taskId : !prompt.trim())}
-              onClick={start}
-            >
-              {running ? '运行中…' : '运行'}
-            </button>
-            {running && (
-              <button
-                className="rounded border border-bad/50 px-3 py-1.5 text-sm text-bad hover:bg-bad/10"
-                onClick={stop}
-              >
-                停止
-              </button>
-            )}
-            {running && <span className="text-xs text-ink-faint">真实执行，通常 10–60 秒</span>}
           </div>
         </section>
 
