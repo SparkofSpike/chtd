@@ -1,0 +1,724 @@
+{
+ "cells": [
+  {
+   "set": "h1",
+   "arm": "chtd-s0-h1",
+   "task": "fix-augmented-assign-mutates",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer identifies the in-place mutation in `tags += [tag]` and proposes the correct fix `return tags + [tag]`, which would satisfy a check that the original list is not modified.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s0-h1",
+   "task": "fix-broad-except",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly homes in on the bare `except:` in reader.py and the fact that it swallows every exception, but its proposed fix still catches TypeError (and omits KeyError), so it keeps masking exactly the non-IndexError errors that constitute the defect's observable failure.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s0-h1",
+   "task": "fix-closure-late-binding",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the late-binding closure defect in the list comprehension of lambdas (all capture the final loop variable `prefix`) and proposes the standard default-argument fix (`p=prefix`), which would make the intended one-function-per-prefix behavior work.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s0-h1",
+   "task": "fix-enumerate-start",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer concludes there is no defect, missing that `enumerate(items)` starts at 0 while the docstring promises numbering from one.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s0-h1",
+   "task": "fix-generator-exhaust",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly pinpoints the exhausted-generator reuse in summarise (iterating the same generator for count then total) and proposes an itertools.tee fix that would make the module produce correct results; its claim of TypeError rather than a silently empty second sum is a minor mis-statement of the failure mode that the rubric says not to demote.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s0-h1",
+   "task": "fix-none-cap",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"It correctly pinpoints the defective `min(value, cap)` handling of the default `cap=None` and proposes the exact fix `return value if cap is None else min(value, cap)` that would make the checks pass, even though it mis-describes the failure mode (claiming it returns `None` rather than raising a TypeError comparing None to a number).\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s0-h1",
+   "task": "fix-or-default-falsy",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer concludes the port function is correct and blames the caller, missing the real defect that `settings.get(\\\"port\\\") or 8080` treats a falsy value like 0 as unset and returns 8080 instead.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s0-h1",
+   "task": "fix-ordinal-index",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that nth uses items[position] (zero-based) despite documenting a 1-based position, and the proposed fix items[position - 1] would make a 1-based contract hold.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s0-h1",
+   "task": "fix-row-alias",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `[[0] * cols] * rows` aliases the same inner list across all rows and proposes the standard list-comprehension fix, which would satisfy a check that mutation of one cell doesn't affect others.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s0-h1",
+   "task": "fix-shallow-copy",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that blanked mutates the input table in place rather than returning a copy as its docstring promises, and its proposed fix (shallow-copying rows, zeroing the column, and returning the copy) would resolve the mismatch.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s0-h1",
+   "task": "fix-single-name",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly points to split_name and identifies that parts[1] mishandles multi-part names, but its proposed fix only validates input length and does not change the function to return the actual last name (e.g. parts[-1]), so it would not make check.py pass for names like \\\"John Doe Smith\\\".\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s0-h1",
+   "task": "fix-sort-key",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer pinpoints the exact defect (`key=len(words)` passes a non-callable int instead of the `len` function) and proposes the correct fix `key=len`, which would make the check pass, even though its description of the resulting behavior (silent no-op rather than a TypeError) is a minor mis-statement of the symptom.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s0-h1",
+   "task": "fix-string-case",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer identifies the defective `is_yes` implementation and correctly explains that its exact case-sensitive comparison to 'yes' fails for other typings, with a fix that would handle case variations.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s0-h1",
+   "task": "fix-strip-whitespace",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `text.strip` returns the bound method instead of calling it, and the proposed fix `return text.strip()` would make the function behave as documented.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s0-h1",
+   "task": "fix-zip-truncates",
+   "llm": "correct",
+   "raw": "{\"grade\":\"correct\",\"why\":\"The answer correctly identifies that pairs() silently truncates via zip when the input lists differ in length and proposes a length check/ValueError that enforces the documented same-length requirement.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s1-h1",
+   "task": "fix-augmented-assign-mutates",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `tags += [tag]` mutates the caller's list in place despite the docstring promising a new list, and the proposed fix `return tags + [tag]` creates a new list as documented.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s1-h1",
+   "task": "fix-broad-except",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the bare except in reader.py as the defect, accurately explains that it swallows all exceptions (including TypeError for invalid index types) and returns None, and proposes a fix that catches only IndexError while raising TypeError for non-integer indices, which would resolve the issue.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s1-h1",
+   "task": "fix-closure-late-binding",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly identifies the late-binding closure defect, but its proposed fix still references the late-bound comprehension variable p in the lambda body, so it would not make the functions capture individual prefixes.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s1-h1",
+   "task": "fix-enumerate-start",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly identifies that enumerate defaults to 0 while the docstring promises numbering from one, but it proposes fixing the docstring instead of the code (enumerate(items, 1)), a fix that would not make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s1-h1",
+   "task": "fix-generator-exhaust",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that the single generator returned by doubled() is exhausted by the first sum(1 for _ in stream), making the second sum(stream) yield 0, and its proposed fix of calling doubled(values) again for the total would produce the documented correct result.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s1-h1",
+   "task": "fix-none-cap",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer concludes the function works as intended and only the docstring is misleading, but the actual defect is that `min(value, cap)` raises a TypeError when `cap` is None (comparison of int and None), a mechanism the answer explicitly denies.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s1-h1",
+   "task": "fix-or-default-falsy",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `settings.get(\\\"port\\\") or 8080` collapses falsy-but-valid port values to 8080, and its proposed fix `settings.get(\\\"port\\\", 8080)` would resolve that behavior.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s1-h1",
+   "task": "fix-ordinal-index",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer identifies the off-by-one in `nth` (`items[position]` instead of `items[position - 1]`), correctly explains that it contradicts the documented 1-based behavior, and proposes the fix that would make the check pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s1-h1",
+   "task": "fix-row-alias",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `[[0] * cols] * rows` creates rows that are aliases of the same list object, and the proposed list-comprehension fix would make the grid behave as intended.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s1-h1",
+   "task": "fix-shallow-copy",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly identifies the in-place mutation, but its proposed fix only copies the table without zeroing the specified column, so it would not make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s1-h1",
+   "task": "fix-single-name",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that split_name returns parts[1] instead of the last element, explaining the IndexError on single-word names and wrong last name on multi-word names, and its fix using parts[-1] with a length guard addresses the defect.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s1-h1",
+   "task": "fix-sort-key",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly pinpoints `key=len(words)` and proposes the right fix (`key=len`), but its account of the failure is wrong: an int is not callable, so the call raises TypeError rather than silently returning the list unsorted, meaning it does not explain the observed failure.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s1-h1",
+   "task": "fix-string-case",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer identifies the strict case-sensitive exact comparison in is_yes and proposes normalization that matches the docstring and would fix the intended failing cases.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s1-h1",
+   "task": "fix-strip-whitespace",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `tidy` returns the bound `strip` method instead of calling it, and the proposed fix `text.strip()` would make the check pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s1-h1",
+   "task": "fix-zip-truncates",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It identifies the length-mismatch discrepancy but treats the docstring as the defect and proposes updating the docstring rather than adding the missing same-length validation, so the fix would not satisfy a check expecting an error on unequal lengths.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s2-h1",
+   "task": "fix-augmented-assign-mutates",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `tags += [tag]` mutates the original list in place (via __iadd__) instead of returning a new list as the docstring promises, and the proposed fix `return tags + [tag]` would resolve the defect.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s2-h1",
+   "task": "fix-broad-except",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the bare except clause as the defect, explains that it swallows all exceptions and returns None, and proposes narrowing it to IndexError (and possibly KeyError), which would fix the overbroad suppression.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s2-h1",
+   "task": "fix-closure-late-binding",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the late-binding closure bug in `build` (all lambdas share the loop variable `prefix`, so each returns the last prefix) and its proposed fixes (default-argument capture or `functools.partial`) would make the function behave as documented.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s2-h1",
+   "task": "fix-enumerate-start",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer concludes there is no defect, even though `enumerate(items)` lacks `start=1` and therefore numbers from 0, contradicting the docstring; it also misstates that `start=1` is the default.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s2-h1",
+   "task": "fix-generator-exhaust",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that doubled(values) is a generator consumed by the first sum, so the second sum(stream) yields 0, and its proposed single-pass fixes would produce the correct count and doubled total.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s2-h1",
+   "task": "fix-none-cap",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer concludes there is no defect, but `min(value, cap)` raises TypeError when `cap` is left at its default `None`, so the function fails in that documented case.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s2-h1",
+   "task": "fix-or-default-falsy",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer concludes there is no defect in ports.py, missing that the `or 8080` idiom wrongly replaces any falsy configured value (e.g. port 0) with 8080.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s2-h1",
+   "task": "fix-ordinal-index",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the off-by-one defect in nth (0-based indexing vs. the documented 1-based interface) and proposes the fix `items[position - 1]`, which matches the fixture and would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s2-h1",
+   "task": "fix-row-alias",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the row-aliasing bug caused by `[[0] * cols] * rows` and proposes a list-comprehension fix that creates independent row lists.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s2-h1",
+   "task": "fix-shallow-copy",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The diagnosis correctly identifies in-place mutation of the input table instead of returning a copy, but the concrete fix suggested (a shallow `table.copy()`) would still mutate the original inner row lists, so it would not make the check pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s2-h1",
+   "task": "fix-single-name",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It targets the right function (split_name), but its account of the failure is factually wrong (a single-part name raises IndexError on parts[1], not ('John', '')), and its proposed fix raises ValueError / re-documents the contract rather than making the function return the actual last name.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s2-h1",
+   "task": "fix-sort-key",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies `key=len(words)` in `by_length` as the defect, explains it produces a TypeError (despite loosely calling it a syntax error, which the rubric says not to demote), and the proposed fix `key=len` would make the check pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s2-h1",
+   "task": "fix-string-case",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the case-sensitive strict equality in is_yes as the defect and proposes a case-insensitive fix that would resolve the observed failure for variations like 'Yes' and 'YES'.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s2-h1",
+   "task": "fix-strip-whitespace",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `tidy` returns the bound `strip` method object instead of calling it, and the proposed fix `text.strip()` would make the function return the whitespace-stripped string.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s2-h1",
+   "task": "fix-zip-truncates",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer identifies the silent truncation from zip when lists differ in length, matching the code's behavior and the docstring's stated same-length requirement, and proposes adding length validation in the module.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s3-h1",
+   "task": "fix-augmented-assign-mutates",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer pinpoints `tags += [tag]` as mutating the caller's list in place and proposes `return tags + [tag]`, which creates a new list and would satisfy a check that the original is unmodified.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s3-h1",
+   "task": "fix-broad-except",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer pinpoints the bare `except:` clause in reader.py that swallows all exceptions, and its proposed fix (catching only IndexError so out-of-range still returns None while other errors propagate) matches the defect and would satisfy the test.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s3-h1",
+   "task": "fix-closure-late-binding",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer concludes there is no defect, but the fixture has a classic late-binding closure bug where every lambda shares the loop variable `prefix` and thus all prepend the final prefix.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s3-h1",
+   "task": "fix-enumerate-start",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"It correctly identifies that enumerate starts at 0 while the docstring promises one-based numbering, and its proposed fix (start enumeration at 1) would make the function match the documented behavior.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s3-h1",
+   "task": "fix-generator-exhaust",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `summarise` consumes the one-shot `doubled` generator twice (count, then total on an exhausted generator) and recommends a single-pass fix that yields the right count and total, so check.py would pass; its labeling of the symptom as a TypeError rather than a silently-zero total is only a minor mis-statement of the failure mode.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s3-h1",
+   "task": "fix-none-cap",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly pinpoints the missing `cap is None` guard in `limits.py` and its proposed fix (return `value` when cap is None, else `min(value, cap)`) would make check.py pass, even though it misdescribes the exact failure as returning None rather than raising a TypeError.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s3-h1",
+   "task": "fix-or-default-falsy",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer concludes there is no defect in ports.py, missing that the `or 8080` fallback silently replaces a legitimate falsy port value (e.g. 0) with 8080 instead of using a proper `is None` / key-presence check.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s3-h1",
+   "task": "fix-ordinal-index",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the off-by-one defect in ordinals.py (items[position] vs. the documented 1-based contract) and proposes items[position - 1], which aligns behavior with the docstring, despite a minor slip calling items[1] \\\"items[0]\\\".\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s3-h1",
+   "task": "fix-row-alias",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `[[0] * cols] * rows` creates rows sharing one inner list, and its proposed list-comprehension fix produces independent rows, matching what the code does.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s3-h1",
+   "task": "fix-shallow-copy",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `blanked` mutates the input rows in place and returns the same object instead of a copy, matching the code's behavior, and its proposed fix (shallow-copying each row into a new table with the column zeroed) would satisfy a check that the original table is left unmodified.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s3-h1",
+   "task": "fix-single-name",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer identifies the split_name function and correctly notes that it returns the first two parts rather than the last, but its proposed fix still returns parts[0], parts[1], so it does not correct the likely defect for multi-part names.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s3-h1",
+   "task": "fix-sort-key",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer pinpoints `key=len(words)` in sorting.py, correctly explains that sorted receives a non-callable value (the result of calling len) instead of a callable key, and prescribes the fix `key=len`, which makes the function sort by word length as documented.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s3-h1",
+   "task": "fix-string-case",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that is_yes performs an exact case-sensitive comparison against 'yes', making it reject any other typing despite the docstring's promise of leniency.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s3-h1",
+   "task": "fix-strip-whitespace",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `tidy` returns the bound `strip` method instead of calling it, and the proposed fix `text.strip()` would make the function behave as documented.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s3-h1",
+   "task": "fix-zip-truncates",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly notices that zip silently truncates for unequal lengths, but it misidentifies the defect as a misleading docstring and mainly proposes editing the docstring rather than enforcing the equal-length requirement, so the fix would not make the likely behavioral check pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s4-h1",
+   "task": "fix-augmented-assign-mutates",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that tags += [tag] mutates the original list in place, contradicting the docstring's promise of returning a new list, and the proposed fix return tags + [tag] resolves the defect.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s4-h1",
+   "task": "fix-broad-except",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer identifies the bare `except:` in reader.load as the defect and correctly explains that it swallows all exceptions instead of only the missing-index case, with a fix narrowing the catch to IndexError that would let check.py see real errors propagate.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s4-h1",
+   "task": "fix-closure-late-binding",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly identifies the late-binding closure bug (all lambdas share the final `prefix`), but its proposed fix `lambda prefix=text: prefix + text` is wrong: the default is evaluated at lambda-creation time where `text` is undefined, so it would raise NameError instead of fixing the capture problem (the correct form binds `prefix=prefix` as a default).\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s4-h1",
+   "task": "fix-enumerate-start",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer concludes there is no defect and even claims the code uses `enumerate(items, start=1)`, a mechanism that does not exist in the fixture (it actually uses `enumerate(items)`, so numbering starts at 0 and contradicts the docstring).\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s4-h1",
+   "task": "fix-generator-exhaust",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly identifies that the generator is exhausted by the first sum so the second sum returns 0, but the primary fix it proposes (storing the generator in a variable and reusing it) is wrong—it is already stored in a variable—and the alternative fix is left vague.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s4-h1",
+   "task": "fix-none-cap",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies the cap=None handling and proposes a valid fix, but its account is wrong: min(value, None) raises TypeError in Python 3 rather than returning None.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s4-h1",
+   "task": "fix-or-default-falsy",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It focuses on the correct ports.py function but misses the actual falsy-port bug where `settings.get(\\\"port\\\") or 8080` turns a configured port of 0 into 8080, and its proposed input-validation fix would not resolve that defect.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s4-h1",
+   "task": "fix-ordinal-index",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that nth indexes items[position] instead of items[position - 1], so a 1-based position returns the wrong element, and its proposed fix (subtracting 1) would make the function match its docstring.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s4-h1",
+   "task": "fix-row-alias",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the aliasing bug where `[[0] * cols] * rows` creates multiple references to the same row list, and the proposed list-comprehension fix would make the grid behave correctly.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s4-h1",
+   "task": "fix-shallow-copy",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that blanked mutates the input table in place rather than returning a copy as its docstring promises, and its proposed fix (copy the table before zeroing the column) would satisfy a check that the original remains unchanged.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s4-h1",
+   "task": "fix-single-name",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer points at parts[1] and its fix uses parts[-1], but it dismisses the >2-part name bug and frames the defect as missing short-input handling, so its account of the observed failure is incorrect.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s4-h1",
+   "task": "fix-sort-key",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies the defective `key=len(words)` expression and gives the right fix (`key=len`), but its account of the failure is wrong—`len(words)` returns a non-callable int, so `sorted` raises a TypeError ('int' object is not callable) rather than silently returning the words in original order.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s4-h1",
+   "task": "fix-string-case",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the defect as the strict, case-sensitive exact comparison in is_yes and proposes a fix that normalizes case and whitespace, which would address the observed failure.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s4-h1",
+   "task": "fix-strip-whitespace",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `return text.strip` returns the bound method instead of calling it, and the proposed fix `text.strip()` would make the function behave as documented.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s4-h1",
+   "task": "fix-zip-truncates",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly describes that zip silently truncates to the shorter list, but it concludes the code itself is fine and proposes only relaxing the docstring instead of making pairs enforce/validate the same-length contract, so its diagnosis and fix would not explain or resolve a failing check on mismatched-length behavior.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s5-h1",
+   "task": "fix-augmented-assign-mutates",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer pinpoints `tags += [tag]`, correctly explains that list `+=` mutates the caller's list in place (contradicting the docstring's promise of a new list), and proposes `return tags + [tag]`, a fix that would make the function non-mutating and satisfy the documented behavior.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s5-h1",
+   "task": "fix-broad-except",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the bare `except:` in reader.py as the defect, accurately describes that it swallows all exceptions (TypeError etc.) and returns None instead of propagating them, and proposes a fix that catches only IndexError, which matches the module's intended behavior.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s5-h1",
+   "task": "fix-closure-late-binding",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the late-binding closure defect where all lambdas share the comprehension's `prefix` variable and thus prepend the last prefix, and its default-argument fix would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s5-h1",
+   "task": "fix-enumerate-start",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that enumerate(items) starts at 0 while the docstring promises one-based numbering, and proposes the fix enumerate(items, start=1), which would make the output match the documented behavior.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s5-h1",
+   "task": "fix-generator-exhaust",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `summarise` reuses the same generator `stream`, so the second `sum(stream)` yields 0 because the generator is already exhausted by the count, and the proposed list-based fix would resolve it.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s5-h1",
+   "task": "fix-none-cap",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly identifies the missing guard around min(value, cap) and proposes a fix that would work, but its account of the failure is wrong for Python 3: min(value, None) raises a TypeError, not returning None.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s5-h1",
+   "task": "fix-or-default-falsy",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer effectively says the function behaves as documented and invents an AttributeError-on-non-dict defect that does not exist in the fixture, missing the real bug that `or 8080` replaces a falsy but valid port such as 0.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s5-h1",
+   "task": "fix-ordinal-index",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"It pinpoints the off-by-one indexing in `nth` (returning `items[position]` instead of `items[position - 1]`) and proposes the fix that would satisfy the 1-based contract.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s5-h1",
+   "task": "fix-row-alias",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `[[0] * cols] * rows` creates aliased row references and proposes a list-comprehension fix that produces independent rows.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s5-h1",
+   "task": "fix-shallow-copy",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that blanked mutates the original table's rows and returns the same table instead of making a copy as the docstring promises, and its proposed row-copy fix would address the defect.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s5-h1",
+   "task": "fix-single-name",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `return parts[0], parts[1]` should use `parts[-1]` so the last name isn't truncated for multi-part names (and avoids IndexError on single names), and the proposed fix matches the intended behavior.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s5-h1",
+   "task": "fix-sort-key",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly identifies the defective line and proposes the right fix (`key=len`), but its account of the failure is wrong: `len(words)` is an int, so `sorted` raises `TypeError: 'int' object is not callable` rather than silently preserving the original order.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s5-h1",
+   "task": "fix-string-case",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that is_yes is strictly case-sensitive (`answer == 'yes'`) despite its docstring implying leniency 'however it was typed', and its proposed `.lower().strip()` fix in the module (not check.py) would make a leniency check pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s5-h1",
+   "task": "fix-strip-whitespace",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `return text.strip` returns the bound method object rather than the stripped string, and its fix `return text.strip()` would make the function behave as documented.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-s5-h1",
+   "task": "fix-zip-truncates",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer concludes there is no defect in pairs.py, whereas the fixture's defect is that zip silently truncates mismatched-length inputs instead of enforcing the documented same-length requirement.\"}",
+   "passed_gate": true
+  }
+ ]
+}
