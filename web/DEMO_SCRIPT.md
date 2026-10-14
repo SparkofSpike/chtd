@@ -22,8 +22,8 @@ cd E:\Coding\chtd\web
 然后做一次**彩排**：展开「模型与端点配置」→ 路由选 **`student`** → 点「运行」，
 确认 40 秒左右能出「通过」。彩排成功后再开始正式录，并且**保持路由停在 `student`**。
 
-> `student` 那行如果是红的，说明训练盒上的模型服务没在跑 —— 见本文末「服务掉了怎么重启」。
-> **不要带着红灯开录。**
+> 若卡到超过 2 分钟没结果，说明训练盒上的服务出问题了 —— 见本文末「服务掉了怎么重启」。
+> `student` 那行是红的，同样先去那里。**不要带着红灯开录。**
 
 **窗口**：建议浏览器 1280×720 以上，`Ctrl+0` 恢复 100% 缩放，隐藏书签栏（`Ctrl+Shift+B`）。
 
@@ -297,3 +297,22 @@ nohup /root/chtd-control-venv/bin/python serve_openai_bf16.py \
 等约 30 秒，`curl .../health` 能答之后，在页面上点一次「重新检测路由」。
 
 换其他臂：把 `--adapter-path` 换成同目录下的 `chtd-seed2-adapter`、`chtd-seed3-adapter` 等即可。
+
+### 如果服务“在跑但不应答”
+
+这个现象 2026-10-15 遇到过一次，很有欺骗性：进程活着、端口在监听，但所有请求超时。
+原因是一个早已断开的连接占住了唯一的处理线程（旧代码用的是单线程 `HTTPServer`）。
+**已在两个 serve 脚本里修掉**（改为 `ThreadingHTTPServer` + `timeout = 300`），
+训练盒上的副本也已同步。若再遇到，一瞬间就能认出来：
+
+```bash
+# 并发三个请求：修好的版本会全部毫秒级返回；单线程卡死的版本会全部超时
+for i in 1 2 3; do ( timeout 8 curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" \
+  http://127.0.0.1:8003/v1/models ) & done; wait
+
+# 看有没有一个 ESTABLISHED 连接占着（state=01，且对端已不在）
+grep ":1F43" /proc/net/tcp | awk '$4=="01"'
+```
+
+真的再遇到（比如服务是用旧代码起的），直接重启即可；旧版本仍在本目录下：
+`serve_openai_bf16.py.bak-20261015-041528`。
