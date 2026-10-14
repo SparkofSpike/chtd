@@ -90,4 +90,7 @@ LIVE_TASK_ID_OK = re.compile(r"^[A-Za-z0-9._-]{1,80}$")
 # Exported read-only JSON cache.
 DATA_DIR = BACKEND_DIR / "data"
 
-ENDPOINT_TIMEOUT = 1.5  # seconds, per health probe
+#: Per-probe budget. A local endpoint answers in milliseconds; one that is not listening either
+#: refuses at once or never answers, and this machine takes the slow path (~2 s to a closed
+#: 127.0.0.1 port), so the budget is what keeps a five-second health poll from stalling on it.
+ENDPOINT_TIMEOUT = 0.6

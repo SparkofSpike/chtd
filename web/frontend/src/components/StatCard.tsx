@@ -6,14 +6,16 @@ interface Props {
   sub?: string
   source?: string
   accent?: boolean
+  /** 网格跨度等由调用方决定：卡片数量与列数的搭配是布局的事，不是卡片的事。 */
+  className?: string
 }
 
 // 核心数字卡：数字 + 来源 tooltip（PLAN §2 概览数字卡）。
-export default function StatCard({ label, value, sub, source, accent }: Props) {
+export default function StatCard({ label, value, sub, source, accent, className = '' }: Props) {
   const [show, setShow] = useState(false)
   return (
     <div
-      className="card relative p-4"
+      className={`card relative p-4 ${className}`}
       onMouseEnter={() => setShow(true)}
       onMouseLeave={() => setShow(false)}
     >

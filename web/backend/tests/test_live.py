@@ -154,12 +154,69 @@ def test_capabilities_says_exactly_what_is_missing(tmp_path, monkeypatch):
     monkeypatch.setattr(live, "node_status",
                         lambda: {"bin": "node", "ok": True, "version": "v0.0.0", "detail": ""})
     monkeypatch.setattr(live, "probe_endpoint",
-                        lambda url: {"url": url, "ok": False, "model": None,
-                                     "detail": "test"})
+                        lambda url, **_: {"url": url, "ok": False, "model": None,
+                                          "detail": "test"})
+    monkeypatch.setattr(live, "_ENDPOINT_CACHE", {})
     caps = live.capabilities(fresh=True)
     assert caps["mode"] == "replay"
     assert caps["runnable_routes"] == []
     assert any("agnes CLI not found" in reason for reason in caps["reasons"])
+
+
+# --------------------------------------------------------------------------- endpoint probe cache
+
+
+def test_a_failed_probe_is_not_repeated_on_every_poll(monkeypatch):
+    """`/api/health` is polled every five seconds and a probe of a closed local port costs ~2 s here.
+
+    The counter is the point: without the cache this fires on every poll.
+    """
+    monkeypatch.setattr(live, "_ENDPOINT_CACHE", {})
+    calls = []
+
+    def counting(url):
+        calls.append(url)
+        return {"url": url, "ok": False, "model": None, "detail": "refused"}
+
+    monkeypatch.setattr(live, "_probe_endpoint_uncached", counting)
+    for _ in range(5):
+        live.probe_endpoint("http://127.0.0.1:9")
+    assert len(calls) == 1
+
+
+def test_fresh_forces_the_probe_again(monkeypatch):
+    monkeypatch.setattr(live, "_ENDPOINT_CACHE", {})
+    calls = []
+    monkeypatch.setattr(live, "_probe_endpoint_uncached",
+                        lambda url: (calls.append(url),
+                                     {"url": url, "ok": False, "model": None, "detail": ""})[1])
+    live.probe_endpoint("http://127.0.0.1:9")
+    live.probe_endpoint("http://127.0.0.1:9", fresh=True)
+    assert len(calls) == 2
+
+
+def test_a_reachable_endpoint_is_re_probed_sooner_than_a_dead_one():
+    """A server an operator starts should turn green quickly; one that is down can wait."""
+    assert live.ENDPOINT_CACHE_OK_SECONDS < live.ENDPOINT_CACHE_FAIL_SECONDS
+
+
+# --------------------------------------------------------------------------- what a clone has
+
+
+def test_the_fixture_falls_back_to_the_checked_in_seeds(tmp_path, monkeypatch):
+    """`data/` is generated and untracked; a clone only has `harness/tasks/<set>/<task_id>/`."""
+    jsonl = tmp_path / "holdout-3.jsonl"
+    jsonl.write_text(json.dumps({"id": "seeded", "prompt": "p"}), encoding="utf-8")
+    seeds = tmp_path / "harness" / "tasks" / "holdout-3" / "seeded"
+    seeds.mkdir(parents=True)
+    (seeds / "check.py").write_text("print('ok')", encoding="utf-8")
+    # The primary root is the one a full checkout has and a clone does not.
+    monkeypatch.setattr(
+        live.config, "LIVE_TASK_SETS",
+        [(jsonl, tmp_path / "data" / "workspaces", tmp_path / "harness" / "tasks" / "holdout-3")])
+    row = live.list_tasks()[0]
+    assert row["fixture_ready"] is True
+    assert row["files"] == ["check.py"]
 
 
 def test_capabilities_marks_a_route_ready_when_its_pieces_are_present(tmp_path, monkeypatch):
@@ -173,7 +230,8 @@ def test_capabilities_marks_a_route_ready_when_its_pieces_are_present(tmp_path, 
     monkeypatch.setattr(live, "node_status",
                         lambda: {"bin": "node", "ok": True, "version": "v0.0.0", "detail": ""})
     monkeypatch.setattr(live, "probe_endpoint",
-                        lambda url: {"url": url, "ok": False, "model": None, "detail": "test"})
+                        lambda url, **_: {"url": url, "ok": False, "model": None, "detail": "test"})
+    monkeypatch.setattr(live, "_ENDPOINT_CACHE", {})
     caps = live.capabilities(fresh=True)
     assert caps["mode"] == "live"
     assert caps["runnable_routes"] == ["teacher"]

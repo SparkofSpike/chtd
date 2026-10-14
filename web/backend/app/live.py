@@ -45,20 +45,44 @@ POLL_SECONDS = 0.4
 SQLITE_TIMEOUT = 1.0
 #: Capabilities answer in a few hundred milliseconds when a route is up and time out when it is
 #: not, and the top bar asks every five seconds. The cache keeps that polling from spending the
-#: whole interval inside `node --version` and a connect timeout.
+#: whole interval inside `node --version` and a connect attempt.
 CAPS_CACHE_SECONDS = 15.0
+#: An endpoint's own answer is cached separately and for longer when it is bad news. A local server
+#: that is not running does not come up five seconds later, while one an operator just started
+#: should turn green promptly — so a refusal is remembered longer than an answer.
+ENDPOINT_CACHE_OK_SECONDS = 10.0
+ENDPOINT_CACHE_FAIL_SECONDS = 45.0
+_ENDPOINT_CACHE: dict[str, tuple[float, dict[str, Any]]] = {}
 
 
 # --------------------------------------------------------------------------- capability probe
 
 
-def probe_endpoint(base_url: str) -> dict[str, Any]:
+def probe_endpoint(base_url: str, *, fresh: bool = False) -> dict[str, Any]:
     """Probe a model endpoint. `/v1/models` first: it is the OpenAI-compatible fact.
 
     A route pointed at a hosted API (the teacher) is *not* probed here — this is only for the
     local student endpoint, which is the piece an operator serves themselves. `trust_env=False`
     keeps an ambient proxy setting from answering for the endpoint.
+
+    Cached per URL: this runs inside `/api/health`, which the top bar polls every five seconds, and
+    on this machine a connection to a closed local port takes ~2 seconds to fail. A failed probe
+    is remembered longer than a successful one — see `ENDPOINT_CACHE_FAIL_SECONDS`.
     """
+    now = time.time()
+    if not fresh:
+        cached = _ENDPOINT_CACHE.get(base_url)
+        if cached is not None:
+            age, hit = cached
+            ttl = ENDPOINT_CACHE_OK_SECONDS if hit["ok"] else ENDPOINT_CACHE_FAIL_SECONDS
+            if now - age < ttl:
+                return hit
+    info = _probe_endpoint_uncached(base_url)
+    _ENDPOINT_CACHE[base_url] = (now, info)
+    return info
+
+
+def _probe_endpoint_uncached(base_url: str) -> dict[str, Any]:
     info: dict[str, Any] = {"url": base_url, "ok": False, "model": None, "detail": ""}
     for path in ("/v1/models", "/health"):
         try:
@@ -134,19 +158,19 @@ def capabilities(*, fresh: bool = False) -> dict[str, Any]:
     now = time.time()
     if not fresh and _CAPS_CACHE and now - _CAPS_CACHE[0] < CAPS_CACHE_SECONDS:
         return _CAPS_CACHE[1]
-    result = _capabilities_uncached()
+    result = _capabilities_uncached(fresh=fresh)
     _CAPS_CACHE = (now, result)
     return result
 
 
-def _capabilities_uncached() -> dict[str, Any]:
+def _capabilities_uncached(*, fresh: bool = False) -> dict[str, Any]:
     cli = agnes_cli_status()
     node = node_status()
     route = config.LIVE_ROUTE
     teacher_cred = credential_status("teacher")
     student_cred = credential_status("student")
     student_endpoint = probe_endpoint(os.environ.get("CHTD_STUDENT_URL",
-                                                     "http://127.0.0.1:8000"))
+                                                     "http://127.0.0.1:8000"), fresh=fresh)
 
     routes = [
         {"route": "teacher", "kind": "hosted",

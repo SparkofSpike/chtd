@@ -121,6 +121,21 @@ export default function Arena() {
   const rowOf = (arm: string, t: string) => byGroup.get(arm)?.get(t)
   const bothRun = tasks.length > 0
 
+  // 两臂结果不同就是这张表里真正要看的那几行。分组与选项文本共用同一个判定，
+  // 免得“排在前面的”与“标了星的”将来各自漂移。
+  const isDivergent = (t: string) =>
+    rowOf(leftArm, t)?.passed !== rowOf(rightArm, t)?.passed
+
+  const taskOption = (t: string) => {
+    const l = rowOf(leftArm, t)
+    const r = rowOf(rightArm, t)
+    return (
+      <option key={t} value={t}>
+        {t}（{l?.passed ? '通过' : '失败'} / {r?.passed ? '通过' : '失败'}）
+      </option>
+    )
+  }
+
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold text-ink">Arena / Replay：同题并排回放</h1>
@@ -183,17 +198,18 @@ export default function Arena() {
                 disabled={!bothRun}
               >
                 {!bothRun && <option value="">— 无共同任务 —</option>}
-                {tasks.map((t) => {
-                  const l = rowOf(leftArm, t)
-                  const r = rowOf(rightArm, t)
-                  const diff = l?.passed !== r?.passed
-                  return (
-                    <option key={t} value={t}>
-                      {t}（{l?.passed ? '通过' : '失败'} / {r?.passed ? '通过' : '失败'}）
-                      {diff ? ' ★' : ''}
-                    </option>
-                  )
-                })}
+                {/* 分组而不只是排序：48 项平铺时，演示真正要看的那几行（两臂结果不同）
+                    排在前面但仍然混在一列里，分组之后一眼能看出有几个、在哪。 */}
+                {tasks.some((t) => isDivergent(t)) && (
+                  <optgroup label={`结果分歧 —— 演示重点（${tasks.filter(isDivergent).length} 题）`}>
+                    {tasks.filter(isDivergent).map((t) => taskOption(t))}
+                  </optgroup>
+                )}
+                {tasks.some((t) => !isDivergent(t)) && (
+                  <optgroup label={`结果一致 —— 背景对照（${tasks.filter((t) => !isDivergent(t)).length} 题）`}>
+                    {tasks.filter((t) => !isDivergent(t)).map((t) => taskOption(t))}
+                  </optgroup>
+                )}
               </select>
             </div>
           </div>

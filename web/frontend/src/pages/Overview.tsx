@@ -59,9 +59,17 @@ export default function Overview() {
 
       <section>
         <h2 className="mb-3 text-sm font-semibold text-ink">核心结论（数字可溯源，悬停查看来源）</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {cards.map((c) => (
-            <StatCard key={c.label} {...c} />
+        {/* 五张卡要铺满两行：前三张各占三列的 2/6，后两张各占一半。用三列网格的话
+            第二行会空出三分之一，看着像没画完。 */}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+          {cards.map((c, i) => (
+            <StatCard
+              key={c.label}
+              {...c}
+              className={
+                i < 3 ? 'lg:col-span-2' : i === cards.length - 1 ? 'sm:col-span-2 lg:col-span-3' : 'lg:col-span-3'
+              }
+            />
           ))}
         </div>
       </section>
