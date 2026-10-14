@@ -1,0 +1,206 @@
+{
+ "note": "本仓库 data/ 下 AGH 账本的完整普查（data/ 本身未入库，此处为可核验汇总）",
+ "ledgers": 1123,
+ "sessions": 1649,
+ "events": 120066,
+ "model_invocations_by_route": {
+  "teacher/agnes-3.0-flash": 1714,
+  "teacher/deepseek-v4-pro": 31,
+  "teacher/qwen3.5:4b": 5,
+  "teacher/agnes-2.5-pro": 4
+ },
+ "by_run": {
+  "_agh_home": {
+   "sessions": 518,
+   "events": 39950,
+   "models": [
+    "teacher/agnes-3.0-flash"
+   ]
+  },
+  "agh_home": {
+   "sessions": 345,
+   "events": 23393,
+   "models": [
+    "teacher/agnes-2.5-pro",
+    "teacher/agnes-3.0-flash",
+    "teacher/deepseek-v4-pro",
+    "teacher/qwen3.5:4b"
+   ]
+  },
+  "rollouts": {
+   "sessions": 184,
+   "events": 12043,
+   "models": [
+    "teacher/agnes-3.0-flash"
+   ]
+  },
+  "fix-shallow-copy": {
+   "sessions": 45,
+   "events": 3171,
+   "models": [
+    "teacher/agnes-3.0-flash"
+   ]
+  },
+  "fix-ordinal-index": {
+   "sessions": 41,
+   "events": 2892,
+   "models": [
+    "teacher/agnes-3.0-flash"
+   ]
+  },
+  "fix-single-name": {
+   "sessions": 41,
+   "events": 3048,
+   "models": [
+    "teacher/agnes-3.0-flash"
+   ]
+  },
+  "fix-sort-key": {
+   "sessions": 41,
+   "events": 2893,
+   "models": [
+    "teacher/agnes-3.0-flash"
+   ]
+  },
+  "fix-string-case": {
+   "sessions": 41,
+   "events": 3645,
+   "models": [
+    "teacher/agnes-3.0-flash"
+   ]
+  },
+  "fix-augmented-assign-mutates": {
+   "sessions": 37,
+   "events": 2607,
+   "models": [
+    "teacher/agnes-3.0-flash"
+   ]
+  },
+  "fix-broad-except": {
+   "sessions": 37,
+   "events": 2538,
+   "models": [
+    "teacher/agnes-3.0-flash"
+   ]
+  },
+  "fix-closure-late-binding": {
+   "sessions": 37,
+   "events": 2585,
+   "models": [
+    "teacher/agnes-3.0-flash"
+   ]
+  },
+  "fix-enumerate-start": {
+   "sessions": 37,
+   "events": 2551,
+   "models": [
+    "teacher/agnes-3.0-flash"
+   ]
+  },
+  "fix-generator-exhaust": {
+   "sessions": 37,
+   "events": 2551,
+   "models": [
+    "teacher/agnes-3.0-flash"
+   ]
+  },
+  "fix-none-cap": {
+   "sessions": 37,
+   "events": 2551,
+   "models": [
+    "teacher/agnes-3.0-flash"
+   ]
+  },
+  "fix-or-default-falsy": {
+   "sessions": 37,
+   "events": 2551,
+   "models": [
+    "teacher/agnes-3.0-flash"
+   ]
+  },
+  "fix-row-alias": {
+   "sessions": 37,
+   "events": 2551,
+   "models": [
+    "teacher/agnes-3.0-flash"
+   ]
+  },
+  "fix-strip-whitespace": {
+   "sessions": 37,
+   "events": 2551,
+   "models": [
+    "teacher/agnes-3.0-flash"
+   ]
+  },
+  "fix-zip-truncates": {
+   "sessions": 37,
+   "events": 2551,
+   "models": [
+    "teacher/agnes-3.0-flash"
+   ]
+  },
+  "chtd-20261011-a": {
+   "sessions": 10,
+   "events": 3056,
+   "models": [
+    "teacher/agnes-3.0-flash"
+   ]
+  },
+  "student": {
+   "sessions": 3,
+   "events": 77,
+   "models": [
+    "teacher/deepseek-v4-pro"
+   ]
+  },
+  "teacher": {
+   "sessions": 3,
+   "events": 130,
+   "models": [
+    "teacher/deepseek-v4-pro"
+   ]
+  },
+  "round1": {
+   "sessions": 2,
+   "events": 67,
+   "models": [
+    "teacher/deepseek-v4-pro"
+   ]
+  },
+  "prefix-agh-home": {
+   "sessions": 1,
+   "events": 20,
+   "models": [
+    "teacher/agnes-3.0-flash"
+   ]
+  },
+  "home-a": {
+   "sessions": 1,
+   "events": 20,
+   "models": [
+    "teacher/agnes-3.0-flash"
+   ]
+  },
+  "home-b": {
+   "sessions": 1,
+   "events": 20,
+   "models": [
+    "teacher/agnes-3.0-flash"
+   ]
+  },
+  "home-crlf": {
+   "sessions": 1,
+   "events": 27,
+   "models": [
+    "teacher/agnes-3.0-flash"
+   ]
+  },
+  "home-lf": {
+   "sessions": 1,
+   "events": 27,
+   "models": [
+    "teacher/agnes-3.0-flash"
+   ]
+  }
+ }
+}

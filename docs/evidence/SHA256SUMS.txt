@@ -1,0 +1,7 @@
+b73ea395200c458a412ffdc3f7d8c8ea606e0766e89a596e16085a93be131512  1-agh-execution-census.json
+609066ef41f0fe62c288fc298d883bb506e5e2296afcb688bf67bf575a35ac19  2-tool-call-chains/chain-a.json
+e6ac5e2b2d60e46253d23f383ce956287e254980cfb59aaf6e822444720ec8ee  2-tool-call-chains/chain-b.json
+87e91ee9f858a8820fd2522d43ec0e0d44823923694c606b39f41e98da1bce05  2-tool-call-chains/chain-c.json
+e7e09d3105b2fdcd7a04ff4f7498863bfd11015dd24bb435a454226f904b617b  3-agnes-participation.md
+fd506eb4838e6cc5f237455d43fdc9a4eb707a45f71cd8358b08b6e31de7e10d  4-config-and-verification.md
+a0960b02733978e6c4b435084c4caa6a9d9de88b3f6b595ab63351eb071e66f6  README.md
