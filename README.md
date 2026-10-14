@@ -97,15 +97,17 @@ is a smoke test, and what would have to happen to get a real one — a task set 
 legible, tasks with more steps, and throttled collection against a rate limit — is set out with its
 arithmetic in [docs/finetune.md](docs/finetune.md).
 
-**The full programme has since run, and it is written up.** Three fresh held-out sets (15, 30 and
-48 tasks), up to three training seeds per arm, every answer in the record batch hand-read, the
-phrase gate benchmarked against two human readers, and an LLM judge piloted and gated. The result
-is a negative one with a measured reason: at nine student-state rows the paired contrast the design
-exists to test is not distinguishable at 30 tasks (0–3 pp against a 26.6 pp detection floor), and
-the fine-tunes' instability — across seeds and across a prompt change — is itself a reproduced
-finding, rooted in `last` supervision teaching the final answer but never the exploration policy.
-The single entry point, with what the evidence supports and what it does not, is
-[docs/findings-20261014.md](docs/findings-20261014.md).
+**The full programme has since run, and it is written up.** Three fresh held-out sets (15, 12 and
+30 tasks, pooled to 57), up to three training seeds per arm, every answer graded on a three-level
+rubric (one set by hand, two by the validated LLM judge), the phrase gate benchmarked against two
+human readers, and the power arithmetic done before the conclusions. The result, stated with its
+uncertainty: the student-state family **halves the base's failure rate** — 17.5 % against 31.6 %
+pooled, same direction in all three sets, McNemar p = 0.077 — while the ordinal mean difference is
+not distinguishable from noise, and the strongest arm in the batch (v5) is a different data shape
+at ten times the rows. The fine-tunes' instability — across seeds and across a prompt change — is
+itself a reproduced finding, rooted in `last` supervision teaching the final answer but never the
+exploration policy. The single entry point, with what the evidence supports and what it does not,
+is [docs/findings-20261014.md](docs/findings-20261014.md).
 
 ## License
 

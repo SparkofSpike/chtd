@@ -109,11 +109,11 @@ Per-task verdicts and the pooled arithmetic are reproducible from the scripts ab
 
 1. **Pre-register the failure rate as the primary endpoint** (or co-primary with the ordinal mean),
    with the same rubric, before any new sweep.
-2. **Enough tasks to resolve the observed effect.** At the measured spread (sd ≈ 0.99 ordinal
-   points), the pooled +0.17 needs ≈**265 tasks per arm** for 80 % power; the failure-rate
-   difference (14 pp) needs ≈**150 per arm** by the paired-discordance arithmetic. A 100-task
-   confirmatory set is the affordable first step and would already move p from 0.077 to ~0.03 if
-   the effect holds.
+2. **Enough tasks to resolve the observed effect.** The failure-rate difference (14 pp at the
+   measured discordance π_d = 0.281) needs ≈**110 tasks per arm** for 80 % power; the ordinal mean
+   (sd ≈ 0.99, delta 0.17) needs ≈**268**. A **100-task confirmatory set** is the affordable first
+   step: at the observed rates it projects to exact McNemar **p ≈ 0.01** (b ≈ 21, c ≈ 7) — that is
+   the run that would settle it.
 3. **One judge for the confirmatory set** (or two, fully crossed), so reader differences cannot be
    confounded with the arms.
 4. **The prompt held fixed to the training distribution** — the holdout-4 trace showed a prompt
