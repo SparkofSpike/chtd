@@ -1,0 +1,27 @@
+{
+  "audit_skill": "experiment-audit",
+  "verdict": "FAIL",
+  "reason_code": "protocol_mismatch_and_retry_and_proxy_metric",
+  "summary": "Recorded phrase-gate counts are reproducible, but the run is post hoc, the lexical scorer has identifier false positives, and CHTD seed1 has an unrecorded attempt followed by a retry.",
+  "review_independence": "same-family",
+  "acceptance_status": "provisional",
+  "reviewer_model": "gpt-5.6-sol",
+  "reviewer_reasoning": "ultra",
+  "date": "2026-10-14",
+  "overall_verdict": "fail",
+  "integrity_status": "fail",
+  "checks": {
+    "ground_truth_provenance": {"status": "warn", "classification": "synthetic_proxy"},
+    "metric_semantic_validity": {"status": "fail", "details": "Lexical phrase and identifier checker; demonstrated false positive."},
+    "result_arithmetic": {"status": "pass", "details": "Counts and paired outcomes match recorded JSONL rows."},
+    "attempt_integrity": {"status": "fail", "details": "At least 49 attempts for 48 task IDs in CHTD seed1; one unrecorded near-timeout session was retried."},
+    "adapter_provenance": {"status": "warn", "details": "Run manifests omit adapter artifact IDs and hashes; seed1 shards lack run manifests."},
+    "preregistration_alignment": {"status": "fail", "details": "Existing preregistration specifies teacher-demo dose ladder and human metric, not seeded CHTD/control phrase-gate arms."},
+    "scope": {"status": "warn", "details": "Two seeds; CHTD 7/48 vs 38/48."}
+  },
+  "claims": [
+    {"id": "C1_recorded_phrase_gate_counts", "impact": "supported_with_qualifiers"},
+    {"id": "C2_semantic_correctness", "impact": "unsupported"},
+    {"id": "C3_general_CHTD_superiority", "impact": "unsupported"}
+  ]
+}
