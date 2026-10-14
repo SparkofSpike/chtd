@@ -1,0 +1,1684 @@
+{
+ "cells": [
+  {
+   "set": "h1",
+   "arm": "base-h1",
+   "task": "fix-string-case",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that answers.py's is_yes is too strict (exact 'yes' match only), which explains why the assertions for 'Yes', 'YES', and ' yes ' fail, and implies the fix belongs in the module.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-h1",
+   "task": "fix-sort-key",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly points at `key=len(words)` in sorting.py and proposes the fixed `key=len`, which would make check.py pass; calling it a \\\"syntax error\\\" instead of the TypeError ('int' object is not callable) is a minor mis-statement that the rubric says not to demote.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-h1",
+   "task": "fix-shallow-copy",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer locates the mutation correctly but concludes the defect is in check.py and that the test should be changed to expect in-place mutation, blaming the test rather than the module whose docstring promises a copy.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-h1",
+   "task": "fix-ordinal-index",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that nth returns items[position] without converting the documented 1-based position to a 0-based index, explains that nth(...,1) yields 'b' instead of 'a', and proposes the fix items[position - 1], which makes check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-h1",
+   "task": "fix-single-name",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that split_name assumes at least two whitespace-separated parts and raises IndexError on the single-name input used in check.py, and its proposed handling of one-part names would let check.py run successfully.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-h1",
+   "task": "fix-strip-whitespace",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that clean.py's tidy returns the bound method text.strip instead of calling it, and the proposed fix text.strip() makes check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-h1",
+   "task": "fix-closure-late-binding",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the late-binding closure bug in handlers.py's build function, accurately explaining that all lambdas share the final `prefix` value so first('x') returns '[b]x' and the first assertion fails.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-h1",
+   "task": "fix-generator-exhaust",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that the doubled() generator in summarise is exhausted by the count calculation so the subsequent sum yields 0, and its proposed fix (materializing the doubled values in a list) would make check.py pass; the minor slip about the sum being based on original values doesn't change the diagnosis.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-h1",
+   "task": "fix-broad-except",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the bare `except:` in reader.py as the defect, explaining that it swallows the TypeError that check.py requires to surface, and its proposed fix (let the TypeError propagate) would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-h1",
+   "task": "fix-none-cap",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer blames check.py's assertion messages and claims limits.py is correct, missing the actual defect that limit(5) calls min(5, None), which raises a TypeError.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "base-h1",
+   "task": "fix-enumerate-start",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer correctly notes enumerate starts at 0 but wrongly concludes listing.py is correct and blames check.py's assertion, whereas the defect is that numbered() should pass start=1 to enumerate.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-h1",
+   "task": "fix-zip-truncates",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer correctly describes zip's truncation behavior but concludes the implementation is fine and the test/check.py is the bug, explicitly blaming the test rather than identifying pairs.py's failure to raise ValueError.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-h1",
+   "task": "fix-or-default-falsy",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer blames check.py's assertion structure and explicitly concludes ports.py is correct, missing the real defect that `settings.get(\\\"port\\\") or 8080` returns 8080 for port 0.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "base-h1",
+   "task": "fix-row-alias",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the [[0]*cols]*rows aliasing bug, explains that modifying cells[0][0] makes cells[1][0] equal 1, and proposes independent per-row lists, which would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-h1",
+   "task": "fix-augmented-assign-mutates",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly pinpoints that `tags += [tag]` mutates the caller's list in place, which explains why the assertion `original == [\\\"a\\\"]` fails.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5-h1",
+   "task": "fix-string-case",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The diagnosis correctly identifies the case-sensitive comparison in answers.py as the defect, but the proposed fix `str(answer).lower() == 'yes'` omits stripping whitespace, so the check.py case `' yes '` would still fail.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5-h1",
+   "task": "fix-sort-key",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies the buggy line and the right fix (key=len), but its account of the failure is wrong: passing the integer len(words) as key raises TypeError ('int' object is not callable), not a silently unchanged/unsorted list.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5-h1",
+   "task": "fix-shallow-copy",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly locates the defect in table.py's blanked, accurately explaining that it mutates the original table/rows in place rather than copying, and its row.copy() fix would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5-h1",
+   "task": "fix-ordinal-index",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the off-by-one defect in ordinals.py (1-based position treated as 0-based) and proposes the fix items[position - 1], which matches the observed assertion failure in check.py.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5-h1",
+   "task": "fix-single-name",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that names.py's split_name indexes parts[1] unconditionally, causing an IndexError on single-token input like 'Ada', and its proposed graceful-return fixes would let check.py run; the raised-ValueError option is a minor imprecision, not a misdiagnosis.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5-h1",
+   "task": "fix-strip-whitespace",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies the missing parentheses so tidy returns the str.strip function object, but it wrongly locates the defect in check.py and proposes editing check.py (which has no tidy/return at line 2) instead of fixing clean.py's `return text.strip()`.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5-h1",
+   "task": "fix-closure-late-binding",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"It correctly identifies the late-binding closure bug in build's lambda list comprehension (all lambdas share the loop variable, so first returns '[b]x' and the first assertion fails) and proposes the standard default-argument fix that would make check.py pass, despite swapping the file names of build and the assertions.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5-h1",
+   "task": "fix-generator-exhaust",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies the exhausted-generator defect in summarise(), but its concrete fix returns the tuple in the wrong order, so it would not make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5-h1",
+   "task": "fix-broad-except",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"It pinpoints the bare `except:` clause as the defect and correctly explains that it swallows the TypeError from `load([\\\"a\\\",\\\"b\\\"], \\\"not an index\\\")`, and the proposed fix (`except IndexError:`) is exactly what makes check.py pass, even though it mislabels the file as check.py rather than reader.py.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5-h1",
+   "task": "fix-none-cap",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer concludes the directory is fine, missing that limit(5) calls min(5, None) and raises a TypeError, which is the actual defect.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "v5-h1",
+   "task": "fix-enumerate-start",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies `enumerate` zero-indexing in listing.py as the cause and proposes a fix (i+1 or range starting at 1) that would make check.py's assertion pass, despite slightly muddled phrasing calling the assertion 'wrong'.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5-h1",
+   "task": "fix-zip-truncates",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies pairs.py's zip truncation as the defect and proposes raising ValueError on length mismatch, which would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5-h1",
+   "task": "fix-or-default-falsy",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly pinpoints `settings.get(\\\"port\\\") or 8080` in ports.py, accurately explains that 0 is falsey so port({\\\"port\\\": 0}) wrongly returns 8080, and provides a working fix (`port if port is not None else 8080`) that makes all of check.py's assertions pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5-h1",
+   "task": "fix-row-alias",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the aliased-row bug in grid.py's `[[0] * cols] * rows`, explains that mutation of one row affects all rows causing the assertion failure, and proposes the standard list-comprehension fix that would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5-h1",
+   "task": "fix-augmented-assign-mutates",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `tags += [tag]` mutates the caller's list in place, explains the resulting assertion failure on `original == [\\\"a\\\"]`, and proposes `return tags + [tag]`, which makes check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5b-h1",
+   "task": "fix-string-case",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly locates the defect in answers.py and accurately describes that 'Yes', 'YES', and ' yes ' fail the strict '== \\\"yes\\\"' comparison, but its proposed fix `str(answer).lower() == 'yes'` would not make check.py pass because it fails to strip the surrounding whitespace in the ' yes ' case.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5b-h1",
+   "task": "fix-sort-key",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `key=len(words)` passes a single integer key instead of a per-element key, and its proposed fix `key=len` would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5b-h1",
+   "task": "fix-shallow-copy",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that blanked mutates the rows in place rather than returning a copy, explaining why the assertion on `original` fails, and its proposed fix builds a fresh table of copied rows that would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5b-h1",
+   "task": "fix-ordinal-index",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that nth uses the 0-based position directly instead of subtracting 1 for the documented 1-based API, explains that this returns 'b' and raises IndexError on the second call, and proposes the fix items[position - 1] which makes check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5b-h1",
+   "task": "fix-single-name",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer pinpoints names.py's split_name indexing parts[1] and correctly explains that check.py's 'Ada' call raises IndexError, and its primary fix (returning None for single-word names) would let check.py run without crashing.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5b-h1",
+   "task": "fix-strip-whitespace",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly identifies the missing parentheses that make tidy return str.strip rather than the stripped string, but it wrongly locates the defect in check.py and its proposed fix (editing check.py line 2) would not make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5b-h1",
+   "task": "fix-closure-late-binding",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"It correctly identifies the late-binding closure bug in build's lambda list comprehension, explains that all lambdas share the last prefix so first(\\\"x\\\") returns \\\"[b]x\\\" and the first assert fails, and proposes the default-argument capture fix that makes check.py pass (only mislabeling build as living in check.py rather than handlers.py).\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5b-h1",
+   "task": "fix-generator-exhaust",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies that summarise exhausts the doubled generator before the second sum, but its stated fix returns (total, count) instead of (count, total), so it would not make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5b-h1",
+   "task": "fix-broad-except",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies the bare `except:` in reader.py and its proposed fix (`except IndexError`) would make check.py pass, but its account of the observed failure is inverted — it claims `load([\\\"a\\\",\\\"b\\\"], 1) == \\\"b\\\"` fails and that the TypeError test 'is actually fine as written', when in fact the first assert passes and check.py fails precisely because the bare ",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5b-h1",
+   "task": "fix-none-cap",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer concludes there is no real bug in limits.py and dismisses it as a docstring issue, missing that limit(5) with the default cap=None calls min(5, None) and raises TypeError, so check.py actually fails.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "v5b-h1",
+   "task": "fix-enumerate-start",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly locates the defect in listing.py's use of zero-based enumerate producing [\\\"0: a\\\", \\\"1: b\\\"] and proposes a fix (e.g. f\\\"{i + 1}: {item}\\\") that would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5b-h1",
+   "task": "fix-zip-truncates",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that pairs() uses zip, which silently truncates mismatched lists instead of raising ValueError as check.py requires, and its proposed length-check fix would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5b-h1",
+   "task": "fix-or-default-falsy",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer claims the code is correct and `0 or 8080` evaluates to 0, but in Python `0 or 8080` is 8080, so `port({\\\"port\\\": 0})` returns 8080 and check.py's assertion fails — the answer denies the actual defect and instead blames the docstring.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "v5b-h1",
+   "task": "fix-row-alias",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the aliasing bug in grid.py (`[[0] * cols] * rows` shares one inner list), explains that `cells[0][0] = 1` also mutates `cells[1][0]` causing the assert to fail, and proposes the standard list-comprehension fix that would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "v5b-h1",
+   "task": "fix-augmented-assign-mutates",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `tags += [tag]` mutates the caller's list in place, explains that the second assert fails because `original` becomes `[\\\"a\\\", \\\"b\\\"]`, and proposes a fix (`return tags + [tag]`) that would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-h1",
+   "task": "fix-string-case",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that is_yes in answers.py only matches the exact string 'yes', explains that the assertions for 'Yes', 'YES', and ' yes ' fail, and proposes a strip().lower() fix that would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-h1",
+   "task": "fix-sort-key",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer pinpoints the defective line (`key=len(words)` in `by_length`), correctly explains that `len` is applied once to the whole list instead of per word, and proposes the exact fix `key=len` that makes check.py pass (its description of the downstream result as a mis-ordering rather than a TypeError is only a minor mis-statement of the failure mode).\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-h1",
+   "task": "fix-shallow-copy",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that blanked mutates the input table in place and returns the same list, and its proposed fix (copying each row before zeroing) would make both assertions in check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-h1",
+   "task": "fix-ordinal-index",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the off-by-one indexing defect in nth and proposes `return items[position - 1]`, which would make check.py's assertions pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-h1",
+   "task": "fix-single-name",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies that split_name('Ada') raises IndexError from parts[1], but its proposed fix raises ValueError instead, which would not make check.py pass since check.py expects a one-name call to succeed.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-h1",
+   "task": "fix-strip-whitespace",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that tidy returns the bound strip method instead of calling it, explains the resulting assertion failure, and provides the fix (text.strip()) that makes check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-h1",
+   "task": "fix-closure-late-binding",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The late-binding closure diagnosis is accurate, but the proposed fix is wrong: `lambda prefix=prefix: prefix + text` shadows the prefix parameter and leaves `text` undefined, so calling `first(\\\"x\\\")` would raise NameError instead of making check.py pass (a correct fix needs `lambda text, prefix=prefix: prefix + text`).\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-h1",
+   "task": "fix-generator-exhaust",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that the generator `stream` is exhausted by the first `sum` so the second returns 0, and its proposed rewrite produces (3, 12), making check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-h1",
+   "task": "fix-broad-except",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the bare `except:` in `load` as swallowing the TypeError from a non-integer index, and its proposed fix (catching only IndexError) would make check.py pass, despite a garbled reference to which assertion fails.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-h1",
+   "task": "fix-none-cap",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer concludes there is no defect, but limit(5) actually raises TypeError because min(5, None) compares an int with None in Python 3.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-h1",
+   "task": "fix-enumerate-start",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"It correctly identifies that `numbered` uses `enumerate(items)` without `start=1`, producing 0-based output `[\\\"0: a\\\", \\\"1: b\\\"]` that fails check.py's expectation of 1-based numbering.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-h1",
+   "task": "fix-zip-truncates",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that pairs.py's use of zip silently truncates instead of raising ValueError, explains that check.py's else branch then raises the AssertionError as observed, and its primary proposed fix (raising ValueError on unequal lengths) would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-h1",
+   "task": "fix-or-default-falsy",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer identifies that `settings.get(\\\"port\\\") or 8080` treats 0 as falsy, so `port({\\\"port\\\": 0})` returns 8080 and the second assertion fails, matching the actual defect.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-h1",
+   "task": "fix-row-alias",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the aliased-row defect from `[[0] * cols] * rows`, explains the observed shared-mutation failure of the assertion, and proposes the standard list-comprehension fix that makes check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "chtd-h1",
+   "task": "fix-augmented-assign-mutates",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer concludes there is no defect, but `tags += [tag]` mutates the caller's list in place (unlike `tags = tags + [tag]`), so `original` becomes `[\\\"a\\\", \\\"b\\\"]` and the second assert fails.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl-h1",
+   "task": "fix-string-case",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer identifies the strict equality in answers.py as the defect, correctly explains that 'Yes'/'YES'/' yes ' fail the assertions, and the proposed strip().lower() fix would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl-h1",
+   "task": "fix-sort-key",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies `sorted(words, key=len(words))` in sorting.py as the defect, explains that len(words) is a constant key so the stable sort preserves input order, and proposes `key=len`, which would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl-h1",
+   "task": "fix-shallow-copy",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The diagnosis is right that blanked mutates each row dict in place so the original list is changed and the first assertion fails, but the proposed fix `row = {**row, column: 0}` only rebinds the loop variable and never writes the blanked copies back into the returned list, so check.py would still fail the result assertion.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl-h1",
+   "task": "fix-ordinal-index",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer identifies the off-by-one defect in ordinals.py's nth() (items[position] instead of items[position-1]) and its fix would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl-h1",
+   "task": "fix-single-name",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that split_name indexes parts[1] on a single-token name, causing an IndexError on the 'Ada' call, and its single-name handling fix would make check.py run successfully.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl-h1",
+   "task": "fix-strip-whitespace",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer pinpoints the missing parentheses on `return text.strip` (returns the function object rather than the stripped string) and proposes `return text.strip()`, which would make check.py pass, with only a minor mislabeling of the enclosing file name.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl-h1",
+   "task": "fix-closure-late-binding",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the late-binding closure bug in `build` (the lambda captures the loop variable `prefix`, so both returned functions use the last prefix, making `first(\\\"x\\\")` and `second(\\\"x\\\")` return `\\\"[b]x\\\"`), which matches the observed assertion failure, and it offers a default-argument fix that binds `prefix` per iteration so check.py would pass.",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl-h1",
+   "task": "fix-generator-exhaust",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer concludes there is no defect and asserts the code passes, missing that sum(1 for _ in stream) exhausts the generator so sum(stream) returns 0 and check.py fails.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl-h1",
+   "task": "fix-broad-except",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies the bare `except:` and proposes the right fix (`except IndexError:`), but mislocates the defect in check.py rather than reader.py and gives a wrong account of the observed failure (claiming the `load(...,9) is None` assertion fails, when actually it is the final block that raises AssertionError because the bare except swallows the TypeError).\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl-h1",
+   "task": "fix-none-cap",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `min(value, cap)` with the default `cap=None` raises a TypeError for `limit(5)` and proposes a fix that makes check.py pass, despite some initial waffling.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl-h1",
+   "task": "fix-enumerate-start",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `enumerate(items)` starts at 0 so `numbered` returns `['0: a', '1: b']` instead of the expected one-based labels, and its proposed fixes (`i+1` or `enumerate(items, 1)`) would make check.py pass.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl-h1",
+   "task": "fix-zip-truncates",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies that zip silently truncates instead of raising ValueError, but its proposed fix is a no-op (the same code) and it contradicts itself by calling that the standard fix, so the fix would not make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl-h1",
+   "task": "fix-or-default-falsy",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the `settings.get(\\\"port\\\") or 8080` falsy-zero bug, explains why `port({\\\"port\\\": 0})` returns 8080, and its proposed `settings.get(\\\"port\\\", 8080)` fix would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl-h1",
+   "task": "fix-row-alias",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the aliased-sublist bug (`[[0] * cols] * rows`) in grid.py, explains that assigning cells[0][0] = 1 also changes cells[1][0], and proposes a list-comprehension fix that makes check.py pass.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl-h1",
+   "task": "fix-augmented-assign-mutates",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"It correctly identifies the in-place mutation via `tags += [tag]` in tags.py, accurately explains that the second assertion fails because `original` becomes `[\\\"a\\\", \\\"b\\\"]`, and its proposed fix `return tags + [tag]` would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl1-h1",
+   "task": "fix-string-case",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the exact-match comparison in answers.py as the defect, explains that 'Yes'/'YES'/' yes ' fail the assertions in check.py, and proposes a strip().lower() fix that would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl1-h1",
+   "task": "fix-sort-key",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly locates the defect in `key=len(words)` and proposes the right fix (`key=len`), but its account of the failure is wrong: passing the int `len(words)` (e.g. 3) as `key` makes `sorted` raise a `TypeError` ('int' object is not callable), rather than silently returning the list in original order.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl1-h1",
+   "task": "fix-shallow-copy",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly identifies the in-place mutation in blanked() and accurately describes how check.py fails, but the proposed fixes are wrong (the first is a type error, and the second returns copies without zeroing the column, so result would not equal [{'n': 0}, {'n': 0}]).\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl1-h1",
+   "task": "fix-ordinal-index",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the off-by-one defect in ordinals.py (1-based position used directly as a 0-based list index) and proposes the fix `items[position - 1]`, which would make check.py pass.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl1-h1",
+   "task": "fix-single-name",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly locates the defect in names.py's split_name, accurately explaining that parts[1] raises IndexError on the single-name 'Ada' input used by check.py, and offers a permissive fix (returning parts[0], None or guarding) that would let check.py run without error.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl1-h1",
+   "task": "fix-strip-whitespace",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `tidy()` returns the bound method `text.strip` instead of calling it, and the proposed fix (adding parentheses) makes the assertion pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl1-h1",
+   "task": "fix-closure-late-binding",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly diagnoses the late-binding closure bug and provides one working fix, but it wrongly states the defect is in check.py and its first proposed fix (`lambda prefix=text: ...`) is invalid and would not make the test pass.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl1-h1",
+   "task": "fix-generator-exhaust",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly identifies the reused exhausted generator as the problem area, but its account of the failure is wrong (the first sum(1 for _ in stream) actually yields count=3, not 0) and the proposed yield-based fix would not work, since a generator function still returns a single-use iterator that the second sum() would exhaust.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl1-h1",
+   "task": "fix-broad-except",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies the bare `except:` in reader.py as the defect and explains that it swallows the TypeError, but its primary proposed fix `except (IndexError, TypeError)` would still catch the TypeError and leave check.py failing (only the secondary `IndexError`-alone suggestion would work).\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl1-h1",
+   "task": "fix-none-cap",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly locates the problem in limits.py's limit function, but it misdiagnoses the failure (the real bug is min(value, None) raising TypeError when cap is omitted, which check.py's limit(5) call triggers) and its proposed fix of only editing the docstring would not make check.py pass.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl1-h1",
+   "task": "fix-enumerate-start",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that enumerate(items) starts at 0 in listing.py, producing \\\"0: a\\\", \\\"1: b\\\" instead of the expected \\\"1: a\\\", \\\"2: b\\\", and its fix (enumerate(items, 1)) would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl1-h1",
+   "task": "fix-zip-truncates",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that pairs() silently truncates via zip() instead of raising ValueError on length mismatch, and the proposed length check would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl1-h1",
+   "task": "fix-or-default-falsy",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer concludes there is no defect, missing that `get(\\\"port\\\") or 8080` returns 8080 when port is 0, so `assert port({\\\"port\\\": 0}) == 0` actually fails.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl1-h1",
+   "task": "fix-row-alias",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the shared-list-reference bug in `[[0] * cols] * rows`, explains that mutating one row affects all rows causing the assertion to fail, and proposes the standard list-comprehension fix that would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "ctrl1-h1",
+   "task": "fix-augmented-assign-mutates",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `tags += [tag]` mutates the caller's list in place (so `original == [\\\"a\\\"]` fails), and the proposed fix `return tags + [tag]` creates a new list, which makes check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2a",
+   "task": "h2-setdefault-none",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the defective line (assigning the None returned by list.append to registry[name]), explains that the tag/list is lost so the assertion fails, and its proposed fix (assign the list, then append) would make check.py pass; the incidental claim of a TypeError is a minor mis-statement of the failure mode, not a demotion.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2a",
+   "task": "h2-re-match",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that validate.py's use of re.match (anchored at the string start) fails to find 'v1.2' inside 'release v1.2', and its proposed fix of searching anywhere in the text would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2a",
+   "task": "h2-round-half-even",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer ultimately identifies the real defect in pricing.py's half_up, correctly explaining that round() uses banker's rounding so half_up(2.5) returns 2 instead of 3, and implies the fix of implementing true round-half-up.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2a",
+   "task": "h2-join-absolute",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer concludes there is no defect and asserts os.path.join('/srv/www', '/img/logo.png') yields '/srv/www/img/logo.png', when in fact the leading slash makes join discard site_root and return '/img/logo.png', which is the actual defect the assertion catches.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2a",
+   "task": "h2-naive-aware",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly spots the aware-vs-naive datetime mismatch area but misdescribes the failure as merely 'possibly incorrect results' (it is actually a TypeError crash) and locates the defect in check.py's usage rather than in is_pending's naive datetime.now() comparison.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2a",
+   "task": "h2-floor-toward-negative",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies `a // b` as floor division returning -4 instead of the truncation-toward-zero -3 required by the docstring and check.py, and its proposed fix (e.g. `int(a / b)` or a conditional) would make the test pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2a",
+   "task": "h2-strip-charset",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly targets the str.strip call in clean_value, but its account of the behavior is wrong: strip('N/A') removes any leading/trailing A, N, or '/' characters, so 'AN/Apple' becomes 'pple' (not returned unchanged), and it misdescribes strip as matching the exact prefix 'N/A'.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2a",
+   "task": "h2-dict-mutation-view",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly locates the defect in prune.py's drop_expired, but it describes in-place mutation side effects and input validation rather than the actual failure, which is a RuntimeError from deleting entries while iterating over entries.items().\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2a",
+   "task": "h2-unbound-local",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly pinpoints the missing `global total` declaration and its proposed fix would make check.py pass, but its account of the failure is wrong: it claims bump(3) returns 3 and bump(4) returns 4, whereas the code actually raises UnboundLocalError (local variable 'total' referenced before assignment), so it does not explain the observed failure.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2a",
+   "task": "h2-class-attr-shared",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer ultimately identifies the real defect: the class-level mutable `tags = []` list in accounts.py is shared across all Account instances, so `first.add_tag('vip')` mutates the list that `second.tags` also sees, causing the assertion to fail.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2a",
+   "task": "h2-finally-return",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the `finally: return 0` block in guard.py's parse function as the defect, explains that it swallows the raised ValueError (and also gets overridden on success), and its proposed fix of removing the finally block would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2a",
+   "task": "h2-min-key-string",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It identifies the key=str lexicographic defect and gives the right fix, but its account of the failure is wrong because min([10,9,100], key=str) actually returns 10, not 9.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base2-h2a",
+   "task": "h2-setdefault-none",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer identifies the defective line `registry[name] = registry.get(name, []).append(tag)`, correctly explains that `append` returns `None` (so the tag isn't stored as expected), and proposes a fix that makes check.py pass, with only a minor mislabel of the resulting exception.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base2-h2a",
+   "task": "h2-re-match",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that validate.py's regex uses re.match, which anchors at the start of the string so 'release v1.2' fails, and the proposed fix of matching anywhere (re.search) would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base2-h2a",
+   "task": "h2-round-half-even",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that half_up() uses Python's round() (banker's rounding), so round(2.5)==2 fails the check expecting 3, and points at pricing.py's implementation as the defect.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base2-h2a",
+   "task": "h2-join-absolute",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer concludes there is no defect, incorrectly claiming os.path.join('/srv/www', '/img/logo.png') yields '/srv/www/img/logo.png' when the absolute second argument actually makes it discard the first and return '/img/logo.png', which is the defect that makes the assertion fail.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base2-h2a",
+   "task": "h2-naive-aware",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the timezone-aware vs naive comparison (deadline compared against local datetime.now()) in is_pending, which is the fixture's defect, and its proposed UTC/timezone-aware fix would make check.py pass; characterizing the result as possibly-incorrect rather than a TypeError is at most a minor mis-statement of the failure mode.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base2-h2a",
+   "task": "h2-floor-toward-negative",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `a // b` performs floor division (giving -4 for (-7, 2)) instead of truncating toward zero, and its proposed fix (e.g. `int(a / b)`) would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base2-h2a",
+   "task": "h2-strip-charset",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly points at clean_value and predicts check.py will fail, but it misstates the actual behavior: str.strip('N/A') removes any leading/trailing characters in the set {N, /, A}, so 'AN/Apple' becomes 'pple', not 'AN/Apple', and its vague proposed handling of an 'AN/' prefix does not correctly describe the strip-vs-replace defect.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base2-h2a",
+   "task": "h2-dict-mutation-view",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly locates prune.py's drop_expired and notes in-place mutation, but it never identifies the actual failure—deleting from the dict while iterating over entries.items() raises RuntimeError: dictionary changed size during iteration—instead offering irrelevant concerns about copies and input validation.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base2-h2a",
+   "task": "h2-unbound-local",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer pinpoints the missing `global total` in `bump` (the local shadowing that keeps the module-level total at 0) and its proposed `global total` fix would make the counter accumulate correctly; its inaccurate claim that the calls return 3 and 4 rather than raising UnboundLocalError is only a minor mis-statement of the failure mode, not a wrong diagnosis or fix.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base2-h2a",
+   "task": "h2-class-attr-shared",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the class-level mutable `tags = []` in accounts.py as the defect, explains that all Account instances share the same list so `first.add_tag('vip')` makes `second.tags` non-empty and fails the assertion, and the implied fix (instance-level list) would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base2-h2a",
+   "task": "h2-finally-return",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the `finally: return 0` in guard.parse as the defect (it unconditionally swallows both the return value and the raised ValueError), and removing it would make check.py pass, even though it slightly mis-states that the success path returns the parsed value.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base2-h2a",
+   "task": "h2-min-key-string",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies the defective `min(values, key=str)` line and the fix (`min(values)` is right), but its account of the failure is wrong: lexicographic comparison makes the call return 10 (key \\\"10\\\" is smallest), not 9 as the answer claims, so it fails to explain why the assertion actually fails.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2b",
+   "task": "h2-setdefault-none",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that registry.get(name, []).append(tag) assigns None (append's return value), and its proposed two-step fix would make check.py pass; the mistaken claim of a TypeError is a minor mis-statement of the failure mode.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2b",
+   "task": "h2-re-match",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that validate.py's re.match anchors the pattern to the start of the string, so 'v1.2' inside 'release v1.2' is missed, and proposes searching anywhere in the text, which would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2b",
+   "task": "h2-round-half-even",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer identifies that half_up() in pricing.py uses Python's round(), which does banker's rounding (round half to even) rather than rounding halves up, so half_up(2.5) returns 2 instead of 3, matching the observed failure; the fix targets the module rather than the test.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2b",
+   "task": "h2-join-absolute",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer concludes there is no defect and asserts os.path.join('/srv/www', '/img/logo.png') yields '/srv/www/img/logo.png', when in fact the absolute url_path causes the join to discard site_root and return '/img/logo.png', so it misses the actual defect.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2b",
+   "task": "h2-naive-aware",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly senses a timezone mismatch between the aware deadline and naive datetime.now() and its suggested fix (use UTC for both) would make check.py pass, but it mislocates the defect in check.py and describes the failure as possible incorrect results rather than the actual TypeError raised when comparing offset-aware and offset-naive datetimes.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2b",
+   "task": "h2-floor-toward-negative",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `a // b` performs floor division (yielding -4 for -7//2) instead of truncation toward zero (yielding -3), matching the failing assertion, and proposes a fix like `int(a / b)` that would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2b",
+   "task": "h2-strip-charset",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly points at clean_value's strip call, but misdescribes the mechanism: str.strip('N/A') strips the character set {'N','/','A'} from both ends, so clean_value('AN/Apple') actually returns 'pple', not 'AN/Apple' as the answer claims.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2b",
+   "task": "h2-dict-mutation-view",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer points at drop_expired but never identifies the actual failure—mutating the dict while iterating it raises RuntimeError—instead speculating about side effects, validation, and empty/malformed input.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2b",
+   "task": "h2-unbound-local",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly pinpoints the missing `global total` declaration in `bump`, and its proposed fix (adding `global total`) would make check.py pass, even though it slightly mis-describes the symptom as returning `amount` rather than raising an UnboundLocalError on the unassigned local read.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2b",
+   "task": "h2-class-attr-shared",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the class-level mutable `tags = []` in accounts.py as the defect, explaining that the list is shared across all Account instances so adding a tag to `first` also mutates `second.tags`, which is exactly why check.py's assertion fails.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2b",
+   "task": "h2-finally-return",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer pinpoints the defective `finally: return 0` in guard.py's parse, which overrides both the successful return and the raised ValueError, and its proposed fix (removing the finally block) would make check.py pass, even though it inaccurately claims the success path returns the parsed value.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "base-h2b",
+   "task": "h2-min-key-string",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies the lexicographic key=str comparison and proposes the right fix (min(values)), but its account of the observed failure is wrong: min([10, 9, 100], key=str) returns 10 (since \\\"10\\\" sorts before \\\"100\\\" and \\\"9\\\"), not 9, so the described behavior does not explain why check.py's assertion fails.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "chtd-h2a",
+   "task": "h2-setdefault-none",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that list.append returns None so registry[name] becomes None, matching the observed assertion failure, and its proposed list-concatenation fix would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "chtd-h2a",
+   "task": "h2-re-match",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that re.match anchors at the start of the string so 'release v1.2' fails to match, and the proposed re.search fix in validate.py would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "chtd-h2a",
+   "task": "h2-round-half-even",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `round` uses banker's rounding so `half_up(0.5)`/`half_up(2.5)` return 0/2 instead of 1/3, and proposes a fix (math.floor(value + 0.5)) that makes check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "chtd-h2a",
+   "task": "h2-join-absolute",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly focuses on asset_path, but its trailing-slash story does not explain the observed failure (os.path.join discards site_root because url_path is absolute, yielding '/img/logo.png'), and the proposed rstrip fix would not make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "chtd-h2a",
+   "task": "h2-naive-aware",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `is_pending` compares the timezone-aware deadline against a naive `datetime.now()`, causing a TypeError, and its proposed fix (`datetime.now(timezone.utc)`) would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "chtd-h2a",
+   "task": "h2-floor-toward-negative",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies `a // b` in ratios.py as floor division rather than truncation toward zero, explains that truncated_ratio(-7, 2) yields -4 instead of the asserted -3, and proposes fixes (conditional abs division or math.trunc) that would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "chtd-h2a",
+   "task": "h2-strip-charset",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly locates the defective line in clean.py and notes the assertion fails, but its account of the failure is wrong (strip('N/A') removes those characters from both ends yielding 'pple', not 'AN/Apple') and its proposed fix (also using strip) would not make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "chtd-h2a",
+   "task": "h2-dict-mutation-view",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that prune.py mutates the dict while iterating it (causing a RuntimeError: dictionary changed size during iteration) and its final proposed fix—building a filtered dict comprehension—would make check.py work.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "chtd-h2a",
+   "task": "h2-unbound-local",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `total = total + amount` creates a local variable shadowing the module-level total, and the proposed `global total` fix makes check.py pass (albeit slightly misdescribing the outcome as returning 0-based values rather than the UnboundLocalError that actually occurs).\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "chtd-h2a",
+   "task": "h2-class-attr-shared",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer concludes there is no defect, but the shared mutable class attribute `tags` means `first.add_tag('vip')` mutates the class-level list so `second.tags == ['vip']` and the assertion actually fails.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "chtd-h2a",
+   "task": "h2-finally-return",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the `finally: return 0` in guard.py's `parse`, explains that it forces every call to return 0 (so parse('12') != 12 and parse('nope') doesn't raise), and the proposed fix (removing the finally block) would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "chtd-h2a",
+   "task": "h2-min-key-string",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly identifies the defective `min(values, key=str)` in picker.py and proposes a fix (`min(values)`) that would make check.py pass, but its account of the failure is wrong: it claims `smallest([10, 9, 100])` returns 9 and the assertion passes, whereas lexicographic comparison actually returns 10 (since \\\"10\\\" < \\\"100\\\" < \\\"9\\\"), so the assertion fails.\"",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl-h2a",
+   "task": "h2-setdefault-none",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `registry.get(name, []).append(tag)` evaluates to None because `.append` returns None, explains that this makes the assert fail with `{'a': None}`, and proposes working fixes (`+ [tag]` or explicit append) in registry.py.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl-h2a",
+   "task": "h2-re-match",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that re.match anchors the pattern to the start of the string, explains the resulting AssertionError for 'release v1.2', and proposes switching to re.search, which would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl-h2a",
+   "task": "h2-round-half-even",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly diagnoses banker's rounding in half_up and its fix int(value + 0.5) would work, but it misattributes the defect to check.py (the buggy function lives in pricing.py) and its first proposed fix, math.ceil(value - 0.5), would actually return 0 for 0.5 and still fail the assertion.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl-h2a",
+   "task": "h2-join-absolute",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It identifies the leading-slash/os.path.join issue and a workable lstrip fix, but misattributes the defect to check.py and gives an incorrect failure account (os.path.join actually discards /srv/www and returns /img/logo.png, not site_root + url_path[1:]).\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl-h2a",
+   "task": "h2-naive-aware",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly locates the timezone-naive `deadline > datetime.now()` comparison and its proposed fix (`datetime.now(timezone.utc)`) would make check.py pass, but it wrongly attributes the code to check.py rather than deadlines.py and describes the failure as returning False when the actual observed effect is a TypeError from comparing offset-naive and offset-awa",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl-h2a",
+   "task": "h2-floor-toward-negative",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `a // b` floors rather than truncates toward zero, explains that -7 // 2 == -4 fails the check's expectation of -3, and proposes fixes (conditional abs-based division or int(a/b)) that would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl-h2a",
+   "task": "h2-strip-charset",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It identifies clean.py's strip call as faulty, but misstates str.strip as removing the exact substring 'N/A' and proposes fixes that would not make clean_value('AN/Apple') return 'Apple'.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl-h2a",
+   "task": "h2-dict-mutation-view",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies the mutation-during-iteration defect and offers a valid fix, but its account is wrong—`entries.items()` is not a copy and the code raises `RuntimeError: dictionary changed size during iteration` rather than silently deleting all entries and returning `{}`.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl-h2a",
+   "task": "h2-unbound-local",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies the local-vs-module `total` bug and its `global total` fix would make check.py pass, but its account of the observed behavior is wrong: `total = total + amount` raises UnboundLocalError on the first call rather than returning 3 and 4.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl-h2a",
+   "task": "h2-class-attr-shared",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer concludes there is no defect, missing that `tags = []` is a shared class attribute so `first.add_tag('vip')` mutates the list seen by `second`, making the assertion fail.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl-h2a",
+   "task": "h2-finally-return",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the `finally: return 0` in guard.py's `parse` as the defect and accurately explains that it forces every call to return 0, causing parse('12') to fail the assert and suppressing the ValueError for 'nope', so a fix removing the finally return would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl-h2a",
+   "task": "h2-min-key-string",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer concludes there is no defect, wrongly claiming min(values, key=str) coincides with numeric order, when in fact it returns 9 for [10, 9, 100]... wait, actually it returns 9, but for other cases like [9, 10, 100] it returns 100? No—lexicographic: '10' < '100' < '9', so it returns 10, not 9. The fixture's check expects 9, so min(key=str) returns 10 and the asser",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl1-h2a",
+   "task": "h2-setdefault-none",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly fingers the `registry[name] = registry.get(name, []).append(tag)` line and offers a fix that would make check.py pass, but its account of the failure is wrong: `list.append` returns `None`, so `registry` becomes `{'a': None}` and the assertion on line 5 fails immediately, not merely on a hypothetical second call.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl1-h2a",
+   "task": "h2-re-match",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that re.match anchors at the start of the string so 'release v1.2' fails to match, and its proposed fix of searching for the substring (re.search) would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl1-h2a",
+   "task": "h2-round-half-even",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"It correctly identifies that pricing.py's `round(value)` uses banker's rounding (so 0.5→0 and 2.5→2), failing check.py's assertions, and proposes math.floor(x+0.5) which would make the tests pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl1-h2a",
+   "task": "h2-join-absolute",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer concludes the function is correct as written and that the assertion would pass, whereas os.path.join with the absolute second argument actually returns '/img/logo.png' and the check fails.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl1-h2a",
+   "task": "h2-naive-aware",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"It correctly identifies the naive-vs-aware datetime comparison in deadlines.py (which actually raises TypeError) and its proposed fix using datetime.now(timezone.utc) would make check.py work.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl1-h2a",
+   "task": "h2-floor-toward-negative",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `//` floors toward negative infinity rather than truncating toward zero, explains that `truncated_ratio(-7, 2)` returns -4 causing the assertion to fail, and proposes fixes (math.trunc(a/b) or sign handling) that would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl1-h2a",
+   "task": "h2-strip-charset",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly zeroes in on `clean_value`'s misuse of `str.strip`, but its account is wrong (strip treats 'N/A' as a character set and would yield 'pple', not 'N/Apple'), and its proposed fix won't make check.py pass since 'AN/Apple' does not start with 'N/A'.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl1-h2a",
+   "task": "h2-dict-mutation-view",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly locates prune.py but attributes the bug to in-place mutation of the caller's dict (which nothing in check.py actually relies on), missing the real defect that deleting from the dict inside `for key, expires in entries.items()` raises RuntimeError: dictionary changed size during iteration.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl1-h2a",
+   "task": "h2-unbound-local",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly identifies the local-scoping issue on `total = total + amount`, but its account of the failure is wrong (the code raises UnboundLocalError rather than printing 3 then 4) and its proposed fix `total += amount` would still fail since it never declares `global total`.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl1-h2a",
+   "task": "h2-class-attr-shared",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the shared mutable class attribute `tags = []`, explains that `first.add_tag('vip')` mutates the class-wide list causing `second.tags` to be `['vip']` and the assertion to fail, and proposes an instance-attribute fix that would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl1-h2a",
+   "task": "h2-finally-return",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies the `finally: return 0` that swallows the exception and return value, but misattributes it to check.py and invents a nonexistent mechanism whereby check.py overrides guard.py's parse, so the fix is misdirected at the wrong file.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "ctrl1-h2a",
+   "task": "h2-min-key-string",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly points at `min(values, key=str)` and proposes the right fix, but its account is wrong: string comparison returns 100, not 9, so the assertion actually fails.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v4-h2a",
+   "task": "h2-setdefault-none",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that registry.get(name, []).append(tag) stores None because append returns None, matching the observed failure, and its primary fix `registry.get(name, []) + [tag]` makes check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v4-h2a",
+   "task": "h2-re-match",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"It correctly identifies that re.match anchors the pattern at the string start so 'release v1.2' fails the assertion, and the proposed re.search fix would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v4-h2a",
+   "task": "h2-round-half-even",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer wrongly asserts that Python's round() rounds halves up and blames the assertion's comma-expression in check.py, whereas the actual defect is that half_up uses round(), which uses banker's rounding and returns 0 for 0.5 and 2 for 2.5, failing check.py.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v4-h2a",
+   "task": "h2-join-absolute",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer wrongly blames check.py and claims asset_path returns '/srv/www/img/logo.png', but os.path.join discards the first path when the second is absolute, so the actual defect is in assets.py and check.py fails.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v4-h2a",
+   "task": "h2-naive-aware",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies the naive-vs-aware datetime comparison and proposes the right fix, but its explanation that Python localizes the naive datetime and returns False is wrong; the actual call raises a TypeError.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v4-h2a",
+   "task": "h2-floor-toward-negative",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `a // b` floors (-7 // 2 == -4) rather than truncating toward zero, explains why check.py fails, and proposes fixes (int(a/b) or sign-aware division) that yield -3.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v4-h2a",
+   "task": "h2-strip-charset",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly points to clean.py's marker handling, but its account is wrong because strip('N/A') returns 'pple' rather than leaving the string unchanged, and its proposed strip('AN/') fix would not make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v4-h2a",
+   "task": "h2-dict-mutation-view",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies in-place deletion during iteration in prune.py and offers fixes that would work, but its account of the failure is wrong: it claims entries are silently skipped and a smaller dict is returned, when in reality the code raises RuntimeError: dictionary changed size during iteration, so the observed failure is not explained.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v4-h2a",
+   "task": "h2-unbound-local",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly identifies the UnboundLocalError from assigning to `total` without `global`, but its proposed fix uses `nonlocal`, which is invalid for a module-level global and would raise a SyntaxError, so check.py would still fail.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v4-h2a",
+   "task": "h2-class-attr-shared",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `Account.tags` is a class-level mutable list shared across instances, explains the assertion failure in check.py, and proposes moving `tags` into `__init__`, which would make the test pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v4-h2a",
+   "task": "h2-finally-return",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"It correctly identifies the `return 0` in the `finally` clause as the defect and its fix (removing it) makes check.py pass, correctly explaining that parse('12') returns 0; its muddled claim that parse('nope') raises ValueError is a minor mis-statement since it also correctly notes the exception is suppressed.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v4-h2a",
+   "task": "h2-min-key-string",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies `min(values, key=str)` as comparing string representations, notes it returns 10 instead of 9 for the test input, and proposes removing the key (or `key=lambda x: x`) which would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2a",
+   "task": "h2-setdefault-none",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `registry.get(name, []).append(tag)` assigns `None` to the key instead of the list, and its proposed fix correctly makes `check.py` pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2a",
+   "task": "h2-re-match",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that validate.py's re.match anchors the pattern to the start of the string, so 'release v1.2' fails to match, and the proposed re.search fix would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2a",
+   "task": "h2-round-half-even",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `half_up` uses `round`, which applies banker's rounding, causing the two assertions to fail, and proposes a fix that makes `check.py` pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2a",
+   "task": "h2-join-absolute",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies os.path.join and the leading slash as the issue and proposes a fix that would make check.py pass, but its account of the failure is wrong: os.path.join('/srv/www', '/img/logo.png') returns '/img/logo.png', not '/srv/www//img/logo.png'.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2a",
+   "task": "h2-naive-aware",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the naive-vs-aware datetime comparison in `is_pending` as the defect and proposes `datetime.now(timezone.utc)`, which would make check.py pass; misnaming the raised exception is only a minor mis-statement of the failure mode.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2a",
+   "task": "h2-floor-toward-negative",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies `a // b` in ratios.py as the defect (floor division truncates toward negative infinity, giving -4 for -7//2 instead of the expected -3), and its proposed fix `math.trunc(a / b)`/`int(a / b)` would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2a",
+   "task": "h2-strip-charset",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies `str.strip('N/A')` as the flawed line and explains strip removes characters from both ends rather than a prefix, but its stated result ('N/Apple') is wrong (the actual output is 'pple'), and the proposed fix would not make check.py pass since 'AN/Apple' does not start with 'N/A' and text[2:] drops the wrong number of characters.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2a",
+   "task": "h2-dict-mutation-view",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly identifies the delete-during-iteration mutation in `drop_expired` and gives valid fixes, but its account of the failure (silent key-skipping, with examples that it says come out correct) is wrong — in Python 3 the loop raises `RuntimeError: dictionary changed size during iteration` on the first deletion, which is the actual observed failure it neve",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2a",
+   "task": "h2-unbound-local",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies the shadowing assignment in bump(), but its account is wrong (it claims bump returns the amount when the code actually raises UnboundLocalError on the unbound local total) and its suggested fixes are invalid/hedged (counter is not imported in counter.py).\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2a",
+   "task": "h2-class-attr-shared",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the class-level mutable `tags = []` shared across instances, explains that `first.add_tag('vip')` mutates the shared list causing the assert to fail, and proposes a valid fix (instance attribute initialized in `__init__`).\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2a",
+   "task": "h2-finally-return",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the `return 0` in the `finally` block as the defect, accurately explains that it suppresses the parsed value and the ValueError (so check.py's assert and try/except both fail), and proposes removing it to fix check.py.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2a",
+   "task": "h2-min-key-string",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies `min(values, key=str)` as the defective line and its fix (`min(values)`) would make check.py pass, but its account of the observed failure is wrong: lexicographic min of '10','9','100' is '10', so smallest([10, 9, 100]) returns 10 (not \\\"9 by coincidence\\\") and the assertion fails, which the answer fails to explain.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5b-h2a",
+   "task": "h2-setdefault-none",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `list.append()` returns `None`, so `registry[name]` is set to `None` instead of the tag list, and its proposed fix (append to the list then assign that list back) would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5b-h2a",
+   "task": "h2-re-match",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"It correctly identifies that re.match only anchors at the string start, so has_version('release v1.2') returns False and the assert fails, and the proposed re.search fix would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5b-h2a",
+   "task": "h2-round-half-even",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `half_up` uses `round()`, which applies banker's rounding (round(0.5)=0, round(2.5)=2), explains why both assertions fail, and proposes fixes (math.floor(value+0.5) or Decimal ROUND_HALF_UP) that would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5b-h2a",
+   "task": "h2-join-absolute",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly locates the defect at the leading slash in url_path and its lstrip('/') fix would make check.py pass, but its account of the mechanism is inverted — os.path.join('/srv/www', '/img/logo.png') returns '/img/logo.png' (the later absolute component wins), not '/srv/www' as claimed, so the stated failure mode does not match what the code actually does.\"",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5b-h2a",
+   "task": "h2-naive-aware",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It identifies the right root cause (naive vs. aware datetime comparison) and the fix (datetime.now(timezone.utc)) would make check.py pass, but it misattributes the function to check.py rather than deadlines.py and claims the call silently returns False, whereas the code actually raises TypeError for comparing offset-naive and offset-aware datetimes.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5b-h2a",
+   "task": "h2-floor-toward-negative",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies `a // b` (floor division) as the defect, accurately explains it returns -4 instead of -3 for (-7, 2), and the proposed fixes (conditional or math.trunc) would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5b-h2a",
+   "task": "h2-strip-charset",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies clean.py's str.strip misuse, but misstates the actual output ('pple', not 'N/Apple') and its proposed fix (checking for 'N/A') would not make the assertion pass for input 'AN/Apple'.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5b-h2a",
+   "task": "h2-dict-mutation-view",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the defective loop in prune.py that mutates the dict during iteration (raising RuntimeError: dictionary changed size during iteration) and proposes a list-copy/comprehension fix that would make check.py run correctly, even though its trace of the specific input's output is off.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5b-h2a",
+   "task": "h2-unbound-local",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly identifies the `total = total + amount` line, but its account is wrong—the code raises `UnboundLocalError` rather than silently keeping `total` unchanged—and the proposed fix `counter.total += amount` would also fail inside counter.py without importing or referencing the module.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5b-h2a",
+   "task": "h2-class-attr-shared",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the shared mutable class attribute `tags = []` as the defect, explains that `add_tag` mutates the list shared by all instances so `second.tags` becomes `['vip']` and the assertion fails, and proposes an `__init__` instance attribute fix that would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5b-h2a",
+   "task": "h2-finally-return",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the `return 0` in the `finally` block as the defect, notes it makes `parse('12')` return 0 and suppresses the ValueError for bad input, and its proposed fix (removing the return) would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5b-h2a",
+   "task": "h2-min-key-string",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies `min(values, key=str)` in picker.py and the fix `min(values)` would pass, but its account of the actual failure is wrong: `min([10, 9, 100], key=str)` returns 10 (since '10' < '100' < '9' lexicographically), not 9 by coincidence, which is exactly the assertion failure in check.py.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2b",
+   "task": "h2-setdefault-none",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `registry[name] = registry.get(name, []).append(tag)` stores None because list.append returns None, and its proposed fix (capture the list, append, assign back) would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2b",
+   "task": "h2-re-match",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `re.match` anchors at the start of the string so `has_version('release v1.2')` returns False, and the proposed `re.search` fix would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2b",
+   "task": "h2-round-half-even",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that half_up returns round(value), which uses banker's rounding so half_up(0.5)==0 and half_up(2.5)==2, failing check.py, and proposes math.floor(value+0.5) which would make both asserts pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2b",
+   "task": "h2-join-absolute",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"The answer correctly locates the defect (unescaped leading slash on url_path in asset_path) and its proposed lstrip('/') fix would make check.py pass, but its account of the failure is inverted — it claims os.path.join('/srv/www', '/img/logo.png') returns '/srv/www' when it actually returns '/img/logo.png', so the explanation does not match the observed output.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2b",
+   "task": "h2-naive-aware",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"It correctly identifies the tz-aware vs naive datetime comparison in deadlines.py and proposes adding timezone.utc to datetime.now(), which would make check.py pass (the garbled exception name is a minor mis-statement).\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2b",
+   "task": "h2-floor-toward-negative",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies `a // b` as floor division returning -4 for (-7, 2), matching the assertion failure, and its proposed fixes (sign-aware division or math.trunc) would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2b",
+   "task": "h2-strip-charset",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies clean.py's str.strip misuse and proposes a fix that would pass, but its stated failure mode is wrong: clean_value('AN/Apple') returns 'pple', not 'AN/Apple', because strip removes the leading 'A' character as well.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2b",
+   "task": "h2-dict-mutation-view",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies the dict-mutation-during-iteration defect and proposes valid fixes, but its account of check.py wrongly says it prints {'b': 5} instead of raising RuntimeError as it actually does.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2b",
+   "task": "h2-unbound-local",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly locates the shadowing assignment in bump(), but claims the function silently returns amount rather than raising UnboundLocalError, and its proposed fix (`counter.total += amount`, or repeating the same plain assignment) would still fail since the outer name is never declared global.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2b",
+   "task": "h2-class-attr-shared",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the shared mutable class-level `tags = []` as the defect, accurately explains that `first.add_tag('vip')` mutates the shared list so `second.tags` becomes `['vip']` and the assert fails, and proposes an instance-attribute fix (`self.tags = []` in `__init__`) that would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2b",
+   "task": "h2-finally-return",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the `finally: return 0` in `guard.py` as the defect, explains that it makes `parse` always return 0 (breaking the `parse('12') == 12` assertion and suppressing the ValueError on bad input), and its proposed fix of removing the `return` from `finally` would make check.py pass.\"}",
+   "passed_gate": null
+  },
+  {
+   "set": "h2",
+   "arm": "v5-h2b",
+   "task": "h2-min-key-string",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies `min(values, key=str)` and proposes the right fix (`min(values)`), but its account of the failure is wrong for the fixture: it claims the test returns 9 by luck, whereas lexicographic min actually returns 10 and fails check.py.\"}",
+   "passed_gate": null
+  }
+ ]
+}
