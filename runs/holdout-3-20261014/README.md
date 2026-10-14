@@ -255,9 +255,11 @@ reader, contestable at the C/P boundary, and five arms read from tails rather th
    and the teacher-own arms lead (21, 25), with v5 at 21. Neither reading supports a claim about
    the CHTD-specific ingredient; what survives is that *some* fine-tunes on *some* data shapes
    beat the base by a few tasks.
-4. **The h1/h2 +2–3 task advantage still does not replicate on 30 fresh tasks** — and the third
-   pass is a further reason not to lean on the h1/h2 numbers either: they were read before this
-   batch's lesson about unread passes, and the lesson is not specific to h3.
+4. **The h1/h2 +2–3 task advantage still does not replicate on 30 fresh tasks** — and the
+   lesson here applies to how much weight their *gate* columns can carry. The h1/h2 answer reads
+   were full reads under this record's rubric, not failure-only passes, so they are not retracted
+   here; what this pass shows is that any set scored by phrase matching alone inherits the
+   defect-denial blind spot unless its tasks refuse denials, which h1/h2's do not yet.
 
 **Does not establish.** Any reason to prefer student-state data over teacher-own at this scale, in
 either direction — or the reverse. The design still cannot separate data source from supervision
