@@ -7,9 +7,14 @@ few hundred. This script is the measured middle path: a model grades every cell 
 humans read only the cells where it disagrees with them.
 
 Measured on 2026-10-14 (deepseek-flash, 74-cell human-agreed panel): 85% three-way / 89% binary
-agreement, against 84% between the two human readers themselves. See
-`data/holdout-3-20261014/llm-judge-deepseek-flash.json` for the pilot, its per-cell detail, and
-the third-vote split on human-disagreement cells.
+agreement counting the two unparsed cells as misses; over the 72 parsed cells the same run reads
+87.5% / 91.7%. Both denominators are printed below — quote the /all form when the question is
+"can this replace a human read" (an unparsed cell still needs one), the /graded form when it is
+"when it does answer, how often is it right". Note the panel is a *selected* subset
+(two-reader-agreed cells, from three of the seven arms), so 85% is an upper bound on fresh cells,
+not an expectation; a fresh-cell gate (two blind readers on 30–40 new cells) is the missing
+validation. See `runs/holdout-3-20261014/llm-judge-pilot-20261014.json` for the pilot, its
+per-cell detail, and the third-vote split on human-disagreement cells.
 
 Two operational facts baked in below, both measured:
   * the judge must be given room to think — at max_tokens 1200 a reasoning model returned empty
@@ -132,8 +137,14 @@ def main() -> int:
         "model": model,
         "n": len(rows),
         "graded": len(graded),
-        "three_way_agreement": f"{agree}/{len(graded)}" if graded else "0/0",
-        "binary_agreement": f"{binary}/{len(graded)}" if graded else "0/0",
+        "unparsed": len(rows) - len(graded),
+        # Two denominators on purpose (flagged in the 2026-10-14 review): /all counts unparsed
+        # cells as misses — the honest number for "can this replace a human read"; /graded is
+        # conditional on the model producing an answer.
+        "three_way_agreement_all": f"{agree}/{len(rows)}" if rows else "0/0",
+        "binary_agreement_all": f"{binary}/{len(rows)}" if rows else "0/0",
+        "three_way_agreement_graded": f"{agree}/{len(graded)}" if graded else "0/0",
+        "binary_agreement_graded": f"{binary}/{len(graded)}" if graded else "0/0",
         "seconds": round(time.time() - began, 1),
     }
     args.out.write_text(json.dumps({"summary": summary, "cells": rows},
