@@ -1,0 +1,157 @@
+{
+  "label": "chtd-seed0-h3a",
+  "passed": 26,
+  "total": 30,
+  "results": [
+    {
+      "task_id": "h3-counter-most-common",
+      "passed": true,
+      "note": "answer names every expected phrase: ['most_common|tuple|pair|list', 'index|unpack|element|first|\\\\[0\\\\]']"
+    },
+    {
+      "task_id": "h3-dict-keys-index",
+      "passed": true,
+      "note": "answer names every expected phrase: ['view|dict_keys|subscript|not subscriptable', 'list|convert|index|iterat']"
+    },
+    {
+      "task_id": "h3-chained-comparison",
+      "passed": true,
+      "note": "answer names every expected phrase: ['chain|comparison|operator|middle', 'and|wrong direction|third|high']"
+    },
+    {
+      "task_id": "h3-is-vs-equals",
+      "passed": true,
+      "note": "answer names every expected phrase: ['is|identity|intern|cache', '==|equal|value|object']"
+    },
+    {
+      "task_id": "h3-copy-not-deep",
+      "passed": true,
+      "note": "answer names every expected phrase: ['shallow|copy.copy|nested|shared', 'deepcopy|same list|inner|deep']"
+    },
+    {
+      "task_id": "h3-format-missing-key",
+      "passed": true,
+      "note": "answer names every expected phrase: ['missing|KeyError|key|absent', 'default|get|unknown|fill']"
+    },
+    {
+      "task_id": "h3-join-nonstring",
+      "passed": true,
+      "note": "answer names every expected phrase: ['join|non.?string|int|str', 'map|convert|str\\\\(|stringify']"
+    },
+    {
+      "task_id": "h3-slice-negative-step",
+      "passed": true,
+      "note": "answer names every expected phrase: ['slice|step|negative|reverse', 'order|reversed|direction']"
+    },
+    {
+      "task_id": "h3-sorted-descending",
+      "passed": true,
+      "note": "answer names every expected phrase: ['descending|reverse|direction|order', 'score|key|negat|sort']"
+    },
+    {
+      "task_id": "h3-divmod-order",
+      "passed": false,
+      "note": "answer does not name: ['swap|reversed|first|second']\nanswer was: \"i've reviewed `check.py`. it imports the `split` function from `change.py` and makes an assertion that `split(17, 5)` returns `(3, 2)`. this is correct because:\\n\\n- `17` divided by `5` is `3` with a remainder of `2` (since `5 * 3 = 1"
+    },
+    {
+      "task_id": "h3-string-count-overlap",
+      "passed": false,
+      "note": "answer does not name: ['each position|sliding|by one|window']\nanswer was: 'let\\'s analyze the two files together.\\n\\n### `repeats.py`\\nthe `count_pairs` function is straightforward: it returns the number of non-overlapping occurrences of the substring `\"aa\"` in the input `text` using the built-in `c"
+    },
+    {
+      "task_id": "h3-list-index-raises",
+      "passed": true,
+      "note": "answer names every expected phrase: ['index|ValueError|raise|exception', '-1|try|except|absent|not in']"
+    },
+    {
+      "task_id": "h3-all-vs-any",
+      "passed": true,
+      "note": "answer names every expected phrase: ['all|any|quantifier|every', 'empty|role|vacuous|none']"
+    },
+    {
+      "task_id": "h3-set-sorted-order",
+      "passed": false,
+      "note": "answer does not name: ['dict.fromkeys|original order|insertion']\nanswer was: 'let\\'s analyze the two files:\\n\\n1. `check.py`:\\n   - it imports a function `unique_first` from `dedupe`.\\n   - it runs an assertion: `unique_first([\"b\", \"a\", \"b\"]) == [\"b\", \"a\"]`.\\n   - if the assertion passes, it prints "
+    },
+    {
+      "task_id": "h3-first-entry-sorted",
+      "passed": true,
+      "note": "answer names every expected phrase: ['insertion|order|added first|sorted', 'dict|alphabet|key order|first']"
+    },
+    {
+      "task_id": "h3-enum-not-str",
+      "passed": true,
+      "note": "answer names every expected phrase: ['value|\\\\.value', 'enum|member|str|concatenat']"
+    },
+    {
+      "task_id": "h3-property-no-setter",
+      "passed": false,
+      "note": "answer does not name: ['_celsius|assign|setter|AttributeError']\nanswer was: 'the defect is in the `bump` function in `temperature.py`.\\n\\nthe function modifies the `celsius` property of the `reading` instance by adding `delta` to it, but it returns the value of `reading.celsius` rather than returnin"
+    },
+    {
+      "task_id": "h3-super-init-missing",
+      "passed": true,
+      "note": "answer names every expected phrase: ['super|parent|init', 'not called|missing|inherit|absent']"
+    },
+    {
+      "task_id": "h3-dataclass-eq-false",
+      "passed": true,
+      "note": "answer names every expected phrase: ['eq|equal|identity|dataclass', 'eq=True|compare|value|field']"
+    },
+    {
+      "task_id": "h3-percent-order",
+      "passed": true,
+      "note": "answer names every expected phrase: ['order|precedence|integer division|//', 'multiply|first|100|numerator']"
+    },
+    {
+      "task_id": "h3-partition-index",
+      "passed": true,
+      "note": "answer names every expected phrase: ['partition|tuple|three|index', '\\\\[2\\\\]|third|domain|local']"
+    },
+    {
+      "task_id": "h3-stem-find-vs-rfind",
+      "passed": true,
+      "note": "answer names every expected phrase: ['find|first|rfind|last', 'extension|last dot|\\\\.|suffix']"
+    },
+    {
+      "task_id": "h3-split-unbounded",
+      "passed": true,
+      "note": "answer names every expected phrase: ['maxsplit|limit|too many|unpack', 'split|rest|1|message']"
+    },
+    {
+      "task_id": "h3-column-range",
+      "passed": true,
+      "note": "answer names every expected phrase: ['range|len|column|row', 'grid\\\\[0\\\\]|width|first row|columns']"
+    },
+    {
+      "task_id": "h3-max-empty-raise",
+      "passed": true,
+      "note": "answer names every expected phrase: ['empty|ValueError|max|raise', 'default|guard|None|if']"
+    },
+    {
+      "task_id": "h3-sum-no-start",
+      "passed": true,
+      "note": "answer names every expected phrase: ['sum|start|initial|0', 'join|int|string|\\\\x27\\\\x27|empty string']"
+    },
+    {
+      "task_id": "h3-last-zero",
+      "passed": true,
+      "note": "answer names every expected phrase: ['zero|-0|negative', 'slice|empty|guard|if']"
+    },
+    {
+      "task_id": "h3-cut-bytes-utf8",
+      "passed": true,
+      "note": "answer names every expected phrase: ['byte|utf-8|multibyte|encoding', 'character|boundary|decode|codepoint']"
+    },
+    {
+      "task_id": "h3-capitalize-vs-title",
+      "passed": true,
+      "note": "answer names every expected phrase: ['capitalize|title|each word|every', 'first letter|lower|word']"
+    },
+    {
+      "task_id": "h3-round-returns-float",
+      "passed": true,
+      "note": "answer names every expected phrase: ['int|float|type', 'ndigits|two.?arg|round']"
+    }
+  ]
+}

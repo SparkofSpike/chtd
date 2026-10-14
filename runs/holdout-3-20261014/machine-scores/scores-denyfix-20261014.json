@@ -1,0 +1,920 @@
+{
+  "base": {
+    "as_run": 20,
+    "fixed": 20,
+    "handread_correct": 17,
+    "flipped": [],
+    "cells": {
+      "h3-counter-most-common": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-dict-keys-index": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-chained-comparison": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-is-vs-equals": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-copy-not-deep": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-format-missing-key": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-join-nonstring": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-slice-negative-step": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-sorted-descending": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-divmod-order": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-string-count-overlap": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-list-index-raises": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-all-vs-any": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-set-sorted-order": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-first-entry-sorted": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-enum-not-str": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-property-no-setter": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-super-init-missing": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-dataclass-eq-false": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-percent-order": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-partition-index": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-split-unbounded": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-column-range": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-max-empty-raise": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-sum-no-start": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-last-zero": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-cut-bytes-utf8": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-capitalize-vs-title": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-round-returns-float": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-stem-find-vs-rfind": {
+        "as_run": true,
+        "fixed": true
+      }
+    }
+  },
+  "chtd-s0": {
+    "as_run": 26,
+    "fixed": 23,
+    "handread_correct": 19,
+    "flipped": [
+      "enum-not-str",
+      "join-nonstring",
+      "max-empty-raise"
+    ],
+    "cells": {
+      "h3-counter-most-common": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-dict-keys-index": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-chained-comparison": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-is-vs-equals": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-copy-not-deep": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-format-missing-key": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-join-nonstring": {
+        "as_run": true,
+        "fixed": false
+      },
+      "h3-slice-negative-step": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-sorted-descending": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-divmod-order": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-string-count-overlap": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-list-index-raises": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-all-vs-any": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-set-sorted-order": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-first-entry-sorted": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-enum-not-str": {
+        "as_run": true,
+        "fixed": false
+      },
+      "h3-property-no-setter": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-super-init-missing": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-dataclass-eq-false": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-percent-order": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-partition-index": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-stem-find-vs-rfind": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-split-unbounded": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-column-range": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-max-empty-raise": {
+        "as_run": true,
+        "fixed": false
+      },
+      "h3-sum-no-start": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-last-zero": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-cut-bytes-utf8": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-capitalize-vs-title": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-round-returns-float": {
+        "as_run": true,
+        "fixed": true
+      }
+    }
+  },
+  "chtd-s1": {
+    "as_run": 27,
+    "fixed": 22,
+    "handread_correct": 18,
+    "flipped": [
+      "capitalize-vs-title",
+      "enum-not-str",
+      "join-nonstring",
+      "round-returns-float",
+      "sum-no-start"
+    ],
+    "cells": {
+      "h3-counter-most-common": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-dict-keys-index": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-chained-comparison": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-is-vs-equals": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-copy-not-deep": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-format-missing-key": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-join-nonstring": {
+        "as_run": true,
+        "fixed": false
+      },
+      "h3-slice-negative-step": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-sorted-descending": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-divmod-order": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-string-count-overlap": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-list-index-raises": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-all-vs-any": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-set-sorted-order": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-first-entry-sorted": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-enum-not-str": {
+        "as_run": true,
+        "fixed": false
+      },
+      "h3-property-no-setter": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-super-init-missing": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-dataclass-eq-false": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-percent-order": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-partition-index": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-stem-find-vs-rfind": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-split-unbounded": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-column-range": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-max-empty-raise": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-sum-no-start": {
+        "as_run": true,
+        "fixed": false
+      },
+      "h3-last-zero": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-cut-bytes-utf8": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-capitalize-vs-title": {
+        "as_run": true,
+        "fixed": false
+      },
+      "h3-round-returns-float": {
+        "as_run": true,
+        "fixed": false
+      }
+    }
+  },
+  "chtd-s2": {
+    "as_run": 24,
+    "fixed": 21,
+    "handread_correct": 17,
+    "flipped": [
+      "capitalize-vs-title",
+      "enum-not-str",
+      "list-index-raises",
+      "max-empty-raise"
+    ],
+    "cells": {
+      "h3-counter-most-common": {
+        "as_run": false,
+        "fixed": true
+      },
+      "h3-dict-keys-index": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-chained-comparison": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-is-vs-equals": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-copy-not-deep": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-format-missing-key": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-join-nonstring": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-slice-negative-step": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-sorted-descending": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-divmod-order": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-string-count-overlap": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-list-index-raises": {
+        "as_run": true,
+        "fixed": false
+      },
+      "h3-all-vs-any": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-set-sorted-order": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-first-entry-sorted": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-enum-not-str": {
+        "as_run": true,
+        "fixed": false
+      },
+      "h3-property-no-setter": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-super-init-missing": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-dataclass-eq-false": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-percent-order": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-partition-index": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-stem-find-vs-rfind": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-split-unbounded": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-column-range": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-max-empty-raise": {
+        "as_run": true,
+        "fixed": false
+      },
+      "h3-sum-no-start": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-last-zero": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-cut-bytes-utf8": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-capitalize-vs-title": {
+        "as_run": true,
+        "fixed": false
+      },
+      "h3-round-returns-float": {
+        "as_run": true,
+        "fixed": true
+      }
+    }
+  },
+  "ctrl-s0": {
+    "as_run": 25,
+    "fixed": 22,
+    "handread_correct": 21,
+    "flipped": [
+      "enum-not-str",
+      "join-nonstring",
+      "round-returns-float"
+    ],
+    "cells": {
+      "h3-counter-most-common": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-dict-keys-index": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-chained-comparison": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-is-vs-equals": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-copy-not-deep": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-format-missing-key": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-join-nonstring": {
+        "as_run": true,
+        "fixed": false
+      },
+      "h3-slice-negative-step": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-sorted-descending": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-divmod-order": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-string-count-overlap": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-list-index-raises": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-all-vs-any": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-set-sorted-order": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-first-entry-sorted": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-enum-not-str": {
+        "as_run": true,
+        "fixed": false
+      },
+      "h3-property-no-setter": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-super-init-missing": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-dataclass-eq-false": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-percent-order": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-partition-index": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-stem-find-vs-rfind": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-split-unbounded": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-column-range": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-max-empty-raise": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-sum-no-start": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-last-zero": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-cut-bytes-utf8": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-capitalize-vs-title": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-round-returns-float": {
+        "as_run": true,
+        "fixed": false
+      }
+    }
+  },
+  "ctrl-s1": {
+    "as_run": 23,
+    "fixed": 21,
+    "handread_correct": 25,
+    "flipped": [
+      "enum-not-str",
+      "round-returns-float"
+    ],
+    "cells": {
+      "h3-counter-most-common": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-dict-keys-index": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-chained-comparison": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-is-vs-equals": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-copy-not-deep": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-format-missing-key": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-join-nonstring": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-slice-negative-step": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-sorted-descending": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-divmod-order": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-string-count-overlap": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-list-index-raises": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-all-vs-any": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-set-sorted-order": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-first-entry-sorted": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-enum-not-str": {
+        "as_run": true,
+        "fixed": false
+      },
+      "h3-property-no-setter": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-super-init-missing": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-dataclass-eq-false": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-percent-order": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-partition-index": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-stem-find-vs-rfind": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-split-unbounded": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-column-range": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-max-empty-raise": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-sum-no-start": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-last-zero": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-cut-bytes-utf8": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-capitalize-vs-title": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-round-returns-float": {
+        "as_run": true,
+        "fixed": false
+      }
+    }
+  },
+  "v5": {
+    "as_run": 27,
+    "fixed": 28,
+    "handread_correct": 21,
+    "flipped": [],
+    "cells": {
+      "h3-counter-most-common": {
+        "as_run": false,
+        "fixed": true
+      },
+      "h3-dict-keys-index": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-chained-comparison": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-is-vs-equals": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-copy-not-deep": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-format-missing-key": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-join-nonstring": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-slice-negative-step": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-sorted-descending": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-divmod-order": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-string-count-overlap": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-list-index-raises": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-all-vs-any": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-set-sorted-order": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-first-entry-sorted": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-enum-not-str": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-property-no-setter": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-super-init-missing": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-dataclass-eq-false": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-percent-order": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-partition-index": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-stem-find-vs-rfind": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-split-unbounded": {
+        "as_run": false,
+        "fixed": false
+      },
+      "h3-column-range": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-max-empty-raise": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-sum-no-start": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-last-zero": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-cut-bytes-utf8": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-capitalize-vs-title": {
+        "as_run": true,
+        "fixed": true
+      },
+      "h3-round-returns-float": {
+        "as_run": true,
+        "fixed": true
+      }
+    }
+  }
+}
