@@ -11,7 +11,8 @@ distribution.
 supported in either direction. *Adapted beats base* survives only in a weaker, differently-shaped
 form: by the mechanically fixed gate every adapted arm clears the base (20) by 1–3 tasks except
 v5 (93 rows) by 8, and by a full hand read of all 210 answers the CHTD-specific arms **do not**
-clear it (17–19 against the base's 17) while the teacher-own control arms do (21 and 25). The
+clear it (17–19 against the base's 17; a second reader's blind re-grade of three arms puts them
+at 13–16 against the base's 13) while the teacher-own control arms do (21 and 25). The
 gate-based table this record was built on — base 20, chtd 24–27, ctrl 23–25, v5 27 — is an
 instrument artefact: the phrase gate passes answers that conclude there is no defect, and the
 CHTD arm's answers did that most often.
@@ -197,6 +198,29 @@ asymmetry to watch for: two arms (chtd-seed1, ctrl-seed0) were read from full te
 700-character tails, and more text can only find more errors — the reviewer's independent
 grade of the tails-read arms is the check on that.
 
+**The second reader (added 2026-10-14, after the review).** SpikeBot 003 re-graded three arms
+blind — 90 answers, arm labels stripped, fixtures only, before seeing the ledger — and graded
+**more conservatively than this ledger on all three sets**:
+
+| arm | author | 003, blind | disagreements |
+| --- | ---: | ---: | ---: |
+| base | 17 | **13** | 4 |
+| chtd-seed1 | 18 | **16** | 7 |
+| ctrl-seed1 | 25 | **21** | 5 |
+
+The ordering this record's conclusions rest on survives that read — base lowest, ctrl-seed1
+above chtd-seed1, by a margin (5) larger than any boundary call — and because the reviewer graded
+*down* on all three sets, a uniform bias cannot manufacture it. What does **not** survive is the
+ledger's absolute level: this record's "17–19 correct" for the CHTD arms should be read as
+"13–19 depending on the reader". The reviewer's full comment is on PR #9; its per-cell
+disagreements are enumerated there.
+
+**A known false positive in the deny list.** The denial phrase fires on exactly one cell the
+ledger calls correct: `chtd-seed2 / h3-list-index-raises`, whose answer says "there is no defect
+in the code as written" and then, in the same paragraph, names the `ValueError`. Recorded here so
+future passes do not re-litigate it; scoping the forbid to conclusion-position denials was
+considered and left as a known limitation rather than a fragile new rule.
+
 ## Adjudication, after two reviews
 
 The original spot-check read 36 answers (6 tasks × 6 arms). The adversarial review re-read all of
@@ -248,7 +272,8 @@ reader, contestable at the C/P boundary, and five arms read from tails rather th
    ctrl-seed1, none from base or v5. Any comparison drawn from the as-run gate is a comparison of
    answer styles as much as of models.
 2. **On the corrected instruments the paired comparison is a wash or worse for the student-state
-   arm.** Deny-fixed gate: chtd 21–23 vs ctrl 21–22. Hand read: chtd 17–19 vs ctrl 21 and 25. The
+   arm.** Deny-fixed gate: chtd 21–23 vs ctrl 21–22. Hand read: chtd 17–19 vs ctrl 21 and 25; the
+   blind second read of three arms keeps the ordering (base 13, chtd-seed1 16, ctrl-seed1 21). The
    earlier +2–3 did not just fail to replicate at n=30; on this batch it reads backwards.
 3. **"Adapted beats base" survives only as a weak, mostly teacher-own result.** Deny-fixed gate:
    every adapted arm ≥ base+1, v5 ≥ base+8. Hand read: the CHTD arms tie the base (17–19 vs 17)
@@ -270,7 +295,10 @@ is a measurement gap and the reason its row is stated over 28.
 **What would change this record's mind.** An independent re-grade of `handread-20261014.json`
 that moves the correct/partial boundary enough to restore the CHTD arms' lead — the cells to argue
 about are named, and the tails-read arms (base, chtd-seed0, chtd-seed2, ctrl-seed1, v5) are the
-ones where a fuller read could still find more, not fewer, errors.
+ones where a fuller read could still find more, not fewer, errors. *Answered 2026-10-14*: the
+independent blind re-grade came back more conservative, not more generous — it widened the base's
+distance to the teacher-own arm and kept the ordering. The open item now is the four arms neither
+reader has graded twice (chtd-seed0, chtd-seed2, ctrl-seed0, v5).
 
 ## Files
 
