@@ -177,14 +177,14 @@ def _capabilities_uncached(*, fresh: bool = False) -> dict[str, Any]:
          "base_url": config.LIVE_BASE_URL, "model": config.LIVE_MODEL,
          "credential": teacher_cred, "reachable": None,
          "ready": bool(teacher_cred["ok"]),
-         "note": "hosted API; credential presence is the gate, the network is proven at run time"},
+         "note": "托管 API；有凭据即可用，网络在运行时才真正打通"},
         {"route": "student", "kind": "local",
          "base_url": os.environ.get("CHTD_STUDENT_URL", "http://127.0.0.1:8000"),
          "model": os.environ.get("CHTD_STUDENT_MODEL_ID", "qwen3-4b-instruct-2507"),
          "credential": student_cred, "reachable": bool(student_endpoint["ok"]),
          "endpoint": student_endpoint,
          "ready": bool(student_endpoint["ok"]),
-         "note": "whatever OpenAI-compatible endpoint the operator serves"},
+         "note": "你自己服务的 OpenAI 兼容端点，填在页面「模型配置」里即可"},
     ]
 
     reasons: list[str] = []

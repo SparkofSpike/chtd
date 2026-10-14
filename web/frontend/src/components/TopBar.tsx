@@ -4,11 +4,11 @@ import { api } from '../api/client'
 import type { Health } from '../api/types'
 
 const nav = [
-  { to: '/', label: 'Overview', end: true },
-  { to: '/experiments', label: 'Experiments' },
-  { to: '/arena', label: 'Arena / Replay' },
-  { to: '/live', label: 'Live' },
-  { to: '/reproduce', label: 'Reproduce' },
+  { to: '/', label: '概览', end: true },
+  { to: '/experiments', label: '实验数据' },
+  { to: '/arena', label: '并排回放' },
+  { to: '/live', label: '在线运行' },
+  { to: '/reproduce', label: '复现' },
 ]
 
 function Dot({ ok }: { ok: boolean | undefined }) {
@@ -54,9 +54,7 @@ export default function TopBar() {
         <div className="mr-2">
           <div className="text-sm font-semibold text-ink">
             CHTD
-            <span className="ml-2 text-xs font-normal text-ink-dim">
-              Co-Harness Targeted Distillation
-            </span>
+            <span className="ml-2 text-xs font-normal text-ink-dim">同轨定向蒸馏</span>
           </div>
         </div>
 
@@ -69,7 +67,7 @@ export default function TopBar() {
           }`}
         >
           <Dot ok={mode === 'live' ? true : undefined} />
-          {mode === 'live' ? 'Live' : 'Replay'}
+          {mode === 'live' ? '可在线运行' : '仅回放'}
         </span>
 
         {/* 路由健康灯 */}

@@ -116,7 +116,7 @@ export default function Experiments() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold text-ink">Experiments Dashboard（全真实数据）</h1>
+      <h1 className="text-xl font-semibold text-ink">实验数据（全部来自真实记录）</h1>
       <p className="text-sm text-ink-dim">
         图表数据来自后端导出的真实 ledger（<span className="mono">/api/experiments/&lt;name&gt;</span>）。
       </p>

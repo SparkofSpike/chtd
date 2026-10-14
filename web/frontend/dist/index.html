@@ -4,12 +4,53 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="dark" />
-    <meta name="description" content="CHTD（Co-Harness Targeted Distillation）演示端：真实轨迹回放与在线运行。" />
+    <meta name="description" content="CHTD（同轨定向蒸馏）演示端：真实轨迹回放与在线运行。" />
     <!-- 声明图标。不声明的话浏览器会去要 /favicon.ico，而后端的 SPA 兜底会把 index.html
          当成图标返回，控制台里每次导航都会多一条解码失败。 -->
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <title>CHTD · Co-Harness Targeted Distillation</title>
-    <script type="module" crossorigin src="./assets/index-X5acpea7.js"></script>
+    <title>CHTD 演示端 · 同轨定向蒸馏</title>
+    <script>
+      // 每次构建都会给资源换一个新的内容哈希，于是浏览器手上那份**旧的** index.html 会去要
+      // 已经不存在的老文件。样式表拿不到不是"降级"而是"散架"：页面照样渲染，但所有栅格、
+      // 间距、配色一起消失，正文全叠在一起 —— 观众看到的是一堆挤成一团的字。
+      //
+      // 服务端已经给 index.html 加了 no-cache，所以这只会发生一次：缓存在此之前的那一份。
+      // 这段脚本负责把那一次也接住 —— 资源加载失败就带一个一次性参数重载，取回新的
+      // index.html；只重载一次，免得真的缺文件时把页面转进死循环。
+      (function () {
+        var KEY = 'chtd:asset-reload'
+        function reloadOnce() {
+          try {
+            if (sessionStorage.getItem(KEY)) return
+            sessionStorage.setItem(KEY, '1')
+          } catch (e) {
+            /* 隐私模式下 sessionStorage 不可用：仍然重载，只是防不住循环 */
+          }
+          var url = new URL(location.href)
+          url.searchParams.set('_r', String(Date.now()))
+          location.replace(url.toString())
+        }
+        // 样式表：加载失败会在 window 上以捕获阶段派发 error。
+        addEventListener(
+          'error',
+          function (event) {
+            var el = event.target
+            if (!el || el.tagName !== 'LINK') return
+            if (String(el.rel || '').toLowerCase().indexOf('stylesheet') < 0) return
+            reloadOnce()
+          },
+          true,
+        )
+        // 脚本：它 404 的时候页面连 React 都挂不上，只剩一个空的 #root，没有 error 事件可听。
+        addEventListener('load', function () {
+          setTimeout(function () {
+            var root = document.getElementById('root')
+            if (root && root.childElementCount === 0) reloadOnce()
+          }, 1200)
+        })
+      })()
+    </script>
+    <script type="module" crossorigin src="./assets/index-CfMsrDCA.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-BL769I1j.css">
   </head>
   <body>

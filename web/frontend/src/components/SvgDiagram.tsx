@@ -38,7 +38,8 @@ export default function SvgDiagram() {
       <text x="160" y="198" textAnchor="middle" fill="#64748b" fontSize="11">
         唯一变量：模型
       </text>
-      <rect x="70" y="220" width="180" height="34" rx="6" fill="#141a26" stroke="#1f2735" />
+      {/* 框比字窄的话字会溢出到框外，看着像排版错位；宽度按最长那行留足。 */}
+      <rect x="40" y="220" width="240" height="34" rx="6" fill="#141a26" stroke="#1f2735" />
       <text x="160" y="241" textAnchor="middle" fill="#9aa7b8" fontSize="11">
         append-only ledger 逐 step 可比
       </text>
@@ -56,17 +57,23 @@ export default function SvgDiagram() {
       <circle cx="470" cy="110" r="5" fill="#fbbf24" />
       <text x="478" y="100" fill="#fbbf24" fontSize="10">fork</text>
       {/* teacher dropped in */}
+      {/* 两条分叉的标签放在各自箭头上下、面板之内。之前贴着箭头末端从 x=616 起排，
+          文字直接压到 ③ 面板的指标框上（“teacher 决” 后面被遮挡）。 */}
       <line x1="470" y1="110" x2="610" y2="80" stroke="#38bdf8" strokeWidth="2" strokeDasharray="4 3" markerEnd="url(#arrow)" />
       <line x1="470" y1="110" x2="610" y2="140" stroke="#22d3ee" strokeWidth="2" strokeDasharray="4 3" markerEnd="url(#arrow)" />
-      <text x="616" y="82" fill="#38bdf8" fontSize="10">teacher 决策=label</text>
-      <text x="616" y="142" fill="#22d3ee" fontSize="10">student 实际状态</text>
+      <text x="545" y="68" textAnchor="middle" fill="#38bdf8" fontSize="10">
+        teacher 决策=label
+      </text>
+      <text x="545" y="160" textAnchor="middle" fill="#22d3ee" fontSize="10">
+        student 实际状态
+      </text>
       <text x="480" y="190" textAnchor="middle" fill="#64748b" fontSize="11">
         在 student 到达的状态处分叉
       </text>
       <text x="480" y="208" textAnchor="middle" fill="#64748b" fontSize="11">
         分歧处 teacher 决策成为监督信号
       </text>
-      <rect x="380" y="225" width="200" height="30" rx="6" fill="#141a26" stroke="#1f2735" />
+      <rect x="330" y="225" width="300" height="30" rx="6" fill="#141a26" stroke="#1f2735" />
       <text x="480" y="244" textAnchor="middle" fill="#9aa7b8" fontSize="11">
         监督落在需要帮助的状态，而非 teacher 舒适区
       </text>

@@ -50,7 +50,7 @@ const blocks: { title: string; lines: string[]; note?: string }[] = [
 export default function Reproduce() {
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold text-ink">Reproduce</h1>
+      <h1 className="text-xl font-semibold text-ink">复现</h1>
       <p className="text-sm leading-relaxed text-ink-dim">
         原始会话、权重与云端数据在 <span className="mono">/mnt/proj/chtd-experiments/</span>
         （见 <span className="mono">docs/cloud-storage.md</span>）。Replay 形态

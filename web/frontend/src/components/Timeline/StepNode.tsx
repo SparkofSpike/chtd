@@ -93,7 +93,7 @@ export default function StepNode({ step, isLast }: Props) {
                   }`}
                 >
                   <div className="mono text-ink-faint">
-                    {c.result.isError ? 'ERROR' : 'RESULT'}
+                    {c.result.isError ? '错误' : '返回'}
                   </div>
                   <pre className="whitespace-pre-wrap break-words">
                     {expanded ? c.result.content : truncate(c.result.content, 320)}

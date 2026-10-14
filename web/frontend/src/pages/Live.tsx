@@ -253,7 +253,7 @@ export default function Live() {
     <div className="space-y-4">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-ink">Live：真实运行</h1>
+          <h1 className="text-xl font-semibold text-ink">在线运行：真的在跑，不是录像</h1>
           <p className="mt-1 text-sm text-ink-dim">
             在这里跑的每一次都由 AGH 真实执行 —— 模型自己读文件、调工具、给结论，
             再由项目自己的判分器打分。轨迹随运行实时出现。

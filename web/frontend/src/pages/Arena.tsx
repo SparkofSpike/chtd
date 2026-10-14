@@ -138,7 +138,7 @@ export default function Arena() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold text-ink">Arena / Replay：同题并排回放</h1>
+      <h1 className="text-xl font-semibold text-ink">并排回放：同一道题，两条轨迹</h1>
       <p className="text-sm text-ink-dim">
         两侧是<strong className="text-ink">同一条冻结轨道</strong>上的两次真实运行，唯一变量是模型 ——
         轨迹、工具调用与判定均逐事件取自 AGH 账本，未改写。
@@ -246,7 +246,7 @@ export default function Arena() {
                 {s?.seconds != null && <span className="mono text-xs text-ink-faint">{s.seconds}s</span>}
                 {s?.track_sha256 && (
                   <span className="mono text-xs text-ink-faint" title={s.track_sha256}>
-                    track {truncateHash(s.track_sha256)}
+                    轨道 {truncateHash(s.track_sha256)}
                   </span>
                 )}
                 {s?.model_settings?.[0] && (
