@@ -2,7 +2,7 @@
 
 **Teacher and student LLMs share one harness and run the same task loop, so the teacher's agentic capability is targetedly distilled into the student while distractors unrelated to that capability are automatically stripped.**
 
-Status: design stage · built on [Agnes Harness](https://github.com/AgnesAI-Labs/agnes-harness)
+Status: experiments complete (2026-10-14) — the method, the measurements and the negative result are summarised in [docs/findings-20261014.md](docs/findings-20261014.md); built on [Agnes Harness](https://github.com/AgnesAI-Labs/agnes-harness)
 
 ---
 
@@ -64,9 +64,11 @@ The harness is therefore not merely a container for the experiment; it is the in
 harness/   The frozen track, its freeze gate, the Profile, and rollout collection
 packages/  The frozen track delivered as a package the harness can install
 distill/   Dataset construction, the signal-quality gate, SFT sample building, and LoRA training
-eval/      Co-harness evaluation, the arm comparison and distractor analysis
+eval/      Co-harness evaluation, the arm comparison, the instrument benchmarks and the power analysis
 tests/     The pipeline's tests — real ledgers, no model, no GPU, no network
-docs/      Design, method and experiment plan
+docs/      Design, method, experiment plan, and the findings write-up
+runs/      Per-run records: what was run, what it measured, and what it cannot support
+reports/   Audits of individual batches (e.g. the collaborator-run holdout-4)
 data/      Generated artifacts (not tracked)
 ```
 
@@ -94,6 +96,16 @@ optimizer step: the tuned student's answer is wrong in the same way the untuned 
 is a smoke test, and what would have to happen to get a real one — a task set whose failures are
 legible, tasks with more steps, and throttled collection against a rate limit — is set out with its
 arithmetic in [docs/finetune.md](docs/finetune.md).
+
+**The full programme has since run, and it is written up.** Three fresh held-out sets (15, 30 and
+48 tasks), up to three training seeds per arm, every answer in the record batch hand-read, the
+phrase gate benchmarked against two human readers, and an LLM judge piloted and gated. The result
+is a negative one with a measured reason: at nine student-state rows the paired contrast the design
+exists to test is not distinguishable at 30 tasks (0–3 pp against a 26.6 pp detection floor), and
+the fine-tunes' instability — across seeds and across a prompt change — is itself a reproduced
+finding, rooted in `last` supervision teaching the final answer but never the exploration policy.
+The single entry point, with what the evidence supports and what it does not, is
+[docs/findings-20261014.md](docs/findings-20261014.md).
 
 ## License
 
