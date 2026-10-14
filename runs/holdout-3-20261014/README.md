@@ -6,11 +6,15 @@ there is 7–8 points. This run answers both questions on **30 new tasks nobody 
 student-state arm trained at **three seeds** — the missing piece that turns a single number into a
 distribution.
 
-**The result, stated first.** *Adapted beats base* holds, but smaller than this record first
-claimed: by hand read the gap is **1 to 5 tasks** (base 22, arms 23–27), not the "3-to-7" written
-at first pass — see the revision note below. *Student-state beats teacher-own* **does not
-replicate**: the two arms' seed ranges overlap and their means differ by ~1.7 tasks, which is
-smaller than the student-state arm's own seed spread. The earlier +2–3 was consistent with noise.
+**The result, stated first.** Under the corrected instruments (third pass, below), this batch
+**does not support either claim it was built to test**. *Student-state beats teacher-own* is not
+supported in either direction. *Adapted beats base* survives only in a weaker, differently-shaped
+form: by the mechanically fixed gate every adapted arm clears the base (20) by 1–3 tasks except
+v5 (93 rows) by 8, and by a full hand read of all 210 answers the CHTD-specific arms **do not**
+clear it (17–19 against the base's 17) while the teacher-own control arms do (21 and 25). The
+gate-based table this record was built on — base 20, chtd 24–27, ctrl 23–25, v5 27 — is an
+instrument artefact: the phrase gate passes answers that conclude there is no defect, and the
+CHTD arm's answers did that most often.
 
 > **Revision note, 2026-10-14 (adversarial review).** SpikeBot 003 reviewed this record against
 > the raw material (comment on PR #8) and the review landed three findings that this file now
@@ -24,6 +28,19 @@ smaller than the student-state arm's own seed spread. The earlier +2–3 was con
 > and re-scored; see "The phrase fix" below. (3) chtd-seed2 lost **two** tasks to infrastructure,
 > not one — the crash this record names, plus a 180 s timeout it did not. All three findings were
 > re-verified against the records before being applied; the corrections are in place below.
+
+> **Revision 2, 2026-10-14 (the third pass).** This record went back to the raw answers a third
+> time, now reading **all 210** — every pass, not only the failures — and the reading found the
+> instrument's largest defect so far. The phrase gate asks whether an answer says the right
+> *words*; it never asks whether the answer concludes the fixture is broken. Twenty-four answers
+> in the batch contain "no defect"; sixteen of the gate's passes flip to fail once a
+> defect-denial phrase list is added to `forbid` (the fix is in `harness/tasks/holdout-3.jsonl`,
+> and the per-cell flips are named below). After that fix the CHTD arms' lead over the base
+> shrinks to 1–3 tasks and the student-state/teacher-own pair reads as a wash. A complete hand
+> read of all 210 answers (`handread-20261014.json`, rubric stated there) goes further: it puts
+> the CHTD arms at 17–19 correct — the base's level — and the teacher-own arms at 21 and 25.
+> The claims this record was built to test do not survive that read. The ledger is one reader's
+> judgement, per-cell and auditable; the reviewer's re-grade of it is the open item.
 
 ## The task set
 
@@ -118,6 +135,68 @@ cells still reads as a partial by hand (v5's prescribed fix `[0][1]` returns the
 letter), which the hand-read column carries. No other task set in the repo has backslash phrases —
 scanned `error-recovery.jsonl`, `final-holdout.jsonl`, `example.jsonl`.
 
+## The third pass: the deny-list fix and the full hand read
+
+The phrase gate is a one-sided test in a second way the earlier passes had not priced in. It
+requires the expected words and refuses a few named ones, but it never refuses an answer whose
+**conclusion** is that the fixture is fine. An answer that walks through the code and ends
+"there is no defect in the code as written" contains the same words a correct diagnosis does. On
+this batch, 24 answers contain "no defect" and 16 of them were gate passes.
+
+**The fix.** Every h3 task's `forbid` now carries a defect-denial list (`no defect|no bug|is
+correct as written|functionally correct|no obvious defect|no actual defect|nothing broken|both
+files are correct|is correct and|code works|no issues|no problems|nothing wrong|no error in the
+code|passes as expected`), chosen by testing each candidate against all 210 answers: any phrase
+that matched a cell the hand read calls correct was dropped ("works correctly", "works as
+intended" and "code is correct" all failed that test and are not in the list). The rows live in
+`harness/tasks/holdout-3.jsonl`; the flips are reproducible with the checked-in scorer.
+
+**Three instruments, one table.** `as run` is what the sweeps recorded; `phrase fix` re-applies
+the corrected phrase lists; `deny fix` adds the defect-denial list; `hand read` is the full
+per-cell read (below).
+
+| arm | as run | phrase fix | deny fix | hand read (correct) |
+| --- | ---: | ---: | ---: | ---: |
+| base | 20 | 20 | 20 | **17** |
+| chtd-seed0 | 26 | 26 | 23 | **19** |
+| chtd-seed1 | 27 | 27 | 22 | **18** |
+| chtd-seed2 | 24 | 25 | 21 | **17** (of 28 answered) |
+| ctrl-seed0 | 25 | 25 | 22 | **21** |
+| ctrl-seed1 | 23 | 23 | 21 | **25** |
+| v5 | 27 | 28 | 28 | **21** |
+
+Cells the deny fix flips (all were gate passes whose answers conclude the code is fine):
+`chtd-seed0` — enum-not-str, join-nonstring, max-empty-raise; `chtd-seed1` — capitalize-vs-title,
+enum-not-str, join-nonstring, round-returns-float, sum-no-start; `chtd-seed2` —
+capitalize-vs-title, enum-not-str, list-index-raises, max-empty-raise; `ctrl-seed0` —
+enum-not-str, join-nonstring, round-returns-float; `ctrl-seed1` — enum-not-str,
+round-returns-float. The fix catches the denial class; it does **not** catch answers that name
+the wrong mechanism in the right words, or that blame the test, which is why the hand-read
+column is the one this record's conclusions are set by.
+
+**The hand read.** All 210 answers were read against the fixture sources on 2026-10-14;
+the per-cell grade and a one-line reason are in `handread-20261014.json` beside this file. The
+rubric: *correct* — points at the defective code, and any repair it offers would make the
+fixture pass (minor mis-statements of the failure mode are notes, not demotions); *partial* —
+right area, but the account does not explain the observed failure, or the repair is wrong or
+hedged toward editing the test; *failed* — concludes there is no defect, blames the test, or
+names an unrelated mechanism. Two chtd-seed2 cells have no answer at all (a crash and a timeout)
+and are counted as neither.
+
+What the read changes, in one line each: the gate's pass/fail ordering (CHTD arms on top) is not
+reproduced by reading (CHTD arms at the base's level; the teacher-own arms above both). The
+largest single error class is denial (24 cells), followed by "the test is wrong" (the answer
+relocates a real mismatch into `check.py`, 9 cells) and by wrong-mechanism-with-right-words.
+Every cell the earlier passes had flagged is confirmed by this read; no earlier finding is
+withdrawn by it.
+
+**Caveats on the read.** One reader (the author) — no blind protocol, and the grades are
+contestable at the correct/partial boundary, where a stricter reader would move several cells
+down and a more lenient one up; the ledger names every cell so the boundary can be redrawn. The
+asymmetry to watch for: two arms (chtd-seed1, ctrl-seed0) were read from full texts and five from
+700-character tails, and more text can only find more errors — the reviewer's independent
+grade of the tails-read arms is the check on that.
+
 ## Adjudication, after two reviews
 
 The original spot-check read 36 answers (6 tasks × 6 arms). The adversarial review re-read all of
@@ -151,34 +230,45 @@ gate over all 210 cells. The confirmed gate errors:
 - `h3-counter-most-common` on **chtd-seed0** (already recorded at first pass): prescribes editing
   `check.py`'s assertion — the test, not the code.
 
-**Reliability of the two reads.** The review's own re-grade of the three h1 arms differed from the
+**Reliability of the reads.** The review's own re-grade of the three h1 arms differed from the
 first-pass table by one C/P boundary cell per arm and moved no ordering; its h3 findings here were
-re-verified against the full answer texts before being applied. Two rows in the table above
-(cthd-seed1, ctrl-seed0) were not fully re-read by either pass — their hand-read numbers are the
-as-run gate numbers carried forward, and they are the residual uncertainty in this ledger.
+re-verified against the full answer texts before being applied. The two rows this paragraph used
+to carry as "not fully re-read" (cthd-seed1, ctrl-seed0) were read in full by the third pass, and
+both moved — see the table above. The third pass's own residual is stated where it belongs: one
+reader, contestable at the C/P boundary, and five arms read from tails rather than full texts.
 
 ## What this establishes, and what it does not
 
 **Establishes.**
 
-1. **Fine-tuning on 9 rows improves this base on this distribution, for every arm tested.** By
-   hand read the arms land 23–27 against the base's 22 — a 1-to-5-task effect. It survives the
-   gate's known errors in both directions, but it is smaller than this record first said, and the
-   base's own answers (seven conclusions wrong in substance, three correct diagnoses the gate
-   refused) are the strongest competing account of part of it. "The fine-tunes regress" remains
-   unsupportable on this material.
-2. **The student-state arm's three seeds reproduce each other within 2 tasks** (25–27 hand read),
-   so the arm is stable enough to be compared — and the comparison is what kills the previous
-   claim: chtd 25–27 vs ctrl 23–25 overlap.
-3. **The h1/h2 +2–3 task advantage does not replicate on 30 fresh tasks.** With three seeds of
-   the experimental arm now measured, that gap sits inside the arm's own seed spread. The honest
-   reading of the earlier sets is "too small to tell", not "ahead".
+1. **The instrument was the largest single factor in the earlier numbers.** The phrase gate
+   passes defect-denial conclusions; adding a defect-denial `forbid` list (chosen by testing every
+   candidate phrase against all 210 answers) flips 16 cells, unevenly across arms — five from
+   chtd-seed1, four from chtd-seed2, three each from chtd-seed0 and ctrl-seed0, two from
+   ctrl-seed1, none from base or v5. Any comparison drawn from the as-run gate is a comparison of
+   answer styles as much as of models.
+2. **On the corrected instruments the paired comparison is a wash or worse for the student-state
+   arm.** Deny-fixed gate: chtd 21–23 vs ctrl 21–22. Hand read: chtd 17–19 vs ctrl 21 and 25. The
+   earlier +2–3 did not just fail to replicate at n=30; on this batch it reads backwards.
+3. **"Adapted beats base" survives only as a weak, mostly teacher-own result.** Deny-fixed gate:
+   every adapted arm ≥ base+1, v5 ≥ base+8. Hand read: the CHTD arms tie the base (17–19 vs 17)
+   and the teacher-own arms lead (21, 25), with v5 at 21. Neither reading supports a claim about
+   the CHTD-specific ingredient; what survives is that *some* fine-tunes on *some* data shapes
+   beat the base by a few tasks.
+4. **The h1/h2 +2–3 task advantage still does not replicate on 30 fresh tasks** — and the third
+   pass is a further reason not to lean on the h1/h2 numbers either: they were read before this
+   batch's lesson about unread passes, and the lesson is not specific to h3.
 
-**Does not establish.** Any reason to prefer student-state data over teacher-own at this scale.
-The design still cannot separate data source from supervision mode; the h3 set, like h1 and h2,
-has now been read by humans; and 30 tasks still resolve only ~15-point differences. One arm
-(cthd-seed2) lost two tasks to infrastructure (a crash and a timeout) — a measurement gap, not a
-result, and one that cuts *for* the arm on the answered set (25/28).
+**Does not establish.** Any reason to prefer student-state data over teacher-own at this scale, in
+either direction — or the reverse. The design still cannot separate data source from supervision
+mode; the h3 set, like h1 and h2, has now been read by humans; and 30 tasks still resolve only
+~15-point differences. Two chtd-seed2 cells have no answer at all (a crash and a timeout), which
+is a measurement gap and the reason its row is stated over 28.
+
+**What would change this record's mind.** An independent re-grade of `handread-20261014.json`
+that moves the correct/partial boundary enough to restore the CHTD arms' lead — the cells to argue
+about are named, and the tails-read arms (base, chtd-seed0, chtd-seed2, ctrl-seed1, v5) are the
+ones where a fuller read could still find more, not fewer, errors.
 
 ## Files
 
@@ -194,6 +284,8 @@ data/holdout-3-20261014/
   records-*.json                           raw sweeps (session, ledger, workspace)
   scores-*.json                            gate results as run
   scores-rescored-20261014.json            all 210 cells re-graded after the phrase fix
+  scores-denyfix-20261014.json             all 210 cells re-graded after the deny-list fix
+handread-20261014.json                     the third pass: every cell, graded, with a reason
 /mnt/proj/chtd-experiments/node4-recollection-20261012/matched-v2/
   chtd-seed1-adapter/, chtd-seed2-adapter/ the new seed replicates (run.json in each)
 ```
