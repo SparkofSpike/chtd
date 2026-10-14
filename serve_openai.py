@@ -12,7 +12,7 @@ import json
 import re
 import threading
 import time
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
 from distill.finetune import render_chat
@@ -92,6 +92,14 @@ def serve(model_path: str, model_id: str, host: str, port: int,
     inference_lock = threading.Lock()
 
     class Handler(BaseHTTPRequestHandler):
+        # A client that goes away without closing leaves a socket this handler would otherwise
+        # read from forever, and a plain `HTTPServer` serves one request at a time. Measured on
+        # the training box: one such socket held the only worker thread and the endpoint stopped
+        # answering entirely — log silent, three concurrent probes all timing out. The timeout
+        # bounds the wait; the threading server keeps one stranded connection from taking the
+        # whole endpoint with it. Only socket reads and writes are timed.
+        timeout = 300
+
         def _send(self, status: int, payload: dict[str, Any]) -> None:
             body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
             self.send_response(status)
@@ -172,7 +180,7 @@ def serve(model_path: str, model_id: str, host: str, port: int,
                 self._send(400, {"error": str(error)[:250]})
 
     print(f"serving {model_id} on {host}:{port}", flush=True)
-    HTTPServer((host, port), Handler).serve_forever()
+    ThreadingHTTPServer((host, port), Handler).serve_forever()
 
 
 def main() -> None:
