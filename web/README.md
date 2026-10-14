@@ -225,6 +225,17 @@ Live 不用它。
 | `CHTD_LIVE_PRESET` | `minimal-rl` | 冻结轨道 |
 | `CHTD_LIVE_TIMEOUT` | `240` | 单次运行上限（秒） |
 | `CHTD_LIVE_KEY_FILE` | `data/chtd-round-20261011/teacher.key` | 服务端凭据文件 |
+| `CHTD_STUDENT_URL` | `http://127.0.0.1:8000/v1` | student 端点（带上 `/v1`，见下） |
+| `CHTD_STUDENT_MODEL_ID` | `qwen3-4b-instruct-2507` | student 模型 id |
+
+### 端点地址必须带版本段
+
+harness 会在 profile 的 `baseUrl` **后面拼** `/chat/completions`，不是替换路径。所以
+`http://127.0.0.1:8000` 会让它去请求 `http://127.0.0.1:8000/chat/completions` 并拿到 404 —— 这是实测过的。
+项目记录里的 student 地址一律写成 `.../v1`（`harness/profile/chtd.yaml`、`eval/run_arm_h3.py`）。
+
+后端会替你把缺的版本段补上（`normalize_base_url`），页面上填了不带 `/v1` 的地址时会显示
+「实际使用」的那一个；已经带了版本段的地址（如 `https://openrouter.ai/api/v1`）原样不动。
 
 ### 可跑哪些任务
 
@@ -238,7 +249,7 @@ Live 不用它。
 2026-10-15 在一个只含入库文件的导出树里实测：45 个任务列出、30 个带 fixture；选一个用自备凭据
 跑通（4 次工具调用，exit 0，判分通过）。
 
-**凭据是唯一本机没有的东西**，界面会直说缺它，并在「模型配置」里让你填自己的。
+**凭据是唯一本机没有的东西**，界面会直说缺它，并在「模型与端点配置」里让你填自己的。
 
 ### 红线不变
 
