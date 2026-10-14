@@ -98,16 +98,21 @@ legible, tasks with more steps, and throttled collection against a rate limit �
 arithmetic in [docs/finetune.md](docs/finetune.md).
 
 **The full programme has since run, and it is written up.** Three fresh held-out sets (15, 12 and
-30 tasks, pooled to 57), up to three training seeds per arm, every answer graded on a three-level
-rubric (one set by hand, two by the validated LLM judge), the phrase gate benchmarked against two
-human readers, and the power arithmetic done before the conclusions. The result, stated with its
-uncertainty: the student-state family **halves the base's failure rate** — 17.5 % against 31.6 %
-pooled, same direction in all three sets, McNemar p = 0.077 — while the ordinal mean difference is
-not distinguishable from noise, and the strongest arm in the batch (v5) is a different data shape
-at ten times the rows. The fine-tunes' instability — across seeds and across a prompt change — is
-itself a reproduced finding, rooted in `last` supervision teaching the final answer but never the
-exploration policy. The single entry point, with what the evidence supports and what it does not,
-is [docs/findings-20261014.md](docs/findings-20261014.md).
+30 tasks, pooled to 57), a five-point dose ladder, up to three training seeds per arm, every answer
+graded on a three-level rubric (one set by hand, the rest by the validated LLM judge), the phrase
+gate benchmarked against two human readers, and the measurement's own noise floors measured rather
+than assumed. The headline, with its certainty: **fine-tuning works in the endpoint the design
+names** — base 4–5 failures of 15 diagnosis tasks, every trained configuration 0–2, joint
+probability ≤ 3.4 × 10⁻⁹ under the observed base rate; pooled over 57 tasks the student-state
+family halves the base's failure rate (31.6 % → 17.5 %, p = 0.077). The CHTD shape's distinct claim
+is **data efficiency**: 9 student-state rows reach the 33-row teacher-demo point, a one-cell margin
+on single evaluations. Two measurement findings constrain everything else: the **base is
+deterministic** (six evaluations, byte-identical answers) while **an adapter is not** (same weights,
+two evaluations, 9/15 answers differ — worth 0.33 ordinal points), so single 15-task comparisons of
+trained arms are uninformative by construction. The fine-tunes' instability across seeds and
+prompts is itself a reproduced finding, rooted in `last` supervision teaching the answer but never
+the exploration policy. The single entry point, with what the evidence supports and what it does
+not, is [docs/findings-20261014.md](docs/findings-20261014.md).
 
 ## License
 
