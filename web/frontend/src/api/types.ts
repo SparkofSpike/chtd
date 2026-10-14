@@ -7,12 +7,24 @@ export interface HealthEndpoint {
   detail: string
 }
 
+export interface HealthRoute {
+  route: string
+  ready: boolean
+  kind: 'hosted' | 'local'
+  model: string
+  base_url: string
+}
+
 export interface Health {
   mode: 'replay' | 'live'
   endpoints: {
     base: HealthEndpoint
     adapter: HealthEndpoint
   }
+  /** Live 能不能跑，看的是这几条路由。旧后端可能不返回，故可选。 */
+  routes?: HealthRoute[]
+  runnable_routes?: string[]
+  reasons?: string[]
   agnes_cli: { path: string; exists: boolean }
   chtd_root: string
   server_time: string

@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import config, state
-from .routers import arena, experiments, health, sessions, tasks
+from .routers import arena, experiments, health, live, sessions, tasks
 
 app = FastAPI(title="CHTD Web Console", version="0.1.0")
 
@@ -27,13 +27,15 @@ app.include_router(experiments.router)
 app.include_router(sessions.router)
 app.include_router(tasks.router)
 app.include_router(arena.router)
+app.include_router(live.router)
 
 
 @app.get("/api")
 def api_root() -> dict:
     return {"service": "CHTD Web Console", "docs": "/docs",
             "routes": ["/api/health", "/api/tasks", "/api/experiments",
-                       "/api/sessions", "/api/arena/run"]}
+                       "/api/sessions", "/api/arena/run",
+                       "/api/live/capabilities", "/api/live/tasks", "/api/live/run"]}
 
 
 def _dist_ready() -> bool:

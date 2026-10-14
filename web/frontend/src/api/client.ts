@@ -17,8 +17,7 @@ export class ApiError extends Error {
   }
 }
 
-async function getJson<T>(path: string): Promise<T> {
-  let resp: Response
+async function getJson<T>(path: string): Promise<T> {  let resp: Response
   try {
     resp = await fetch(BASE + path, { headers: { Accept: 'application/json' } })
   } catch (e) {
@@ -56,6 +55,9 @@ export const api = {
     getJson<Session>(`/api/sessions/${encodeURIComponent(sessionKey)}`),
 }
 
+/** 通用的 JSON GET，Live 面板用它拉能力与任务列表。 */
+export const getJsonPublic = getJson
+
 export interface ArenaRunOptions {
   mode?: 'replay' | 'live'
   task_id: string
@@ -64,24 +66,21 @@ export interface ArenaRunOptions {
   speed?: number
 }
 
-// POST /api/arena/run 返回 text/event-stream；EventSource 不支持 POST，
-// 因此用 fetch + ReadableStream 手动解析 SSE 帧。
-export async function runArena(
-  opts: ArenaRunOptions,
-  onEvent: (ev: ArenaEvent) => void,
+// POST 一个 SSE 端点并按帧回调。EventSource 不支持 POST，因此用 fetch + ReadableStream
+// 手动解析 SSE 帧；Arena 的回放与 Live 的真实运行共用这一份解析。
+export async function openSse<T extends { event: string }>(
+  path: string,
+  body: unknown,
+  onEvent: (ev: T) => void,
   onFatal: (msg: string) => void,
   signal?: AbortSignal,
 ): Promise<void> {
   let resp: Response
   try {
-    resp = await fetch(BASE + '/api/arena/run', {
+    resp = await fetch(BASE + path, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
-      body: JSON.stringify({
-        arms: ['base', 'chtd'],
-        speed: 1,
-        ...opts,
-      }),
+      body: JSON.stringify(body),
       signal,
     })
   } catch (e) {
@@ -122,7 +121,7 @@ export async function runArena(
     } catch {
       return
     }
-    onEvent({ event: eventName, ...data } as ArenaEvent)
+    onEvent({ event: eventName, ...data } as T)
   }
 
   try {
@@ -149,4 +148,19 @@ export async function runArena(
       /* ignore */
     }
   }
+}
+
+export async function runArena(
+  opts: ArenaRunOptions,
+  onEvent: (ev: ArenaEvent) => void,
+  onFatal: (msg: string) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  return openSse<ArenaEvent>(
+    '/api/arena/run',
+    { arms: ['base', 'chtd'], speed: 1, ...opts },
+    onEvent,
+    onFatal,
+    signal,
+  )
 }

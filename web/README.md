@@ -13,11 +13,13 @@ Web 端。它真实呈现「**任务规划 → 工具调用 → 执行反馈 →
 
 | 模式 | 何时用 | 数据来源 | 界面标注 |
 | --- | --- | --- | --- |
-| **Replay（默认）** | 无 GPU / 不启动模型 / 现场离线 | 读取 `runs/`、`data/` 真实 ledger（records.jsonl + sessions.db） | 顶栏 Replay 徽标 |
-| **Live** | 已启动两个 `serve_openai` 端点，且机器装有可运行的 Agnes CLI | 经 Agnes Harness 实时驱动真实 rollout，SSE 推流 | 顶栏 Live 徽标 |
+| **Replay（默认）** | 无模型 / 现场离线 | 读取 `runs/`、`data/` 真实 ledger（records.jsonl + sessions.db） | 顶栏 Replay 徽标 |
+| **Live** | 有 agnes CLI，且至少一条路由就绪 | 后端真实起一个 AGH 进程，SSE 推送运行中的轨迹 | 顶栏 Live 徽标 |
 
+- **Live 是真的执行**（见 §8）：模型自己读文件、调工具、给结论；轨迹随运行实时出现，跑完由项目
+  自己的 `check_diagnosis` 判分。**不需要 GPU** —— teacher 路由是一条托管 API。
 - **Live 不可用时自动降级 Replay**：事件流会发 `mode_fallback` 说明原因，界面徽标保持 Replay。
-- 顶栏右侧的 **base / adapter 健康灯** 每 5 秒探测两端点的 `/health` 与 `/v1/models`。
+- 顶栏右侧的**路由健康灯**每 5 秒探测一次：哪条路由就绪、用的哪个模型。
 
 ---
 
@@ -37,8 +39,9 @@ web/
 └── frontend/            # Vite + React + TS + Tailwind + Recharts（构建产物 dist/）
 ```
 
-页面（5 个）：**Overview**（问题→三承诺自绘 SVG→数字卡）、**Arena / Replay**（任意两臂同题并排、
-逐步轨迹、错误恢复标记、track hash）、**Experiments**（真实数据图表，每图来源脚注 + 支持/不支持）、
+页面（6 个）：**Overview**（问题→三承诺自绘 SVG→数字卡）、**Arena / Replay**（任意两臂同题并排、
+逐步轨迹、错误恢复标记、track hash）、**Live**（真实运行：选任务→跑→实时轨迹→判分）、
+**Experiments**（真实数据图表，每图来源脚注 + 支持/不支持）、
 **Reproduce**（端点/rollout/eval 复现命令）。
 
 ### Arena 的臂选择
@@ -177,23 +180,62 @@ npm run dev
 
 ---
 
-## 8. Live 模式现状（重要，诚实说明）
+## 8. Live：真的跑起来（不是骨架）
 
-- Live 复用现有 Agnes Harness：经子进程驱动 `harness/` 的 rollout/round/fork 与 `packages/chtd`
-  冻结轨道，**不自写 agent loop**；模型只指向本地两个 `serve_openai`（Agnes Qwen，无第三方）。
-  启动 Live 的两个端点：
-  ```powershell
-  # base（无 adapter）
-  python serve_openai.py --model-path <Qwen模型路径> --port 8000
-  # adapter（带 LoRA）
-  python serve_openai.py --model-path <Qwen模型路径> --adapter-path <LoRA适配器路径> --port 8001
-  ```
-- **当前机器没有可执行的 Agnes CLI 构建产物（`agnes.mjs`）与 agnes-harness 源码**，因此本机
-  Live 完整 AGH rollout 无法跑通，会稳定走 `mode_fallback` → 真实 Replay。
-- 在**装有 agnes-harness 构建**（`CHTD_AGNES_CLI` 指向 `packages/cli/dist/local/agnes.mjs`）并启动
-  两端点的机器上，Live 即可实时并排跑。相关环境变量：`CHTD_AGNES_CLI`、`CHTD_NODE`、
-  `CHTD_BASE_PORT`、`CHTD_ADAPTER_PORT`、`CHTD_PROFILE_TEMPLATE`。
-- 后端运行 Live 时的临时产物只写到 `web/backend/.live/`，不会修改 `runs/`、`data/`。
+Live 不是“到不了就降级”的占位符：`POST /api/live/run` 会在 `web/backend/.live/runs/<id>/` 里
+建一个临时 AGH home，真实起一个 agnes CLI 子进程，并在它写 ledger 的同时轮询那张表 —— 所以页面上
+的轨迹是**边跑边长出来的**，不是跑完才一次性回放。
+
+一次运行需要三样：**agnes CLI**、**node**、**至少一条就绪的路由**。`GET /api/live/capabilities`
+会告诉你缺哪一样，Live 页顶部也直接列出来。
+
+### 两条路由
+
+| 路由 | 是什么 | 就绪条件 |
+| --- | --- | --- |
+| `teacher` | 托管 API（默认 `https://api.agnes-ai.cn/v1`） | 有凭据 —— **不需要 GPU** |
+| `student` | 你自己服务的 OpenAI 兼容端点 | 该端点 `/v1/models` 答 200 |
+
+`student` 路由指向哪由你定：页面上展开「模型配置」就能改 **路由 / 模型 id / baseUrl / 密钥 / 超时**，
+不必改代码。任何能答 `/v1/models` 与 `/v1/chat/completions` 的端点都行（本项目用
+`serve_openai.py` 服务 Qwen3-4B，但页面不假定这一点）。
+
+### 凭据从哪里来
+
+按优先级：请求体里的 `api_key` → 环境变量 `AGNES_SECRET_<ROUTE>_DEFAULT` → 密钥文件
+（`CHTD_LIVE_KEY_FILE`，默认 `data/chtd-round-20261011/teacher.key`）。
+
+从页面填的密钥只会进入那一次运行的子进程环境：**不写进 run 目录、不回显、不记日志**。
+
+### 判分
+
+跑完由本项目自己的 `harness/tasks/check_diagnosis.py` 打分 —— 就是产出历史 holdout-3 分数的
+那个脚本（短语匹配 + 反例拒绝 + 虚构文件检查），所以 Live 的成绩与记录里的成绩是同一把尺。
+注意 holdout-3 任务里那个 `check.py` 是 **fixture 的一部分**（给模型看的证据），不是判分命令；
+Live 不用它。
+
+### 环境变量
+
+| 变量 | 缺省 | 作用 |
+| --- | --- | --- |
+| `CHTD_AGNES_CLI` | `E:\Coding\agnes-harness\...\agnes.mjs` | agnes CLI 入口 |
+| `CHTD_NODE` | `node` | node 可执行文件 |
+| `CHTD_LIVE_ROUTE` / `CHTD_LIVE_MODEL` | `teacher` / `agnes-3.0-flash` | 默认路由与模型 |
+| `CHTD_LIVE_BASE_URL` | `https://api.agnes-ai.cn/v1` | 默认端点 |
+| `CHTD_LIVE_PRESET` | `minimal-rl` | 冻结轨道 |
+| `CHTD_LIVE_TIMEOUT` | `240` | 单次运行上限（秒） |
+| `CHTD_LIVE_KEY_FILE` | `data/chtd-round-20261011/teacher.key` | 服务端凭据文件 |
+
+### 可跑哪些任务
+
+`GET /api/live/tasks` 列的是入库任务集（`harness/tasks/holdout-3.jsonl` 等）里**本机有 fixture**
+的那些：带 fixture 才能跑（少 fixture 的在页面上是禁选项，不会被静静跑成一个模棱两可的失败）。
+也可以选「自定义 prompt」跑一个任意任务 —— 那种运行不给分，只给答案与完整轨迹。
+
+### 红线不变
+
+Live 的临时产物只写到 `web/backend/.live/`；fixture 是**拷进** run 目录再跑的，不写回
+`data/`、`runs/`、`harness/`。
 
 ---
 

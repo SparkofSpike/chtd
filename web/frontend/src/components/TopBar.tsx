@@ -7,6 +7,7 @@ const nav = [
   { to: '/', label: 'Overview', end: true },
   { to: '/experiments', label: 'Experiments' },
   { to: '/arena', label: 'Arena / Replay' },
+  { to: '/live', label: 'Live' },
   { to: '/reproduce', label: 'Reproduce' },
 ]
 
@@ -16,7 +17,10 @@ function Dot({ ok }: { ok: boolean | undefined }) {
   return <span className={`inline-block h-2.5 w-2.5 rounded-full ${color}`} />
 }
 
-// 顶栏：产品名 + Live/Replay 徽标 + base/adapter 健康灯（轮询 /api/health 5s）。
+// 顶栏：产品名 + Live/Replay 徽标 + 路由健康灯（轮询 /api/health 5s）。
+//
+// 灯看的是**路由**而不是固定端口：Live 能不能跑取决于至少一条路由就绪，而路由是什么、
+// 用哪个模型、托管还是本地，都是运行时可换的（见 Live 页的「模型配置」）。
 export default function TopBar() {
   const [health, setHealth] = useState<Health | null>(null)
   const [err, setErr] = useState<string | null>(null)
@@ -68,18 +72,15 @@ export default function TopBar() {
           {mode === 'live' ? 'Live' : 'Replay'}
         </span>
 
-        {/* 模型健康灯 */}
-        <div className="flex items-center gap-3 text-xs text-ink-dim">
-          <span className="flex items-center gap-1.5">
-            <Dot ok={health?.endpoints.base.ok} />
-            base
-            <span className="mono text-ink-faint">:8000</span>
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Dot ok={health?.endpoints.adapter.ok} />
-            adapter
-            <span className="mono text-ink-faint">:8001</span>
-          </span>
+        {/* 路由健康灯 */}
+        <div className="flex flex-wrap items-center gap-3 text-xs text-ink-dim">
+          {(health?.routes ?? []).map((r) => (
+            <span key={r.route} className="flex items-center gap-1.5">
+              <Dot ok={r.ready} />
+              {r.route}
+              <span className="mono text-ink-faint">{r.model}</span>
+            </span>
+          ))}
           {err && <span className="text-bad">后端未连接</span>}
         </div>
 

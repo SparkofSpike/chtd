@@ -9,8 +9,8 @@ export default function Layout() {
         <Outlet />
       </main>
       <footer className="mx-auto max-w-[1400px] px-4 pb-8 text-xs text-ink-faint">
-        只读演示：数据来自 checked-in 的 runs/ 与 data/ ledger，数字可溯源；Live 需在装有
-        agnes-harness 构建的机器并启动 base/adapter 两端点。
+        Experiments / Arena 读的是 checked-in 的真实 ledger，数字可溯源；Live 在同一页上真实执行
+        —— 需要 agnes CLI 与一条就绪的路由（托管 teacher 或自备的 OpenAI 兼容端点）。
       </footer>
     </div>
   )
