@@ -1,7 +1,7 @@
 ﻿import json
 from pathlib import Path
 
-ROOT = Path("data/holdout-3-20261014")
+ROOT = Path("runs/holdout-3-20261014/machine-scores")
 led = json.loads(Path("runs/holdout-3-20261014/handread-20261014.json").read_text(encoding="utf-8"))
 second = json.loads(Path("runs/holdout-3-20261014/handread-second-reader-20261014.json").read_text(encoding="utf-8"))
 order = list(led["cells"]["base"].keys())

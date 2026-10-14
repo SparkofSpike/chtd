@@ -1,6 +1,6 @@
 ﻿import json
 from pathlib import Path
-ROOT = Path("data/holdout-3-20261014")
+ROOT = Path("runs/holdout-3-20261014/machine-scores")
 ARMS = ["base","chtd-s0","chtd-s1","chtd-s2","ctrl-s0","ctrl-s1","v5"]
 RUNS = {"base":"base-h3a","chtd-s0":"chtd-seed0-h3a","chtd-s1":"chtd-seed1-h3a","chtd-s2":"chtd-seed2-h3a",
         "ctrl-s0":"ctrl-seed0-h3a","ctrl-s1":"ctrl-seed1-h3a","v5":"v5-h3a"}
