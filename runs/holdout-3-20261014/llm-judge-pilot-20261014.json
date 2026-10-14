@@ -1,0 +1,574 @@
+{
+  "instrument": "deepseek-flash (official deepseek provider), temperature 0, max_tokens 4000",
+  "protocol": "blind to arm identity; fixture + answer + rubric per call; one cell per call",
+  "panel": "the 74 (then 75) cells where two human readers agree",
+  "cells": [
+    {
+      "arm": "base",
+      "task": "h3-all-vs-any",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "base",
+      "task": "h3-capitalize-vs-title",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "base",
+      "task": "h3-chained-comparison",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "base",
+      "task": "h3-column-range",
+      "human": "partial",
+      "llm": "partial"
+    },
+    {
+      "arm": "base",
+      "task": "h3-copy-not-deep",
+      "human": "failed",
+      "llm": "failed"
+    },
+    {
+      "arm": "base",
+      "task": "h3-counter-most-common",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "base",
+      "task": "h3-dataclass-eq-false",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "base",
+      "task": "h3-dict-keys-index",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "base",
+      "task": "h3-divmod-order",
+      "human": "failed",
+      "llm": "failed"
+    },
+    {
+      "arm": "base",
+      "task": "h3-enum-not-str",
+      "human": "failed",
+      "llm": "failed"
+    },
+    {
+      "arm": "base",
+      "task": "h3-first-entry-sorted",
+      "human": "failed",
+      "llm": "failed"
+    },
+    {
+      "arm": "base",
+      "task": "h3-format-missing-key",
+      "human": "failed",
+      "llm": "failed"
+    },
+    {
+      "arm": "base",
+      "task": "h3-is-vs-equals",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "base",
+      "task": "h3-join-nonstring",
+      "human": "failed",
+      "llm": "failed"
+    },
+    {
+      "arm": "base",
+      "task": "h3-last-zero",
+      "human": "failed",
+      "llm": "failed"
+    },
+    {
+      "arm": "base",
+      "task": "h3-list-index-raises",
+      "human": "failed",
+      "llm": "failed"
+    },
+    {
+      "arm": "base",
+      "task": "h3-max-empty-raise",
+      "human": "failed",
+      "llm": "failed"
+    },
+    {
+      "arm": "base",
+      "task": "h3-partition-index",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "base",
+      "task": "h3-percent-order",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "base",
+      "task": "h3-property-no-setter",
+      "human": "failed",
+      "llm": "partial"
+    },
+    {
+      "arm": "base",
+      "task": "h3-set-sorted-order",
+      "human": "failed",
+      "llm": "failed"
+    },
+    {
+      "arm": "base",
+      "task": "h3-slice-negative-step",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "base",
+      "task": "h3-sorted-descending",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "base",
+      "task": "h3-stem-find-vs-rfind",
+      "human": "failed",
+      "llm": "partial"
+    },
+    {
+      "arm": "base",
+      "task": "h3-string-count-overlap",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "base",
+      "task": "h3-sum-no-start",
+      "human": "correct",
+      "llm": null
+    },
+    {
+      "arm": "chtd-s1",
+      "task": "h3-all-vs-any",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "chtd-s1",
+      "task": "h3-capitalize-vs-title",
+      "human": "failed",
+      "llm": "failed"
+    },
+    {
+      "arm": "chtd-s1",
+      "task": "h3-column-range",
+      "human": "correct",
+      "llm": "partial"
+    },
+    {
+      "arm": "chtd-s1",
+      "task": "h3-counter-most-common",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "chtd-s1",
+      "task": "h3-cut-bytes-utf8",
+      "human": "partial",
+      "llm": "partial"
+    },
+    {
+      "arm": "chtd-s1",
+      "task": "h3-dataclass-eq-false",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "chtd-s1",
+      "task": "h3-dict-keys-index",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "chtd-s1",
+      "task": "h3-divmod-order",
+      "human": "failed",
+      "llm": "failed"
+    },
+    {
+      "arm": "chtd-s1",
+      "task": "h3-enum-not-str",
+      "human": "failed",
+      "llm": "failed"
+    },
+    {
+      "arm": "chtd-s1",
+      "task": "h3-first-entry-sorted",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "chtd-s1",
+      "task": "h3-format-missing-key",
+      "human": "failed",
+      "llm": "partial"
+    },
+    {
+      "arm": "chtd-s1",
+      "task": "h3-is-vs-equals",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "chtd-s1",
+      "task": "h3-join-nonstring",
+      "human": "failed",
+      "llm": "failed"
+    },
+    {
+      "arm": "chtd-s1",
+      "task": "h3-last-zero",
+      "human": "failed",
+      "llm": "failed"
+    },
+    {
+      "arm": "chtd-s1",
+      "task": "h3-list-index-raises",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "chtd-s1",
+      "task": "h3-max-empty-raise",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "chtd-s1",
+      "task": "h3-percent-order",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "chtd-s1",
+      "task": "h3-round-returns-float",
+      "human": "failed",
+      "llm": "failed"
+    },
+    {
+      "arm": "chtd-s1",
+      "task": "h3-set-sorted-order",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "chtd-s1",
+      "task": "h3-slice-negative-step",
+      "human": "correct",
+      "llm": "partial"
+    },
+    {
+      "arm": "chtd-s1",
+      "task": "h3-split-unbounded",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "chtd-s1",
+      "task": "h3-sum-no-start",
+      "human": "failed",
+      "llm": "failed"
+    },
+    {
+      "arm": "chtd-s1",
+      "task": "h3-super-init-missing",
+      "human": "correct",
+      "llm": "partial"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-all-vs-any",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-chained-comparison",
+      "human": "correct",
+      "llm": null
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-column-range",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-copy-not-deep",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-counter-most-common",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-dataclass-eq-false",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-divmod-order",
+      "human": "failed",
+      "llm": "failed"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-enum-not-str",
+      "human": "failed",
+      "llm": "failed"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-first-entry-sorted",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-format-missing-key",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-is-vs-equals",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-join-nonstring",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-last-zero",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-list-index-raises",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-max-empty-raise",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-partition-index",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-percent-order",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-round-returns-float",
+      "human": "failed",
+      "llm": "failed"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-set-sorted-order",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-slice-negative-step",
+      "human": "correct",
+      "llm": "partial"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-sorted-descending",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-split-unbounded",
+      "human": "correct",
+      "llm": "partial"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-string-count-overlap",
+      "human": "correct",
+      "llm": "correct"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-sum-no-start",
+      "human": "failed",
+      "llm": "failed"
+    },
+    {
+      "arm": "ctrl-s1",
+      "task": "h3-super-init-missing",
+      "human": "correct",
+      "llm": "partial"
+    }
+  ],
+  "summary": {
+    "n": 74,
+    "unparsed_after_retry": 2,
+    "three_way_agreement": "63/74 = 85%",
+    "binary_agreement_correct_vs_not": "66/74 = 89%",
+    "human_human_agreement_for_reference": "76/90 = 84%"
+  },
+  "third_party_adjudication": {
+    "note": "the 14 cells where the two human readers disagree (binary), LLM as third vote",
+    "cells": [
+      {
+        "arm": "base",
+        "task": "h3-super-init-missing",
+        "author": "C",
+        "reader2": "nC",
+        "llm": "correct"
+      },
+      {
+        "arm": "base",
+        "task": "h3-split-unbounded",
+        "author": "C",
+        "reader2": "nC",
+        "llm": "partial"
+      },
+      {
+        "arm": "base",
+        "task": "h3-cut-bytes-utf8",
+        "author": "C",
+        "reader2": "nC",
+        "llm": null
+      },
+      {
+        "arm": "base",
+        "task": "h3-round-returns-float",
+        "author": "C",
+        "reader2": "nC",
+        "llm": "partial"
+      },
+      {
+        "arm": "chtd-s1",
+        "task": "h3-chained-comparison",
+        "author": "nC",
+        "reader2": "C",
+        "llm": "partial"
+      },
+      {
+        "arm": "chtd-s1",
+        "task": "h3-copy-not-deep",
+        "author": "C",
+        "reader2": "nC",
+        "llm": "correct"
+      },
+      {
+        "arm": "chtd-s1",
+        "task": "h3-sorted-descending",
+        "author": "nC",
+        "reader2": "C",
+        "llm": "partial"
+      },
+      {
+        "arm": "chtd-s1",
+        "task": "h3-string-count-overlap",
+        "author": "C",
+        "reader2": "nC",
+        "llm": "correct"
+      },
+      {
+        "arm": "chtd-s1",
+        "task": "h3-property-no-setter",
+        "author": "C",
+        "reader2": "nC",
+        "llm": "partial"
+      },
+      {
+        "arm": "chtd-s1",
+        "task": "h3-partition-index",
+        "author": "C",
+        "reader2": "nC",
+        "llm": "correct"
+      },
+      {
+        "arm": "ctrl-s1",
+        "task": "h3-dict-keys-index",
+        "author": "C",
+        "reader2": "nC",
+        "llm": "correct"
+      },
+      {
+        "arm": "ctrl-s1",
+        "task": "h3-property-no-setter",
+        "author": "C",
+        "reader2": "nC",
+        "llm": "partial"
+      },
+      {
+        "arm": "ctrl-s1",
+        "task": "h3-cut-bytes-utf8",
+        "author": "C",
+        "reader2": "nC",
+        "llm": "correct"
+      },
+      {
+        "arm": "ctrl-s1",
+        "task": "h3-capitalize-vs-title",
+        "author": "C",
+        "reader2": "nC",
+        "llm": "correct"
+      },
+      {
+        "arm": "base",
+        "task": "h3-cut-bytes-utf8",
+        "author": "C",
+        "reader2": "nC",
+        "llm": null
+      }
+    ],
+    "sides_with_author": 9,
+    "sides_with_reader2": 5
+  },
+  "operational_notes": [
+    "deepseek-flash is a reasoning model: max_tokens must be >= 2500 or long answers return an empty content with all budget spent on reasoning_content (3/74 cells at max_tokens=1200; 0/74 at 4000).",
+    "grade extraction must accept a truncated JSON tail: a lenient '\"grade\"\\s*:\\s*\"(\\w+)\"' extractor recovered 5 cells a strict JSON parse missed."
+  ]
+}
