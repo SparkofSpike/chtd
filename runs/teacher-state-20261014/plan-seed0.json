@@ -1,0 +1,37 @@
+{
+  "arm": "teacher-state",
+  "base_model": "Qwen/Qwen3-4B-Instruct-2507",
+  "base_model_revision": null,
+  "dataset_sha256": "df6613a85b1102ffebca2d12878d0d8b3db2d2127b744961a94453570581fee1",
+  "entries": 9,
+  "notes": [
+    "The isolating arm the paired pilot could not run: a teacher decision at a teacher-reached state, supervised the way the CHTD arm is (last turn only).",
+    "Same nine tasks, same row count, same mode and recipe as the CHTD arm; the only difference is whose exploration precedes the decision.",
+    "Rows are an offline cut of baseline-samples.jsonl: the teacher's own conversation up to its final diagnosis, plus the same fork instruction the CHTD collection used, labelled with the teacher's own diagnosis. No new teacher calls; not a live fork.",
+    "row count 9, samples digest df6613a85b1102ff."
+  ],
+  "output_dir": "/mnt/proj/chtd-experiments/node4-recollection-20261012/matched-v2/teacher-state-seed0-adapter",
+  "recipe": {
+    "alpha": 64,
+    "batch_size": 1,
+    "dropout": 0.05,
+    "epochs": 30,
+    "gradient_accumulation": 8,
+    "learning_rate": 0.0002,
+    "max_sequence_length": 8192,
+    "rank": 32,
+    "seed": 0,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ],
+    "warmup_ratio": 0.03
+  },
+  "teacher_model": "agnes-3.0-flash",
+  "track_sha256": "dc46c09dd798bc4e58edc9a833915860284a77291d2e7218a4137251f60db0c6"
+}
