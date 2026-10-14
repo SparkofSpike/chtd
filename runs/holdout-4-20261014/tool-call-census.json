@@ -1,0 +1,135 @@
+{
+  "instrument": "holdout-4 sessions.db tool/result census",
+  "source": "private archive holdout-4-20261014-v3-final (sessions.db + records.jsonl)",
+  "prompt_note": "the holdout-4 prompt differs from the training and holdout-3 prompt",
+  "arms": {
+    "chtd-seed0": {
+      "sessions": 48,
+      "passed": 7,
+      "first_tool_counts": {
+        "find": 48
+      },
+      "first_call_top": [
+        {
+          "call": "find {\"pattern\": \"test*.py\"}",
+          "n": 48
+        }
+      ],
+      "read_results": {
+        "ok": 13,
+        "error": 96,
+        "ok_rate": 0.119
+      },
+      "sessions_ever_read": 13,
+      "sessions_guessing_src": 48,
+      "answers_directory_does_not_exist": 29,
+      "cross": {
+        "passed": [
+          "h4-base64-pad-2",
+          "h4-csv-quote-2",
+          "h4-html-attr-2",
+          "h4-idna-host-2",
+          "h4-ipv6-authority-1",
+          "h4-ipv6-authority-2",
+          "h4-json-duplicate-2"
+        ],
+        "ever_read": [
+          "h4-base64-pad-2",
+          "h4-cidr-normalize-2",
+          "h4-csv-quote-2",
+          "h4-form-decode-1",
+          "h4-form-query-1",
+          "h4-form-query-2",
+          "h4-header-case-1",
+          "h4-header-case-2",
+          "h4-html-attr-2",
+          "h4-idna-host-2",
+          "h4-ipv6-authority-1",
+          "h4-ipv6-authority-2",
+          "h4-json-duplicate-2"
+        ],
+        "passed_and_ever_read": [
+          "h4-base64-pad-2",
+          "h4-csv-quote-2",
+          "h4-html-attr-2",
+          "h4-idna-host-2",
+          "h4-ipv6-authority-1",
+          "h4-ipv6-authority-2",
+          "h4-json-duplicate-2"
+        ],
+        "passed_not_ever_read": [],
+        "ever_read_but_failed": [
+          "h4-cidr-normalize-2",
+          "h4-form-decode-1",
+          "h4-form-query-1",
+          "h4-form-query-2",
+          "h4-header-case-1",
+          "h4-header-case-2"
+        ]
+      }
+    },
+    "chtd-seed1": {
+      "sessions": 33,
+      "passed": 25,
+      "first_tool_counts": {
+        "ls": 33
+      },
+      "first_call_top": [
+        {
+          "call": "ls {\"path\": \".\"}",
+          "n": 33
+        }
+      ],
+      "read_results": {
+        "ok": 37,
+        "error": 0,
+        "ok_rate": 1.0
+      },
+      "sessions_ever_read": 33,
+      "sessions_guessing_src": 0,
+      "answers_directory_does_not_exist": 0
+    },
+    "base": {
+      "sessions": 48,
+      "passed": 34,
+      "first_tool_counts": {
+        "ls": 48
+      },
+      "first_call_top": [
+        {
+          "call": "ls {\"path\": \".\"}",
+          "n": 48
+        }
+      ],
+      "read_results": {
+        "ok": 48,
+        "error": 0,
+        "ok_rate": 1.0
+      },
+      "sessions_ever_read": 48,
+      "sessions_guessing_src": 0,
+      "answers_directory_does_not_exist": 0
+    },
+    "control-seed0": {
+      "sessions": 48,
+      "passed": 34,
+      "first_tool_counts": {
+        "ls": 48
+      },
+      "first_call_top": [
+        {
+          "call": "ls {\"path\": \".\"}",
+          "n": 48
+        }
+      ],
+      "read_results": {
+        "ok": 48,
+        "error": 0,
+        "ok_rate": 1.0
+      },
+      "sessions_ever_read": 48,
+      "sessions_guessing_src": 0,
+      "answers_directory_does_not_exist": 0
+    }
+  }
+}
