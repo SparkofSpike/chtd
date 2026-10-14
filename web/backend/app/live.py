@@ -480,14 +480,16 @@ class _Cursor:
             plan = step.get("plan") or ""
             if index >= self.steps:
                 frames.append(("step", {"step_index": index, "turn": step.get("turn"),
-                                        "plan": plan}))
+                                        "plan": plan,
+                                        "recovery_kind": step.get("recovery_kind")}))
                 self.steps = index + 1
                 self.plans[index] = plan
             elif plan and plan != self.plans.get(index):
                 # The step was announced before its prose landed; send the fuller version rather
                 # than leaving the browser holding an empty plan for a step that had one.
                 frames.append(("step", {"step_index": index, "turn": step.get("turn"),
-                                        "plan": plan, "update": True}))
+                                        "plan": plan, "update": True,
+                                        "recovery_kind": step.get("recovery_kind")}))
                 self.plans[index] = plan
             done = self.calls.get(index, 0)
             for call in (step.get("calls") or [])[done:]:
@@ -502,6 +504,7 @@ class _Cursor:
                     "step_index": index, "name": call.get("name"),
                     "content": trajectory.sanitize_text(result.get("content") or ""),
                     "isError": bool(result.get("isError")),
+                    "result_kind": result.get("kind") or ("model" if result.get("isError") else "ok"),
                     "duration_ms": call.get("duration_ms")}))
                 done += 1
             self.calls[index] = done
@@ -540,6 +543,23 @@ def _run_diagnosis(ledger: Path, session_key: str, expect: list[str], forbid: li
     output = ((done.stdout or "") + (done.stderr or "")).strip()
     return {"ran": True, "ok": done.returncode == 0, "exit": done.returncode,
             "output": output[:4000], "scorer": "check_diagnosis"}
+
+
+def _result_counts(session: dict[str, Any]) -> dict[str, int]:
+    """How the run's tool calls ended, by kind.
+
+    A run in this project routinely contains refusals: the workspace boundary stops a path outside
+    the sandbox, and the read-only preset's approval gate stops `edit`/`write`/`shell`. Reported
+    as plain numbers so the page can say "the boundary stopped 2 calls and the model adapted"
+    instead of leaving a reader to count red chips and conclude something is broken.
+    """
+    counts = {"ok": 0, "guardrail": 0, "approval": 0, "model": 0}
+    for step in session.get("steps") or []:
+        for call in step.get("calls") or []:
+            result = call.get("result") or {}
+            kind = result.get("kind") or ("model" if result.get("isError") else "ok")
+            counts[kind] = counts.get(kind, 0) + 1
+    return counts
 
 
 def _tail_of(path: Path, limit: int = 4000) -> str:
@@ -705,6 +725,7 @@ async def stream_run(spec: LiveSpec) -> AsyncIterator[tuple[str, dict[str, Any]]
                         "ended_by": "ledger" if ended_by_ledger else "process",
                         "timed_out": timed_out, "seconds": seconds, "passed": passed,
                         "check": check_result, "run_id": run_id,
+                        "result_counts": _result_counts(session),
                         "ledger": str(ledger) if session_key else None,
                         "stdout": str(log_path),
                         "stdout_tail": _tail_of(log_path)},

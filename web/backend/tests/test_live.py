@@ -102,7 +102,8 @@ def test_a_step_whose_plan_arrives_late_is_re_sent():
     cursor.drain(session)
     session["steps"][0]["plan"] = "先读文件"
     assert cursor.drain(session) == [
-        ("step", {"step_index": 0, "turn": 1, "plan": "先读文件", "update": True})]
+        ("step", {"step_index": 0, "turn": 1, "plan": "先读文件", "update": True,
+                   "recovery_kind": None})]
 
 
 def test_force_drains_a_call_whose_result_never_arrived():

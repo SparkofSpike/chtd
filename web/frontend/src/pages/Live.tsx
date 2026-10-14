@@ -11,15 +11,43 @@ import { liveApi, runLive } from '../api/live'
 import type { LiveCapabilities, LiveEvent, LiveTask, RouteStatus } from '../api/live'
 
 type Frame =
-  | { kind: 'step'; index: number; plan: string; turn?: number }
+  | { kind: 'step'; index: number; plan: string; turn?: number; recoveryKind?: string | null }
   | {
       kind: 'call'
       index: number
       name: string
       args: Record<string, unknown> | undefined
-      result?: { content: string; isError: boolean; duration_ms?: number }
+      result?: {
+        content: string
+        isError: boolean
+        duration_ms?: number
+        resultKind?: string
+      }
     }
   | { kind: 'note'; text: string; tone: 'ok' | 'bad' | 'warn' | 'dim' }
+
+// 一次工具调用的四种结局。前两种是**护栏在工作**，不是故障，却很容易被当成故障：
+//   guardrail —— 路径在沙箱外，工作区边界拦住
+//   approval  —— 轨道把 edit/write/shell 放在审批门后，无人应答时拒绝
+// 实测 92 条错误里 64 条属于这两类，而且模型每一次都自己改了路子。用同一个红色
+// 描述它们，读者只会得出“系统坏了”的结论。
+const OUTCOME: Record<string, { label: string; chip: string; box: string }> = {
+  ok: { label: '返回', chip: 'border-ok/50 text-ok', box: 'border-ok/60 text-ink-dim' },
+  guardrail: {
+    label: '边界拦下',
+    chip: 'border-warn/50 text-warn',
+    box: 'border-warn/60 text-warn/90',
+  },
+  approval: {
+    label: '审批未应答',
+    chip: 'border-warn/50 text-warn',
+    box: 'border-warn/60 text-warn/90',
+  },
+  model: { label: '错误', chip: 'border-bad/50 text-bad', box: 'border-bad text-bad/90' },
+}
+
+const outcomeOf = (kind: string | undefined, isError: boolean) =>
+  OUTCOME[kind ?? (isError ? 'model' : 'ok')] ?? OUTCOME.ok
 
 interface Outcome {
   answer: string
@@ -30,6 +58,8 @@ interface Outcome {
   check: { ran: boolean; ok?: boolean; output?: string; scorer?: string; detail?: string } | null
   sessionKey: string | null
   runId: string | null
+  /** 本次运行的调用按结局分类计数，用来区分“护栏在工作”和“真的出错”。 */
+  resultCounts: { ok?: number; guardrail?: number; approval?: number; model?: number } | null
   /** harness 进程自己的输出尾部：退出码不是 0 时，这是唯一能说明发生了什么的东西。 */
   stdoutTail: string
 }
@@ -154,7 +184,13 @@ export default function Live() {
         const index = Number(ev.step_index ?? 0)
         setFrames((prev) => {
           const at = prev.findIndex((f) => f.kind === 'step' && f.index === index)
-          const next: Frame = { kind: 'step', index, plan: String(ev.plan ?? ''), turn: ev.turn as number }
+          const next: Frame = {
+            kind: 'step',
+            index,
+            plan: String(ev.plan ?? ''),
+            turn: ev.turn as number,
+            recoveryKind: (ev.recovery_kind as string | null) ?? null,
+          }
           if (at >= 0) {
             const copy = [...prev]
             copy[at] = next
@@ -193,6 +229,7 @@ export default function Live() {
                   content: String(ev.content ?? ''),
                   isError: Boolean(ev.isError),
                   duration_ms: ev.duration_ms as number | undefined,
+                  resultKind: (ev.result_kind as string | undefined) ?? undefined,
                 },
               }
               break
@@ -212,6 +249,7 @@ export default function Live() {
           check: prev?.check ?? null,
           sessionKey: prev?.sessionKey ?? null,
           runId: prev?.runId ?? null,
+          resultCounts: prev?.resultCounts ?? null,
           stdoutTail: prev?.stdoutTail ?? '',
         }))
         break
@@ -227,6 +265,7 @@ export default function Live() {
           check: (s.check as Outcome['check']) ?? null,
           sessionKey: (s.session_key as string) ?? null,
           runId: (s.run_id as string) ?? null,
+          resultCounts: (s.result_counts as Outcome['resultCounts']) ?? null,
           stdoutTail: String(s.stdout_tail ?? ''),
         }))
         break
@@ -655,6 +694,18 @@ export default function Live() {
                   <div key={i} className="pt-1">
                     <div className="flex items-center gap-2">
                       <span className="mono text-[11px] text-ink-faint">#{f.index + 1}</span>
+                      {/* 上一个动作被拦下之后，模型调整了做法，新一步标出来。
+                          措辞按被拦下的原因分开：“边界拦下”与“审批未应答”不是故障，
+                          写成“错误恢复”会让读者以为运行出了问题。 */}
+                      {f.recoveryKind && (
+                        <span className="chip border-warn/50 text-warn">
+                          {f.recoveryKind === 'guardrail'
+                            ? '边界拦下后调整'
+                            : f.recoveryKind === 'approval'
+                              ? '审批未应答后调整'
+                              : '错误后恢复'}
+                        </span>
+                      )}
                       <span className="h-px flex-1 bg-line" />
                     </div>
                     {/* 这一步的规划文本。之前只画了序号和分隔线，模型自己说的话
@@ -667,7 +718,12 @@ export default function Live() {
                     )}
                   </div>
                 ) : (
-                  <div key={i} className="rounded border border-line bg-bg-base p-2">
+                  <div
+                    key={i}
+                    className={`rounded border bg-bg-base p-2 ${
+                      f.result && !f.result.isError ? 'border-line' : 'border-line'
+                    }`}
+                  >
                     <div className="flex flex-wrap items-center gap-2 text-xs">
                       <span className="mono rounded bg-accent/15 px-1.5 py-0.5 text-accent">
                         {f.name}
@@ -677,7 +733,11 @@ export default function Live() {
                           {(f.result.duration_ms / 1000).toFixed(1)}s
                         </span>
                       )}
-                      {f.result?.isError && <span className="chip border-bad/50 text-bad">错误</span>}
+                      {f.result?.isError && (
+                        <span className={`chip ${outcomeOf(f.result.resultKind, true).chip}`}>
+                          {outcomeOf(f.result.resultKind, true).label}
+                        </span>
+                      )}
                     </div>
                     {f.args && Object.keys(f.args).length > 0 && (
                       <pre className="mono mt-1 overflow-x-auto text-[11px] text-ink-dim">
@@ -687,7 +747,7 @@ export default function Live() {
                     {f.result && (
                       <pre
                         className={`mt-1.5 whitespace-pre-wrap break-words border-l-2 pl-2 text-[11px] leading-relaxed ${
-                          f.result.isError ? 'border-bad text-bad/90' : 'border-ok/60 text-ink-dim'
+                          outcomeOf(f.result.resultKind, f.result.isError).box
                         }`}
                       >
                         {truncate(f.result.content, 600)}
@@ -726,6 +786,30 @@ export default function Live() {
                   <span className="mono text-[11px] text-ink-faint">{outcome.sessionKey}</span>
                 )}
               </div>
+              {/* 调用结局分布。这一行是给读者降噪用的：一次真实运行里常有被拦下的调用，
+                  逐个看红黄标签很容易得出“系统坏了”；集中写出来就能看出
+                  “被边界拦下 N 次、模型 N 次都自己改了路子”。 */}
+              {outcome.resultCounts && (() => {
+                const c = outcome.resultCounts!
+                const total = (c.ok ?? 0) + (c.guardrail ?? 0) + (c.approval ?? 0) + (c.model ?? 0)
+                if (!total) return null
+                const parts: string[] = [`成功 ${c.ok ?? 0}`]
+                if (c.guardrail) parts.push(`边界拦下 ${c.guardrail}`)
+                if (c.approval) parts.push(`审批未应答 ${c.approval}`)
+                if (c.model) parts.push(`出错 ${c.model}`)
+                const boundary = (c.guardrail ?? 0) + (c.approval ?? 0)
+                return (
+                  <div className="mt-2 text-[11px] leading-relaxed text-ink-faint">
+                    调用 {total} 次：{parts.join(' · ')}
+                    {boundary > 0 && (
+                      <span className="text-ink-dim">
+                        {' '}
+                        —— 被拦下的都是设计中的边界（工作区范围 / 审批门），不是故障。
+                      </span>
+                    )}
+                  </div>
+                )
+              })()}
               {outcome.check?.output && (
                 <pre className="mono mt-2 whitespace-pre-wrap break-words rounded border border-line bg-bg-base p-2 text-[11px] text-ink-dim">
                   {outcome.check.output}

@@ -51,7 +51,9 @@ export interface ToolCall {
   name: string
   args: Record<string, unknown>
   ordinal?: number
-  result?: { content: string; isError: boolean }
+  // kind 区分四种结局：ok / guardrail（工作区边界拦下）/ approval（审批门未应答）/ model（真错）。
+  // 后两者是设计中的边界，不是故障，界面不该与真错用同一种红色。
+  result?: { content: string; isError: boolean; kind?: string | null }
   duration_ms?: number
   policy?: { isReadOnly?: boolean; [k: string]: unknown }
 }
@@ -63,6 +65,8 @@ export interface Step {
   calls: ToolCall[]
   verifier?: { scope?: string; verdict?: string; reasons?: string[] }
   recovery?: boolean
+  /** 上一步是什么被拦下/出锹的，决定这一步的恢复标签怎么写。 */
+  recovery_kind?: string | null
 }
 
 export interface Session {

@@ -6,6 +6,33 @@ function truncate(s: string, n = 280): string {
   return s.length > n ? s.slice(0, n) + ' …' : s
 }
 
+// 一次工具调用的四种结局。guardrail 与 approval 是**边界在工作**：前者是工作区范围拦下
+// 沙箱外的路径，后者是只读轨道把 edit/write/shell 放在无人应答的审批门后。实测 92 条
+// 错误里 64 条属于这两类，模型每次也都自己改了路子——用真错的红色描述它们会让人误判。
+const OUTCOME: Record<string, { label: string; chip: string; box: string }> = {
+  ok: { label: '返回', chip: 'border-ok/50 text-ok', box: 'border-ok/60 text-ink-dim' },
+  guardrail: {
+    label: '边界拦下',
+    chip: 'border-warn/50 text-warn',
+    box: 'border-warn/60 text-warn/90',
+  },
+  approval: {
+    label: '审批未应答',
+    chip: 'border-warn/50 text-warn',
+    box: 'border-warn/60 text-warn/90',
+  },
+  model: { label: '错误', chip: 'border-bad/50 text-bad', box: 'border-bad text-bad/90' },
+}
+
+const outcomeOf = (kind: string | undefined | null, isError: boolean) =>
+  OUTCOME[kind ?? (isError ? 'model' : 'ok')] ?? OUTCOME.ok
+
+const RECOVERY_LABEL: Record<string, string> = {
+  guardrail: '边界拦下后调整',
+  approval: '审批未应答后调整',
+  model: '错误后恢复',
+}
+
 interface Props {
   step: TimedStep
   isLast?: boolean
@@ -16,7 +43,7 @@ export default function StepNode({ step, isLast }: Props) {
   const [expanded, setExpanded] = useState(false)
   const border = step.divergent
     ? 'border-warn'
-    : step.calls.some((c) => c.result?.isError)
+    : step.calls.some((c) => c.result?.isError && (c.result.kind ?? 'model') === 'model')
       ? 'border-bad/60'
       : 'border-line'
 
@@ -42,7 +69,9 @@ export default function StepNode({ step, isLast }: Props) {
         <div className="flex items-center gap-2 text-xs">
           <span className="mono text-ink-dim">#{step.index + 1}</span>
           {step.recovery && (
-            <span className="chip border-warn/50 text-warn">错误恢复</span>
+            <span className="chip border-warn/50 text-warn">
+              {RECOVERY_LABEL[step.recovery_kind ?? 'model'] ?? '错误后恢复'}
+            </span>
           )}
           {step.divergent && (
             <span className="chip border-warn/50 text-warn">
@@ -87,13 +116,11 @@ export default function StepNode({ step, isLast }: Props) {
               {c.result && (
                 <div
                   className={`mt-1.5 rounded border-l-2 pl-2 text-[11px] leading-relaxed ${
-                    c.result.isError
-                      ? 'border-bad text-bad/90'
-                      : 'border-ok/60 text-ink-dim'
+                    outcomeOf(c.result.kind, c.result.isError).box
                   }`}
                 >
                   <div className="mono text-ink-faint">
-                    {c.result.isError ? '错误' : '返回'}
+                    {outcomeOf(c.result.kind, c.result.isError).label}
                   </div>
                   <pre className="whitespace-pre-wrap break-words">
                     {expanded ? c.result.content : truncate(c.result.content, 320)}

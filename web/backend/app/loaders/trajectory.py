@@ -12,6 +12,35 @@ from typing import Any
 # carries the full path it tried). The demo ships those traces publicly, so the machine-specific
 # prefix is collapsed to <workspace> / <home> while the meaningful tail is kept: a viewer still
 # sees which relative path failed, just not whose disk it was.
+#: A tool result can be an error in three different senses, and the page has to tell them apart:
+#: a refusal is not a malfunction. Measured over the runs in this repo: of 92 error results, 64 are
+#: the boundary working as designed (56 approval refusals, 8 workspace refusals). Showing those in
+#: the same red chip as a real failure reads as "the system is broken" when it is the system
+#: working — and the recoveries that follow are the behaviour the project exists to demonstrate.
+REFUSAL_GUARDRAIL = re.compile(
+    r"outside the workspace|E_FS_DENIED|outside every allow rule", re.I)
+REFUSAL_APPROVAL = re.compile(
+    r"rejected this action|requires approval|awaiting approval", re.I)
+
+
+def classify_result(is_error: bool, content: str) -> str:
+    """`ok` | `guardrail` | `approval` | `model`.
+
+    `guardrail` is the workspace boundary refusing a path outside it; `approval` is the track's
+    approval gate refusing a destructive action nobody can answer (the read-only builtin preset
+    gates `edit`, `write` and `shell` this way — `read` is the only tool that runs). Both are the
+    design. `model` is a genuine mistake: a path that does not exist, arguments that do not match
+    the schema, a fetch that timed out.
+    """
+    if not is_error:
+        return "ok"
+    if REFUSAL_GUARDRAIL.search(content):
+        return "guardrail"
+    if REFUSAL_APPROVAL.search(content):
+        return "approval"
+    return "model"
+
+
 _PATH_RULES = [
     re.compile(r"[A-Za-z]:\\\\?Users\\\\?[^\\\\\s'\"]+\\\\?(?:[^\\\\\s'\"]+\\\\?)*?ML_Project\\\\?chtd", re.I),
     re.compile(r"[A-Za-z]:\\\\?Users\\\\?[^\\\\\s'\"]+", re.I),
@@ -73,7 +102,7 @@ def build_session(meta: dict[str, Any], events: list[dict[str, Any]]) -> dict[st
     current: dict[str, Any] | None = None
     calls_by_id: dict[str, dict[str, Any]] = {}
     final_answer: str | None = None
-    pending_error = False  # set when a tool result isError; next step -> recovery
+    pending_error: str | None = None  # kind of the last refusal/failure; next step reacts to it
 
     def close_step() -> None:
         if current is not None:
@@ -148,11 +177,12 @@ def build_session(meta: dict[str, Any], events: list[dict[str, Any]]) -> dict[st
                 "plan": "",
                 "calls": [],
                 "verifier": None,
-                "recovery": pending_error,
+                "recovery": bool(pending_error),
+                "recovery_kind": pending_error,
                 "_durs": [],
                 "_by_id": {},
             }
-            pending_error = False
+            pending_error = None
         elif etype == "assistant/message":
             txt = _text_of(data.get("content"))
             if not txt:
@@ -168,7 +198,7 @@ def build_session(meta: dict[str, Any], events: list[dict[str, Any]]) -> dict[st
                 "name": data.get("name"),
                 "args": data.get("args") or {},
                 "ordinal": data.get("ordinal"),
-                "result": {"content": "", "isError": False},
+                "result": {"content": "", "isError": False, "kind": None},
                 "duration_ms": None,
                 "policy": {
                     "isReadOnly": policy.get("isReadOnly"),
@@ -191,9 +221,13 @@ def build_session(meta: dict[str, Any], events: list[dict[str, Any]]) -> dict[st
             if call is None:
                 call = calls_by_id.get(tid)
             if call is not None:
-                call["result"] = {"content": content, "isError": is_err}
+                call["result"] = {"content": content, "isError": is_err,
+                                  "kind": classify_result(is_err, content)}
+            # A refusal is also something the next step may respond to — that recovery is exactly
+            # what the project demonstrates. But its kind is carried, so the page can say "the
+            # boundary refused the call, the model adjusted" rather than "an error was recovered".
             if is_err:
-                pending_error = True
+                pending_error = classify_result(is_err, content)
         elif etype == "effect/settled":
             if current is not None:
                 dm = data.get("durationMs")
