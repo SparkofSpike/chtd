@@ -43,3 +43,19 @@ def test_rerun_refuses_to_delete_an_existing_ledger(tmp_path: Path) -> None:
         holdout_sweep.run_one("base", 8000, {"id": "fix-example"}, root)
 
     assert ledger.read_bytes() == b"raw evidence"
+
+
+def test_workspace_copy_hides_evaluator_check(tmp_path: Path) -> None:
+    source = tmp_path / "task"
+    workspace = tmp_path / "student"
+    source.mkdir()
+    workspace.mkdir()
+    (source / "lib_example.py").write_text("def f(): return 1\n", encoding="utf-8")
+    (source / "check.py").write_text("EXPECTED = 'hidden rubric'\n", encoding="utf-8")
+    (source / "README.md").write_text("Documented input behavior.\n", encoding="utf-8")
+
+    holdout_sweep.copy_task_sources(source, workspace)
+
+    assert (workspace / "lib_example.py").read_text(encoding="utf-8") == "def f(): return 1\n"
+    assert (workspace / "README.md").is_file()
+    assert not (workspace / "check.py").exists()

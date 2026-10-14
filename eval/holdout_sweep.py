@@ -109,6 +109,18 @@ def score(ledger: Path, key: str, expect: list[str], forbid: list[str],
     return r.returncode == 0, (r.stdout or "").strip()
 
 
+def copy_task_sources(task_dir: Path, workspace: Path) -> None:
+    """Copy task inputs while keeping evaluator sidecars out of the model workspace.
+
+    The private holdout bundles a ``check.py`` beside each broken implementation for fixture
+    self-validation. Copying it would expose scoring logic to the model and invalidate the
+    measurement, so only the task's non-check files are staged for the agent.
+    """
+    for src in task_dir.iterdir():
+        if src.is_file() and src.name != "check.py":
+            shutil.copy2(src, workspace / src.name)
+
+
 def run_one(arm: str, port: int, task: dict, root: Path,
             shared_home: Path | None = None) -> dict:
     """One task, one arm, its own workspace and its own ledger.
@@ -139,9 +151,7 @@ def run_one(arm: str, port: int, task: dict, root: Path,
             raise ValueError(f"shared AGH profile {profile_path} differs; refusing a track change")
     else:
         profile_path.write_text(intended_profile, encoding="utf-8", newline="\n")
-    for src in (TASKS_DIR / task_id).iterdir():
-        if src.is_file():
-            shutil.copy2(src, work / src.name)
+    copy_task_sources(TASKS_DIR / task_id, work)
 
     env = dict(os.environ)
     env["AGH_HOME"] = str(home)
