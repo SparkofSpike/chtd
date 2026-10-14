@@ -57,6 +57,13 @@ SERVER_PORT = int(os.environ.get("CHTD_BACKEND_PORT", "8088"))
 # Frontend static dist (may be absent; backend must still start).
 FRONTEND_DIST = WEB_DIR / "frontend" / "dist"
 
+#: The local student endpoint. The `/v1` matters: the harness appends `/chat/completions` to this
+#: string rather than replacing a path, so a base URL without it asks for
+#: `http://host:8000/chat/completions` and gets a 404. Every recorded student profile writes it
+#: with the suffix (`harness/profile/chtd.yaml`, `eval/run_arm_h3.py`).
+STUDENT_URL = os.environ.get("CHTD_STUDENT_URL", "http://127.0.0.1:8000/v1")
+STUDENT_MODEL_ID = os.environ.get("CHTD_STUDENT_MODEL_ID", "qwen3-4b-instruct-2507")
+
 # Live scratch dir (only place the backend writes at runtime).
 LIVE_DIR = BACKEND_DIR / ".live"
 LIVE_RUNS_DIR = LIVE_DIR / "runs"

@@ -24,6 +24,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 import shutil
 import sqlite3
 import subprocess
@@ -43,6 +44,13 @@ from .loaders import trajectory
 POLL_SECONDS = 0.4
 #: A single poll may lose a race with the writer; this is how long it waits before giving up.
 SQLITE_TIMEOUT = 1.0
+#: After the run's own `turn/end` lands, how long the process gets to exit on its own before the
+#: run is ended for it. Measured: an endpoint that keeps its connection open (HTTP/1.1 without a
+#: close, which is what a vLLM-style server does) left the harness process alive after its turn
+#: was complete — the ledger held the answer and the process did not exit, so the page sat on
+#: "running" until the whole timeout elapsed. The work was done; only the exit was missing. A few
+#: seconds covers the harness's own wrapping-up writes (title, cost rows) that follow `turn/end`.
+FINISH_GRACE_SECONDS = 5.0
 #: Capabilities answer in a few hundred milliseconds when a route is up and time out when it is
 #: not, and the top bar asks every five seconds. The cache keeps that polling from spending the
 #: whole interval inside `node --version` and a connect attempt.
@@ -84,21 +92,27 @@ def probe_endpoint(base_url: str, *, fresh: bool = False) -> dict[str, Any]:
 
 def _probe_endpoint_uncached(base_url: str) -> dict[str, Any]:
     info: dict[str, Any] = {"url": base_url, "ok": False, "model": None, "detail": ""}
-    for path in ("/v1/models", "/health"):
+    base = normalize_base_url(base_url)
+    info["url"] = base
+    # `/models` hangs off the version segment; `/health` sits on the service root. Building the
+    # first path as `base + "/v1/models"` produced `/v1/v1/models` — measured against this
+    # project's own `serve_openai.py`, which matches its paths exactly and therefore answered 404.
+    # A real endpoint would then read as unreachable while being perfectly usable.
+    origin = base[: base.rindex("/")] if "/" in base else base
+    for url, label in ((f"{base}/models", "models"), (f"{origin}/health", "health")):
         try:
-            response = httpx.get(base_url.rstrip("/") + path,
-                                 timeout=config.ENDPOINT_TIMEOUT, trust_env=False)
-        except Exception as error:  # network / DNS / refused -> not ok
-            info["detail"] = f"{path} unreachable: {type(error).__name__}"
+            response = httpx.get(url, timeout=config.ENDPOINT_TIMEOUT, trust_env=False)
+        except Exception as error:  # network / DNS / refused -> try the next shape
+            info["detail"] = f"{label} unreachable: {type(error).__name__}"
             continue
         if response.status_code != 200:
-            info["detail"] = f"{path} HTTP {response.status_code}"
+            info["detail"] = f"{label} HTTP {response.status_code}"
             continue
         info["ok"] = True
-        info["detail"] = path
+        info["detail"] = url
         try:
             payload = response.json()
-            if path == "/v1/models":
+            if label == "models":
                 rows = payload.get("data") or []
                 if rows and isinstance(rows[0], dict):
                     info["model"] = rows[0].get("id")
@@ -169,8 +183,8 @@ def _capabilities_uncached(*, fresh: bool = False) -> dict[str, Any]:
     route = config.LIVE_ROUTE
     teacher_cred = credential_status("teacher")
     student_cred = credential_status("student")
-    student_endpoint = probe_endpoint(os.environ.get("CHTD_STUDENT_URL",
-                                                     "http://127.0.0.1:8000"), fresh=fresh)
+    student_raw = config.STUDENT_URL
+    student_endpoint = probe_endpoint(normalize_base_url(student_raw), fresh=fresh)
 
     routes = [
         {"route": "teacher", "kind": "hosted",
@@ -179,12 +193,12 @@ def _capabilities_uncached(*, fresh: bool = False) -> dict[str, Any]:
          "ready": bool(teacher_cred["ok"]),
          "note": "托管 API；有凭据即可用，网络在运行时才真正打通"},
         {"route": "student", "kind": "local",
-         "base_url": os.environ.get("CHTD_STUDENT_URL", "http://127.0.0.1:8000"),
-         "model": os.environ.get("CHTD_STUDENT_MODEL_ID", "qwen3-4b-instruct-2507"),
+         "base_url": normalize_base_url(student_raw),
+         "model": config.STUDENT_MODEL_ID,
          "credential": student_cred, "reachable": bool(student_endpoint["ok"]),
          "endpoint": student_endpoint,
          "ready": bool(student_endpoint["ok"]),
-         "note": "你自己服务的 OpenAI 兼容端点，填在页面「模型配置」里即可"},
+         "note": "你自己服务的 OpenAI 兼容端点，点右侧「配置」填地址"},
     ]
 
     reasons: list[str] = []
@@ -345,6 +359,26 @@ class LiveSpec:
         return f"AGNES_SECRET_{self.route.upper().replace('-', '_')}_DEFAULT"
 
 
+def normalize_base_url(url: str) -> str:
+    """The endpoint root the harness appends `/chat/completions` to.
+
+    The suffix is not cosmetic. Measured on this machine: a profile whose student route read
+    `http://127.0.0.1:8000` made the harness ask for `http://127.0.0.1:8000/chat/completions`,
+    and the endpoint answered 404 — the harness appends the path rather than replacing one. Every
+    recorded student profile writes it as `.../v1`, so that is the form this produces; an operator
+    who typed `http://localhost:8000` meant the same server and now gets the same URL.
+
+    A URL that already carries a version segment is left alone, so `https://openrouter.ai/api/v1`
+    and `http://host:8000/v2` survive unchanged.
+    """
+    cleaned = url.strip().rstrip("/")
+    if not cleaned:
+        return cleaned
+    if not re.search(r"/v\d+(?:/|$)", cleaned):
+        cleaned += "/v1"
+    return cleaned
+
+
 def build_profile(spec: LiveSpec) -> str:
     """A one-route AGH profile for this run.
 
@@ -352,6 +386,7 @@ def build_profile(spec: LiveSpec) -> str:
     refuses anything else — so the directory is `profiles/local-dev/` even though this profile
     is generated, not checked in.
     """
+    base_url = normalize_base_url(spec.base_url)
     return f"""# Generated by the CHTD console for one live run; not a checked-in profile.
 name: local-dev
 schemaVersion: 1
@@ -361,14 +396,14 @@ provider:
   routes:
     - route: {spec.route}
       api: openai-completions
-      baseUrl: "{spec.base_url}"
+      baseUrl: "{base_url}"
       credentialRef: "secret://{spec.route}/default"
       models:
         - id: "{spec.model}"
           name: "{spec.model}"
           api: openai-completions
           route: {spec.route}
-          baseUrl: "{spec.base_url}"
+          baseUrl: "{base_url}"
           reasoning: false
           input: ["text"]
           cost: {{ input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }}
@@ -507,6 +542,20 @@ def _run_diagnosis(ledger: Path, session_key: str, expect: list[str], forbid: li
             "output": output[:4000], "scorer": "check_diagnosis"}
 
 
+def _tail_of(path: Path, limit: int = 4000) -> str:
+    """The end of a run's output, for the case where it did not finish cleanly.
+
+    Without this the page can only say `exit 4`, and a reader has no way to tell an approval
+    refusal from a transport failure from a model that simply wandered off. The harness writes
+    both to the same place, so the page shows what it wrote.
+    """
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
+    return trajectory.sanitize_text(text[-limit:].strip())
+
+
 def _run_check(work: Path, command: str) -> dict[str, Any]:
     """Run a task's own check script inside the workspace it just ran in.
 
@@ -528,6 +577,12 @@ def _run_check(work: Path, command: str) -> dict[str, Any]:
 async def stream_run(spec: LiveSpec) -> AsyncIterator[tuple[str, dict[str, Any]]]:
     """Drive one run and yield `(event, payload)` as the ledger grows."""
     caps = capabilities()
+    if spec.route not in caps["runnable_routes"]:
+        # The capabilities answer is cached for 15 s, so it can be stale in exactly the case that
+        # matters: an operator started the endpoint and clicked Run without clicking re-check.
+        # Refusing here would be a false negative on a route that is up. Ask once more, for real,
+        # before saying no — this costs a probe only on the path that was about to fail anyway.
+        caps = capabilities(fresh=True)
     if spec.route not in caps["runnable_routes"]:
         yield ("live_error", {"message": f"route {spec.route!r} is not ready",
                               "reasons": caps["reasons"]})
@@ -568,7 +623,7 @@ async def stream_run(spec: LiveSpec) -> AsyncIterator[tuple[str, dict[str, Any]]
     yield ("begin", {
         "mode": "live", "effective_mode": "live", "lanes": [f"{spec.route}/{spec.model}"],
         "task_id": spec.task_id, "run_id": run_id, "route": spec.route, "model": spec.model,
-        "preset": spec.preset, "base_url": spec.base_url,
+        "preset": spec.preset, "base_url": normalize_base_url(spec.base_url),
         "workspace": str(work), "files": copied, "replay_note": "",
     })
 
@@ -577,6 +632,8 @@ async def stream_run(spec: LiveSpec) -> AsyncIterator[tuple[str, dict[str, Any]]
     session_key: str | None = None
     timed_out = False
     exit_code: int | None = None
+    ended_by_ledger = False
+    turn_done_at: float | None = None
     check_result: dict[str, Any] | None = None
     process: subprocess.Popen | None = None
 
@@ -594,8 +651,17 @@ async def stream_run(spec: LiveSpec) -> AsyncIterator[tuple[str, dict[str, Any]]
                              "session_key": session_key, "preset": spec.preset}, events)
                         for frame in cursor.drain(session):
                             yield frame
+                        if turn_done_at is None and any(e["type"] == "turn/end" for e in events):
+                            turn_done_at = time.time()
                 exit_code = process.poll()
                 if exit_code is not None:
+                    break
+                if turn_done_at is not None and time.time() - turn_done_at > FINISH_GRACE_SECONDS:
+                    # The turn is complete and the process is still here only because something is
+                    # holding a connection open. End the run; the answer is already in the ledger.
+                    ended_by_ledger = True
+                    process.kill()
+                    process.wait(timeout=15)
                     break
                 if time.time() - started > spec.timeout:
                     timed_out = True
@@ -616,9 +682,12 @@ async def stream_run(spec: LiveSpec) -> AsyncIterator[tuple[str, dict[str, Any]]
         else:
             session = {"steps": [], "final_answer": "", "user_prompt": spec.prompt}
 
-        if spec.expect and not timed_out and exit_code == 0 and session_key:
+        # A run the ledger finished counts as finished: the process was only still alive because a
+        # connection was. Judging it is the point, so both endings qualify.
+        completed = exit_code == 0 or ended_by_ledger
+        if spec.expect and not timed_out and completed and session_key:
             check_result = _run_diagnosis(ledger, session_key, spec.expect, spec.forbid, work)
-        elif spec.check and not timed_out and exit_code == 0:
+        elif spec.check and not timed_out and completed:
             check_result = _run_check(work, spec.check)
 
         seconds = round(time.time() - started, 1)
@@ -633,10 +702,12 @@ async def stream_run(spec: LiveSpec) -> AsyncIterator[tuple[str, dict[str, Any]]
         yield ("end", {
             "lane": f"{spec.route}/{spec.model}",
             "session": {"session_key": session_key, "exit": exit_code,
+                        "ended_by": "ledger" if ended_by_ledger else "process",
                         "timed_out": timed_out, "seconds": seconds, "passed": passed,
                         "check": check_result, "run_id": run_id,
                         "ledger": str(ledger) if session_key else None,
-                        "stdout": str(log_path)},
+                        "stdout": str(log_path),
+                        "stdout_tail": _tail_of(log_path)},
         })
     finally:
         if process is not None and process.poll() is None:  # pragma: no cover - safety net

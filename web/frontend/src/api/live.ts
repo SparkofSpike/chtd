@@ -76,7 +76,8 @@ export interface LiveRunOptions {
 }
 
 export const liveApi = {
-  capabilities: () => getJsonPublic<LiveCapabilities>('/api/live/capabilities'),
+  capabilities: (fresh = false) =>
+    getJsonPublic<LiveCapabilities>(`/api/live/capabilities${fresh ? '?fresh=true' : ''}`),
   tasks: () => getJsonPublic<LiveTasksResponse>('/api/live/tasks'),
 }
 

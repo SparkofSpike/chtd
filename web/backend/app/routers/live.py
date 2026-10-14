@@ -58,9 +58,15 @@ def _resolve_key(route: str, supplied: str | None) -> str:
 
 
 @router.get("/capabilities")
-def get_capabilities() -> dict:
-    """Whether Live can run here, and what each route would use."""
-    caps = live.capabilities()
+def get_capabilities(fresh: bool = False) -> dict:
+    """Whether Live can run here, and what each route would use.
+
+    `?fresh=true` skips the probe cache. The page needs it immediately after an operator starts
+    an endpoint: a failed probe is remembered for 45 s so that a five-second poll does not spend
+    its whole interval waiting on a closed port, and without this the page would keep showing a
+    red light for most of a minute after the server came up.
+    """
+    caps = live.capabilities(fresh=fresh)
     tasks = live.list_tasks()
     caps["tasks"] = len(tasks)
     caps["tasks_with_fixtures"] = sum(1 for t in tasks if t["fixture_ready"])

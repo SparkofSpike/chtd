@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { liveApi, runLive } from '../api/live'
-import type { LiveCapabilities, LiveEvent, LiveTask } from '../api/live'
+import type { LiveCapabilities, LiveEvent, LiveTask, RouteStatus } from '../api/live'
 
 type Frame =
   | { kind: 'step'; index: number; plan: string; turn?: number }
@@ -30,11 +30,22 @@ interface Outcome {
   check: { ran: boolean; ok?: boolean; output?: string; scorer?: string; detail?: string } | null
   sessionKey: string | null
   runId: string | null
+  /** harness 进程自己的输出尾部：退出码不是 0 时，这是唯一能说明发生了什么的东西。 */
+  stdoutTail: string
 }
 
 function truncate(s: string, n: number): string {
   if (!s) return ''
   return s.length > n ? s.slice(0, n) + ' …' : s
+}
+
+/** 与后端 `normalize_base_url` 同规则：harness 在 baseUrl 后拼 `/chat/completions`，
+ *  所以它必须带版本段。这里只用于展示“实际会用哪个地址”，让填了 `http://host:8000`
+ *  的人看得到它会变成 `http://host:8000/v1`，而不是等运行失败才知道。 */
+function effectiveBaseUrl(url: string): string {
+  const cleaned = url.trim().replace(/\/+$/, '')
+  if (!cleaned) return cleaned
+  return /\/v\d+(\/|$)/.test(cleaned) ? cleaned : `${cleaned}/v1`
 }
 
 function Dot({ ok }: { ok: boolean | null | undefined }) {
@@ -58,11 +69,13 @@ export default function Live() {
   const [showAdvanced, setShowAdvanced] = useState(false)
 
   const [running, setRunning] = useState(false)
+  const [checking, setChecking] = useState(false)
   const [frames, setFrames] = useState<Frame[]>([])
   const [outcome, setOutcome] = useState<Outcome | null>(null)
   const [error, setError] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   const logRef = useRef<HTMLDivElement | null>(null)
+  const configRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     let stop = false
@@ -87,6 +100,20 @@ export default function Live() {
     })()
     return () => {
       stop = true
+    }
+  }, [])
+
+  const refreshCaps = useCallback(async () => {
+    // 只刷新能力，不碰读者已经填进去的值 —— 点「重新检测」的人刚把端点起起来，
+    // 把他填的地址重置成默认值正是最坏的反应。
+    setChecking(true)
+    try {
+      setCaps(await liveApi.capabilities(true))
+      setLoadError(null)
+    } catch (e) {
+      setLoadError((e as Error).message)
+    } finally {
+      setChecking(false)
     }
   }, [])
 
@@ -185,6 +212,7 @@ export default function Live() {
           check: prev?.check ?? null,
           sessionKey: prev?.sessionKey ?? null,
           runId: prev?.runId ?? null,
+          stdoutTail: prev?.stdoutTail ?? '',
         }))
         break
       }
@@ -199,6 +227,7 @@ export default function Live() {
           check: (s.check as Outcome['check']) ?? null,
           sessionKey: (s.session_key as string) ?? null,
           runId: (s.run_id as string) ?? null,
+          stdoutTail: String(s.stdout_tail ?? ''),
         }))
         break
       }
@@ -235,6 +264,18 @@ export default function Live() {
   const stop = useCallback(() => {
     abortRef.current?.abort()
     setRunning(false)
+  }, [])
+
+  // 路由行上的「配置」：展开配置区、选中该路由、把它的默认值填上。
+  // 直接把请求方送到能改的地方，而不是让他去找。
+  const openConfig = useCallback((target?: RouteStatus) => {
+    if (target) {
+      setRoute(target.route)
+      setModel(target.model)
+      setBaseUrl(target.base_url)
+    }
+    setShowAdvanced(true)
+    configRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   }, [])
 
   const liveReady = caps?.mode === 'live'
@@ -320,6 +361,14 @@ export default function Live() {
                   凭据：{r.credential.source === 'env' ? '环境变量' : r.credential.source === 'file' ? '密钥文件' : '无'}
                 </span>
                 {!r.ready && <span className="text-ink-faint">{r.note}</span>}
+                {/* 改模型与端点的地方就在下面，但它是可折叠的 —— 与其让读者去找到
+                    那个开关，不如让每一行自己带路。 */}
+                <button
+                  className="ml-auto rounded border border-line px-2 py-0.5 text-ink-dim hover:border-accent/50 hover:text-accent"
+                  onClick={() => openConfig(r)}
+                >
+                  配置
+                </button>
               </div>
             ))}
           </div>
@@ -409,12 +458,26 @@ export default function Live() {
             </>
           )}
 
-          <div className="mt-4 border-t border-line pt-3">
+          <div className="mt-4 border-t border-line pt-3" ref={configRef}>
+            {/* 这里曾经是一行 72×16 的暗色小字，藏在任务选择器下面 —— 读者被指到「模型配置」
+                却找不到它。改成整宽的正式按钮，并把当前选中的路由写在右侧，
+                既看得见、也知道里面现在是什么。 */}
             <button
-              className="text-xs text-ink-dim hover:text-ink"
+              className={`flex w-full items-center justify-between rounded border px-2.5 py-2 text-xs transition-colors ${
+                showAdvanced
+                  ? 'border-accent/50 bg-accent/5 text-accent'
+                  : 'border-line text-ink-dim hover:border-accent/40 hover:text-ink'
+              }`}
               onClick={() => setShowAdvanced((v) => !v)}
+              aria-expanded={showAdvanced}
             >
-              {showAdvanced ? '收起' : '展开'}模型配置
+              <span className="flex items-center gap-1.5">
+                <span className="text-[10px]">{showAdvanced ? '▾' : '▸'}</span>
+                模型与端点配置
+              </span>
+              <span className="mono text-ink-faint">
+                {route}/{model}
+              </span>
             </button>
             {showAdvanced && (
               <div className="mt-2 space-y-2">
@@ -454,18 +517,29 @@ export default function Live() {
                     value={baseUrl}
                     onChange={(e) => setBaseUrl(e.target.value)}
                   />
+                  {effectiveBaseUrl(baseUrl) !== baseUrl.trim() && (
+                    <div className="mt-1 text-[11px] text-ink-faint">
+                      实际使用：<span className="mono text-ink-dim">{effectiveBaseUrl(baseUrl)}</span>
+                      （harness 会在它后面拼 <span className="mono">/chat/completions</span>，所以要带版本段）
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs text-ink-dim">
                     密钥（留空则用服务端凭据；只在本次运行的子进程环境里）
                   </label>
-                  <input
-                    className="mono mt-1 w-full rounded border border-line bg-bg-base px-2 py-1.5 text-xs text-ink"
-                    type="password"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    placeholder="sk-…"
-                  />
+                  {/* 包在 form 里：浏览器对“不在表单里的密码框”会在控制台发一条提示，
+                      而且回车不应该把整个页面重载。这个 form 不提交任何东西。 */}
+                  <form onSubmit={(e) => e.preventDefault()}>
+                    <input
+                      className="mono mt-1 w-full rounded border border-line bg-bg-base px-2 py-1.5 text-xs text-ink"
+                      type="password"
+                      autoComplete="off"
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      placeholder="sk-…"
+                    />
+                  </form>
                 </div>
                 <div>
                   <label className="block text-xs text-ink-dim">超时（秒）</label>
@@ -478,6 +552,54 @@ export default function Live() {
                     onChange={(e) => setTimeoutSecs(Number(e.target.value) || 240)}
                   />
                 </div>
+
+                {/* 常驻的重检按钮，而不是只在报错时出现：改了地址的人需要验证新地址，
+                    而这正是路由状态还停在旧结果的时候。 */}
+                <div className="flex items-center gap-2 border-t border-line pt-2">
+                  <button
+                    className="whitespace-nowrap rounded border border-line px-2.5 py-1 text-xs text-ink-dim hover:border-accent/50 hover:text-accent disabled:opacity-50"
+                    disabled={checking}
+                    onClick={refreshCaps}
+                  >
+                    {checking ? '检测中…' : '重新检测路由'}
+                  </button>
+                  <span className="text-[11px] leading-snug text-ink-faint">
+                    端点未就绪的结果缓存 45 秒，改了配置点这里。
+                  </span>
+                </div>
+
+                {/* 选中一条还没就绪的路由时，把原因和下一步直接写在这里。
+                    否则读者填完地址点「运行」只会收到一句路由未就绪。 */}
+                {(() => {
+                  const r = caps?.routes.find((x) => x.route === route)
+                  if (!r || r.ready) return null
+                  const port = (r.base_url.match(/:\d+\/?$/) || [])[0]?.replace(/\D/g, '') || '8000'
+                  return (
+                    <div className="rounded border border-warn/40 bg-warn/5 p-2 text-[11px] leading-relaxed text-warn">
+                      {r.kind === 'local' ? (
+                        <>
+                          这条路由指向 <span className="mono">{r.base_url}</span>
+                          ，它现在没有响应。先把这个端点起起来 —— 任何能答{' '}
+                          <span className="mono">/v1/models</span> 的 OpenAI 兼容服务都行：
+                          <div className="mono mt-1 whitespace-pre-wrap rounded bg-bg-base p-1.5 text-ink-dim">
+                            python serve_openai.py --model-path &lt;权重路径&gt; \
+                            {'\n  '}--model-id {model} --port {port}
+                          </div>
+                          {/* --model-id 要与上面填的模型 id 一致：profile 里声明的模型和端点
+                              报回来的名字不一致时，路由能通但跑出来的记录对不上。 */}
+                          <div className="text-ink-dim">
+                            <span className="mono">--model-id</span> 要和上面填的模型 id 一致。
+                          </div>
+                          端点起来后点下面「重新检测路由」就能看到它变绿。
+                        </>
+                      ) : (
+                        <>这条路由需要凭据；把它填在下面的「密钥」里，或设置环境变量{' '}
+                          <span className="mono">{r.credential.env}</span>。
+                        </>
+                      )}
+                    </div>
+                  )
+                })()}
               </div>
             )}
           </div>
@@ -522,9 +644,19 @@ export default function Live() {
                     {f.text}
                   </p>
                 ) : f.kind === 'step' ? (
-                  <div key={i} className="flex items-center gap-2 pt-1">
-                    <span className="mono text-[11px] text-ink-faint">#{f.index + 1}</span>
-                    <span className="h-px flex-1 bg-line" />
+                  <div key={i} className="pt-1">
+                    <div className="flex items-center gap-2">
+                      <span className="mono text-[11px] text-ink-faint">#{f.index + 1}</span>
+                      <span className="h-px flex-1 bg-line" />
+                    </div>
+                    {/* 这一步的规划文本。之前只画了序号和分隔线，模型自己说的话
+                        全部丢掉 —— 而“任务规划”正是这个页面要展示的环节之一。
+                        后端还会在 plan 迟到时重发这一帧（见 _Cursor），这里得接住。 */}
+                    {f.plan && (
+                      <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-ink">
+                        {f.plan.length > 900 ? f.plan.slice(0, 900) + ' …' : f.plan}
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <div key={i} className="rounded border border-line bg-bg-base p-2">
@@ -590,6 +722,18 @@ export default function Live() {
                 <pre className="mono mt-2 whitespace-pre-wrap break-words rounded border border-line bg-bg-base p-2 text-[11px] text-ink-dim">
                   {outcome.check.output}
                 </pre>
+              )}
+              {/* 退出码不是 0，或者根本没跑到判分 —— 这两种情况下读者手上只有一个数字，
+                  而 harness 已经把原因写在自己的输出里了。失败时默认展开。 */}
+              {outcome.stdoutTail && (outcome.exit !== 0 || !outcome.check?.ran) && (
+                <details className="mt-2" open>
+                  <summary className="cursor-pointer text-xs text-warn">
+                    运行未正常结束（exit {outcome.exit ?? '?'}）—— harness 输出尾部
+                  </summary>
+                  <pre className="mono mt-1 max-h-64 overflow-y-auto whitespace-pre-wrap break-words rounded border border-warn/30 bg-bg-base p-2 text-[11px] text-ink-dim">
+                    {outcome.stdoutTail}
+                  </pre>
+                </details>
               )}
               {outcome.answer && (
                 <details className="mt-2" open>
