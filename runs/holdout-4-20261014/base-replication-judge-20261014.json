@@ -1,0 +1,604 @@
+{
+ "cells": [
+  {
+   "set": "h1",
+   "arm": "base-v1run",
+   "task": "fix-string-case",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"It correctly identifies that is_yes in answers.py only matches the exact string 'yes' and fails for 'Yes', 'YES', and ' yes ', which explains the failing assertions in check.py.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v1run",
+   "task": "fix-sort-key",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer pinpoints the defective `key=len(words)` call in sorting.py and proposes the correct fix `key=len`, which would make check.py pass; calling it a syntax error is only a minor misstatement of the failure mode.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v1run",
+   "task": "fix-shallow-copy",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer locates the defect in check.py and calls the test assertion wrong, blaming the test rather than the in-place mutating blanked() function in table.py.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v1run",
+   "task": "fix-ordinal-index",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that nth passes a 1-based position directly into 0-based list indexing and proposes the fix items[position - 1], which makes both assertions in check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v1run",
+   "task": "fix-single-name",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that names.py's split_name indexes parts[1] unconditionally, causing an IndexError on the single-name call 'Ada' in check.py, and its proposed fix (handling a one-part name) would let check.py run.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v1run",
+   "task": "fix-strip-whitespace",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that clean.py's tidy returns the strip method object instead of calling text.strip(), and its proposed fix would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v1run",
+   "task": "fix-closure-late-binding",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the late-binding closure bug in build's list comprehension, explains that all lambdas share the final prefix value so first(\\\"x\\\") returns \\\"[b]x\\\" and the first assertion fails, matching the fixture.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v1run",
+   "task": "fix-generator-exhaust",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"It correctly identifies that the generator `stream` is exhausted by the count expression, so the subsequent `sum(stream)` yields 0 (not 12), and its proposed fixes (materializing a list) would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v1run",
+   "task": "fix-broad-except",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the bare `except:` in reader.py that swallows the TypeError from a bad index type, causing check.py's expected-TypeError assertion to fail, and its suggested fix of not catching all exceptions would make the test pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v1run",
+   "task": "fix-none-cap",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer claims limits.py is correctly implemented and blames check.py's assertion messages, missing the real defect that min(value, None) raises TypeError when no cap is given.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "base-v1run",
+   "task": "fix-enumerate-start",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer correctly spots the enumerate-from-0 behavior but then concludes the function is correct and blames the test, when the defect is that listing.py needs enumerate(items, start=1).\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v1run",
+   "task": "fix-zip-truncates",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer correctly notes that zip silently truncates, but concludes the test in check.py is wrong rather than identifying the defect in pairs.py, which should raise ValueError on a length mismatch.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v1run",
+   "task": "fix-or-default-falsy",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer blames check.py's assertion formatting and concludes ports.py is correct, missing that `settings.get(\\\"port\\\") or 8080` returns 8080 for port 0, which is the actual defect.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "base-v1run",
+   "task": "fix-row-alias",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the aliasing bug from `[[0] * cols] * rows` (all rows share one list) and explains that cells[0][0] = 1 makes cells[1][0] == 1, so the assertion fails, with the correct fix of building independent rows.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v1run",
+   "task": "fix-augmented-assign-mutates",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `tags += [tag]` mutates the input list in place, so `original` becomes `[\\\"a\\\", \\\"b\\\"]`, matching the failing assertion in check.py.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2run",
+   "task": "fix-string-case",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that answers.py's is_yes is too strict (exact match only) and that check.py's assertions fail for 'Yes', 'YES', and ' yes ' because of missing case/whitespace normalization, which describes the actual behavior.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2run",
+   "task": "fix-sort-key",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer pinpoints `key=len(words)` as the defect and prescribes the correct fix `key=len`, which would make check.py pass; calling it a \\\"syntax error\\\" is a minor mis-statement of the failure mode that the rubric says not to demote.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2run",
+   "task": "fix-shallow-copy",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer correctly notes the in-place mutation but concludes the defect is in check.py and that the test is wrong, blaming the test and endorsing editing it rather than identifying that table.py's blanked must copy the table to honor its docstring.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2run",
+   "task": "fix-ordinal-index",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that nth uses 0-based indexing directly on a 1-based position, explains that nth(['a','b','c'], 1) returns 'b' instead of 'a', and proposes the fix items[position - 1], which makes both assertions in check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2run",
+   "task": "fix-single-name",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that split_name indexes parts[1] unconditionally, causing an IndexError on the single-name call 'Ada' in check.py, and its proposed fix (handle the one-part case) would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2run",
+   "task": "fix-strip-whitespace",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that clean.py returns `text.strip` (the method object) instead of calling `text.strip()`, and the proposed fix would make the assertion in check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2run",
+   "task": "fix-closure-late-binding",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the late-binding closure bug in build() where all lambdas share the same `prefix` variable, accurately explaining that both functions return the last prefix \\\"[b]\\\" and that the first assertion fails.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2run",
+   "task": "fix-generator-exhaust",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that the doubled generator in summarise is consumed twice—exhausted by the count before the sum—and its proposed fix (materialize the values into a list) would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2run",
+   "task": "fix-broad-except",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the bare `except:` in reader.py as the defect and explains that it swallows the TypeError from the bad index, causing check.py's try/except TypeError to fall through to the AssertionError, with a fix direction that would let the TypeError surface.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2run",
+   "task": "fix-none-cap",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer blames check.py's assertion messages and declares limit() correct, missing the actual defect that min(value, cap) raises TypeError when cap defaults to None (limit(5)).\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2run",
+   "task": "fix-enumerate-start",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer correctly notes the 0-vs-1 numbering mismatch but concludes listing.py is correct and blames the test in check.py, whereas the actual defect is the missing start=1 in enumerate and the fix belongs in listing.py.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2run",
+   "task": "fix-zip-truncates",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer blames check.py and declares pairs() correct, when the defect is that pairs.py must raise ValueError on a length mismatch instead of silently truncating via zip.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2run",
+   "task": "fix-or-default-falsy",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer blames check.py's assertion message and declares ports.py correct, missing the real defect that `settings.get(\\\"port\\\") or 8080` turns a configured port of 0 into 8080, which is exactly what makes the assertion fail.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2run",
+   "task": "fix-row-alias",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the aliased-row defect from `[[0] * cols] * rows`, explains that `cells[0][0] = 1` also changes `cells[1][0]`, and its proposed fix of creating independent lists per row would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2run",
+   "task": "fix-augmented-assign-mutates",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `tags += [tag]` mutates the caller's list in place, so `original` becomes `[\\\"a\\\", \\\"b\\\"]` and the second assertion in check.py fails.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2brun",
+   "task": "fix-string-case",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that is_yes only matches the exact string 'yes' and would return False for 'Yes', 'YES', and ' yes ', explaining the assertion failures, with an implied fix to normalize case/whitespace.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2brun",
+   "task": "fix-sort-key",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the defective `key=len(words)` in sorting.py and proposes the fix `key=len`, which would make check.py pass; calling it a \\\"syntax error\\\" is a minor mislabel of the TypeError and not a demotion.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2brun",
+   "task": "fix-shallow-copy",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies that blanked() mutates the input table in place, but frames the defect as lying in check.py (calling the test assertion 'wrong') and hedges with a fix that edits the test rather than the module, even though its alternative fix (returning a copy) would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2brun",
+   "task": "fix-ordinal-index",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the off-by-one indexing bug in `nth` (1-based position used directly as a 0-based index) and proposes the fix `items[position - 1]`, which would make both assertions in check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2brun",
+   "task": "fix-single-name",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly points to `parts[1]` in names.py and explains that split_name('Ada') raises IndexError because there is no second part, with a fix that would let check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2brun",
+   "task": "fix-strip-whitespace",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that clean.py's tidy returns the un-called text.strip method instead of text.strip(), explains the assertion failure, and proposes the fix that makes check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2brun",
+   "task": "fix-closure-late-binding",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"It correctly identifies the late-binding closure in handlers.py's build function, explaining that all lambdas share the same `prefix` variable (the last value \\\"[b]\\\"), which matches the actual failure of the first assertion.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2brun",
+   "task": "fix-generator-exhaust",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that the generator `stream` is consumed by the count, leaving the following sum empty (so summarise returns (3, 0)), and proposes fixing it by materialising the values first — which would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2brun",
+   "task": "fix-broad-except",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the bare `except:` in reader.py that swallows the TypeError from an invalid index type, and its proposed fix (let the TypeError surface by not catching it) would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2brun",
+   "task": "fix-none-cap",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer blames check.py for weak assertion messages and declares the module's logic correct, missing that limit(5) calls min(5, None) and raises TypeError in Python 3.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2brun",
+   "task": "fix-enumerate-start",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer correctly notes enumerate starts at 0 producing \\\"0: a\\\", but it locates the defect in check.py and declares the test wrong, whereas the real defect is listing.py's missing start=1; its proposed direction of fix (editing the test) would not make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2brun",
+   "task": "fix-zip-truncates",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer blames check.py and concludes pairs.py is correct, asserting the test wrongly expects a ValueError, when the actual defect is that pairs() must raise ValueError on a length mismatch instead of silently truncating via zip.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2brun",
+   "task": "fix-or-default-falsy",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer blames check.py's assertion style and declares ports.py correct, missing the actual defect that `settings.get(\\\"port\\\") or 8080` returns 8080 for port 0 and fails the test.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2brun",
+   "task": "fix-row-alias",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the aliased-row bug in `[[0] * cols] * rows`, explains that `cells[0][0] = 1` also changes `cells[1][0]` so the assert fails, and the proposed fix (independent rows) would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v2brun",
+   "task": "fix-augmented-assign-mutates",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `tags += [tag]` in tags.py mutates the caller's list in place, which is exactly why check.py's `original == [\\\"a\\\"]` assertion fails.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v3run",
+   "task": "fix-string-case",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that answers.py's is_yes only matches the exact string 'yes', so the mixed-case/whitespace assertions in check.py fail, and the fix (normalize case/whitespace before comparing) would make the checks pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v3run",
+   "task": "fix-sort-key",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the defective line `sorted(words, key=len(words))`, explains that `len(words)` evaluates to an int rather than a per-item key function, and proposes the fix `key=len`, which would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v3run",
+   "task": "fix-shallow-copy",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies that blanked() mutates the input table in place, but it frames the test as the defective part and hedges toward changing check.py rather than fixing table.py to return a copy as its docstring promises.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v3run",
+   "task": "fix-ordinal-index",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that nth uses items[position] despite the 1-based contract, and the proposed fix items[position - 1] would make both assertions in check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v3run",
+   "task": "fix-single-name",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that names.py's split_name unconditionally indexes parts[1], causing an IndexError on the single-name call split_name('Ada') in check.py, and its proposed fix of handling single names would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v3run",
+   "task": "fix-strip-whitespace",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that tidy returns the strip method object instead of calling it, and the proposed fix text.strip() would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v3run",
+   "task": "fix-closure-late-binding",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the late-binding closure defect in build's list comprehension, explaining that all lambdas share the final prefix value so first('x') returns '[b]x' and the first assertion fails, matching the actual behavior.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v3run",
+   "task": "fix-generator-exhaust",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `summarise` consumes the `doubled` generator twice, so the second `sum(stream)` sees an exhausted generator and returns the wrong total, and its proposed fix (materialize the values first) would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v3run",
+   "task": "fix-broad-except",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the bare `except:` in reader.py as the defect that swallows the TypeError from a non-integer index, which explains why check.py's `else: raise AssertionError` fires, and its proposed fix (letting the TypeError surface) would make the test pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v3run",
+   "task": "fix-none-cap",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer blames check.py's assertion messages and declares limits.py correct, missing the actual defect that min(value, None) raises TypeError when no cap is given.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "base-v3run",
+   "task": "fix-enumerate-start",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer blames check.py as incorrect even though listing.py's enumerate(items) starting at 0 contradicts its own docstring, so it misidentifies the defect and would not fix the module.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v3run",
+   "task": "fix-zip-truncates",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer correctly describes the silent truncation but concludes the implementation is correct and the test/check.py is at fault, i.e. it blames the test rather than identifying the defect in pairs.py.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v3run",
+   "task": "fix-or-default-falsy",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer blames check.py and declares ports.py correct, missing the real defect that `settings.get(\\\"port\\\") or 8080` turns a legitimate port 0 into 8080.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "base-v3run",
+   "task": "fix-row-alias",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `[[0] * cols] * rows` creates rows referencing the same inner list, explains that modifying cells[0][0] also changes cells[1][0], and proposes making independent rows, which would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v3run",
+   "task": "fix-augmented-assign-mutates",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that `tags += [tag]` mutates the input list in place, so `original` becomes `[\\\"a\\\", \\\"b\\\"]` and the `original == [\\\"a\\\"]` assertion fails, matching the fixture's actual behavior.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v4run",
+   "task": "fix-string-case",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that is_yes in answers.py only matches the exact string 'yes' and fails on capitalized/whitespace variants, which explains the failing assertions in check.py.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v4run",
+   "task": "fix-sort-key",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the defective `key=len(words)` in sorting.py and proposes `key=len`, which makes check.py pass; its mislabeling of the failure as a \\\"syntax error\\\" is an allowed minor mis-statement.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v4run",
+   "task": "fix-shallow-copy",
+   "llm": "partial",
+   "raw": "{\"grade\": \"partial\", \"why\": \"It correctly identifies the in-place mutation mechanism in table.py's blanked(), but frames the defect as being in check.py and hedges toward editing the test rather than firmly fixing the module to copy (e.g., deepcopy) so check.py passes.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v4run",
+   "task": "fix-ordinal-index",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that nth uses the 1-based position directly as a 0-based list index, explains the resulting wrong value for nth(['a','b','c'], 1), and its proposed fix (items[position - 1]) makes both check.py assertions pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v4run",
+   "task": "fix-single-name",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that split_name unconditionally returns parts[1], causing an IndexError on the single-name call in check.py, and its proposed handling of one-part names would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v4run",
+   "task": "fix-strip-whitespace",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that clean.py's tidy returns the bound method text.strip instead of calling it, and its proposed fix (text.strip()) would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v4run",
+   "task": "fix-closure-late-binding",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the late-binding closure bug in handlers.build, explaining that all lambdas share the final loop variable so first('x') returns '[b]x' and the assertion fails, matching the fixture's actual behavior.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v4run",
+   "task": "fix-generator-exhaust",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies that the generator `stream` is consumed by the count and cannot be reused for `sum`, which matches the actual failure, and its proposed fix (materializing to a list) would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v4run",
+   "task": "fix-broad-except",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"It correctly identifies the bare `except:` in reader.py as the defect that swallows the TypeError the test expects to surface, and its proposed remedy (letting/raising TypeError for invalid index types) would make check.py pass; the incidental claim about IndexError is a minor mis-statement.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v4run",
+   "task": "fix-none-cap",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer blames the test file and asserts limits.py is correct, missing the real defect that limit(5) calls min(5, None) and raises TypeError when cap is None.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "base-v4run",
+   "task": "fix-enumerate-start",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"It correctly spots the off-by-one from enumerate() defaulting to 0, but concludes the function is correct and the test is wrong, blaming check.py rather than the defective listing.py (which needs enumerate(items, 1)).\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v4run",
+   "task": "fix-zip-truncates",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer blames the test in check.py and concludes pairs.py is correctly implemented, when the actual defect is that pairs() uses plain zip() and fails to raise ValueError on length mismatch.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v4run",
+   "task": "fix-or-default-falsy",
+   "llm": "failed",
+   "raw": "{\"grade\": \"failed\", \"why\": \"The answer blames check.py's assertion formatting rather than the actual defect in ports.py (`or 8080` makes port({\\\"port\\\": 0}) return 8080, failing the assertion) and falsely claims the port function is correct.\"}",
+   "passed_gate": false
+  },
+  {
+   "set": "h1",
+   "arm": "base-v4run",
+   "task": "fix-row-alias",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly identifies the `[[0] * cols] * rows` aliasing in grid.py, explains that all rows share one inner list so setting cells[0][0]=1 also makes cells[1][0] equal 1, and proposes creating independent rows, which would make check.py pass.\"}",
+   "passed_gate": true
+  },
+  {
+   "set": "h1",
+   "arm": "base-v4run",
+   "task": "fix-augmented-assign-mutates",
+   "llm": "correct",
+   "raw": "{\"grade\": \"correct\", \"why\": \"The answer correctly locates the defect in tags.py's `tags += [tag]`, explaining that the in-place mutation changes `original` to `[\\\"a\\\", \\\"b\\\"]`, which matches the failing `assert original == [\\\"a\\\"]`.\"}",
+   "passed_gate": true
+  }
+ ]
+}
