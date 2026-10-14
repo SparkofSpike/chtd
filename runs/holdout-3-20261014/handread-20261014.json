@@ -1,0 +1,916 @@
+{
+  "instrument": "author hand-read, 2026-10-14",
+  "rubric": {
+    "correct": "points at the defective code; account of the failure supports the observed one; any repair offered would make the fixture pass (minor mis-statements noted)",
+    "partial": "right area, but the account does not explain the observed failure, or the repair is wrong / hedged toward editing the test",
+    "failed": "concludes there is no defect, blames the test, or names an unrelated mechanism",
+    "no-answer": "infrastructure gap (crash / timeout), not a judgement"
+  },
+  "totals": {
+    "base": {
+      "correct": 17,
+      "partial": 1,
+      "failed": 12,
+      "no_answer": 0,
+      "of": 30
+    },
+    "chtd-s0": {
+      "correct": 19,
+      "partial": 2,
+      "failed": 9,
+      "no_answer": 0,
+      "of": 30
+    },
+    "chtd-s1": {
+      "correct": 18,
+      "partial": 4,
+      "failed": 8,
+      "no_answer": 0,
+      "of": 30
+    },
+    "chtd-s2": {
+      "correct": 17,
+      "partial": 5,
+      "failed": 6,
+      "no_answer": 2,
+      "of": 30
+    },
+    "ctrl-s0": {
+      "correct": 21,
+      "partial": 1,
+      "failed": 8,
+      "no_answer": 0,
+      "of": 30
+    },
+    "ctrl-s1": {
+      "correct": 25,
+      "partial": 1,
+      "failed": 4,
+      "no_answer": 0,
+      "of": 30
+    },
+    "v5": {
+      "correct": 21,
+      "partial": 8,
+      "failed": 1,
+      "no_answer": 0,
+      "of": 30
+    }
+  },
+  "cells": {
+    "base": {
+      "h3-counter-most-common": {
+        "grade": "correct",
+        "note": "names the list-of-tuples return and the repair"
+      },
+      "h3-dict-keys-index": {
+        "grade": "correct",
+        "note": "view not subscriptable; fix next(iter())"
+      },
+      "h3-chained-comparison": {
+        "grade": "correct",
+        "note": "note: calls the valid expression a SyntaxError; repair right"
+      },
+      "h3-is-vs-equals": {
+        "grade": "correct",
+        "note": "identity vs value, fix ==="
+      },
+      "h3-copy-not-deep": {
+        "grade": "failed",
+        "note": "says add_tag is correctly implemented and blames the test's completeness"
+      },
+      "h3-format-missing-key": {
+        "grade": "failed",
+        "note": "blames the assertion's structure; never names the KeyError"
+      },
+      "h3-join-nonstring": {
+        "grade": "failed",
+        "note": "blames the assertion; never names the TypeError"
+      },
+      "h3-slice-negative-step": {
+        "grade": "correct",
+        "note": "note: says the slice returns empty; repair items[-2:] right"
+      },
+      "h3-sorted-descending": {
+        "grade": "correct",
+        "note": "ascending vs required descending; fix negate"
+      },
+      "h3-divmod-order": {
+        "grade": "failed",
+        "note": "says the function is correct; blames the assertion message"
+      },
+      "h3-string-count-overlap": {
+        "grade": "correct",
+        "note": "non-overlapping counting named; sliding repair"
+      },
+      "h3-list-index-raises": {
+        "grade": "failed",
+        "note": "says position_of correctly returns -1; blames the assertion"
+      },
+      "h3-all-vs-any": {
+        "grade": "correct",
+        "note": "all vs any named"
+      },
+      "h3-set-sorted-order": {
+        "grade": "failed",
+        "note": "says the test case is flawed"
+      },
+      "h3-first-entry-sorted": {
+        "grade": "failed",
+        "note": "says the assertion is incorrect"
+      },
+      "h3-enum-not-str": {
+        "grade": "failed",
+        "note": "says it works; blames missing validation"
+      },
+      "h3-property-no-setter": {
+        "grade": "failed",
+        "note": "says the check passes; wrong repair"
+      },
+      "h3-super-init-missing": {
+        "grade": "correct",
+        "note": "missing super().__init__ named"
+      },
+      "h3-dataclass-eq-false": {
+        "grade": "correct",
+        "note": "eq=False disables __eq__"
+      },
+      "h3-percent-order": {
+        "grade": "correct",
+        "note": "// before * named"
+      },
+      "h3-partition-index": {
+        "grade": "correct",
+        "note": "partition()[0] vs [2]"
+      },
+      "h3-split-unbounded": {
+        "grade": "correct",
+        "note": "unbounded split named; maxsplit repair"
+      },
+      "h3-column-range": {
+        "grade": "partial",
+        "note": "claims the given grid works; repair range(len(grid[0])) right"
+      },
+      "h3-max-empty-raise": {
+        "grade": "failed",
+        "note": "calls the defect a grammatical error in the message"
+      },
+      "h3-sum-no-start": {
+        "grade": "correct",
+        "note": "sum cannot join; repair \"\".join"
+      },
+      "h3-last-zero": {
+        "grade": "failed",
+        "note": "says there are no obvious defects"
+      },
+      "h3-cut-bytes-utf8": {
+        "grade": "correct",
+        "note": "note: says it returns 'h\\u00e9'; mechanism byte truncation"
+      },
+      "h3-capitalize-vs-title": {
+        "grade": "correct",
+        "note": "capitalize only first letter; fix title()"
+      },
+      "h3-round-returns-float": {
+        "grade": "correct",
+        "note": "round returns float; isinstance fails; fix int()"
+      },
+      "h3-stem-find-vs-rfind": {
+        "grade": "failed",
+        "note": "invents a no-extension story; never names first-vs-last dot"
+      }
+    },
+    "chtd-s0": {
+      "h3-counter-most-common": {
+        "grade": "failed",
+        "note": "says the defect is in check.py and edits the assertion"
+      },
+      "h3-dict-keys-index": {
+        "grade": "partial",
+        "note": "claims the given assertion passes; repair next(iter()) right"
+      },
+      "h3-chained-comparison": {
+        "grade": "correct",
+        "note": "note: calls it a syntax error; repair right"
+      },
+      "h3-is-vs-equals": {
+        "grade": "correct",
+        "note": "identity vs value"
+      },
+      "h3-copy-not-deep": {
+        "grade": "correct",
+        "note": "shallow copy sharing named; deepcopy repair"
+      },
+      "h3-format-missing-key": {
+        "grade": "correct",
+        "note": "KeyError named; default repair"
+      },
+      "h3-join-nonstring": {
+        "grade": "failed",
+        "note": "says the code is correct and both assertions pass"
+      },
+      "h3-slice-negative-step": {
+        "grade": "correct",
+        "note": "note: says it returns ['b']; repair items[-2:]"
+      },
+      "h3-sorted-descending": {
+        "grade": "correct",
+        "note": "ascending vs descending; negate repair"
+      },
+      "h3-divmod-order": {
+        "grade": "failed",
+        "note": "says there is no defect"
+      },
+      "h3-string-count-overlap": {
+        "grade": "correct",
+        "note": "non-overlapping named; sliding repair"
+      },
+      "h3-list-index-raises": {
+        "grade": "correct",
+        "note": "ValueError named; guard repair"
+      },
+      "h3-all-vs-any": {
+        "grade": "correct",
+        "note": "all vs any"
+      },
+      "h3-set-sorted-order": {
+        "grade": "correct",
+        "note": "sorted(set) vs first-occurrence"
+      },
+      "h3-first-entry-sorted": {
+        "grade": "correct",
+        "note": "sorted vs insertion order; next(iter) repair"
+      },
+      "h3-enum-not-str": {
+        "grade": "failed",
+        "note": "says there is no defect"
+      },
+      "h3-property-no-setter": {
+        "grade": "failed",
+        "note": "says the check passes; wrong repair"
+      },
+      "h3-super-init-missing": {
+        "grade": "correct",
+        "note": "missing super() named"
+      },
+      "h3-dataclass-eq-false": {
+        "grade": "correct",
+        "note": "eq=False named"
+      },
+      "h3-percent-order": {
+        "grade": "correct",
+        "note": "// named; repair"
+      },
+      "h3-partition-index": {
+        "grade": "correct",
+        "note": "partition index named"
+      },
+      "h3-stem-find-vs-rfind": {
+        "grade": "correct",
+        "note": "first vs last dot named; rfind repair"
+      },
+      "h3-split-unbounded": {
+        "grade": "failed",
+        "note": "misreads the fixture as split(' ', 1); invents a multiple-space story"
+      },
+      "h3-column-range": {
+        "grade": "partial",
+        "note": "claims the given grid works; repair right"
+      },
+      "h3-max-empty-raise": {
+        "grade": "failed",
+        "note": "says there is no defect"
+      },
+      "h3-sum-no-start": {
+        "grade": "correct",
+        "note": "sum vs join named"
+      },
+      "h3-last-zero": {
+        "grade": "failed",
+        "note": "talks about negative n; never names the n=0 case"
+      },
+      "h3-cut-bytes-utf8": {
+        "grade": "correct",
+        "note": "UnicodeDecodeError named; character-level repair"
+      },
+      "h3-capitalize-vs-title": {
+        "grade": "failed",
+        "note": "says there is no defect"
+      },
+      "h3-round-returns-float": {
+        "grade": "correct",
+        "note": "round returns float; int() repair"
+      }
+    },
+    "chtd-s1": {
+      "h3-counter-most-common": {
+        "grade": "correct",
+        "note": "list-of-tuples named; [0][0] repair"
+      },
+      "h3-dict-keys-index": {
+        "grade": "correct",
+        "note": "view not subscriptable"
+      },
+      "h3-chained-comparison": {
+        "grade": "partial",
+        "note": "calls it a SyntaxError; repair right"
+      },
+      "h3-is-vs-equals": {
+        "grade": "correct",
+        "note": "identity vs value"
+      },
+      "h3-copy-not-deep": {
+        "grade": "correct",
+        "note": "shallow copy sharing named"
+      },
+      "h3-format-missing-key": {
+        "grade": "failed",
+        "note": "says format returns 'db: '; prescribes a docstring edit"
+      },
+      "h3-join-nonstring": {
+        "grade": "failed",
+        "note": "says there is no defect"
+      },
+      "h3-slice-negative-step": {
+        "grade": "correct",
+        "note": "note: says it returns nothing; repair items[-2:]"
+      },
+      "h3-sorted-descending": {
+        "grade": "partial",
+        "note": "confused trace; offers (-score, name) but calls the test into question"
+      },
+      "h3-divmod-order": {
+        "grade": "failed",
+        "note": "says there is no defect"
+      },
+      "h3-string-count-overlap": {
+        "grade": "correct",
+        "note": "non-overlapping named; sliding repair"
+      },
+      "h3-list-index-raises": {
+        "grade": "correct",
+        "note": "ValueError named"
+      },
+      "h3-all-vs-any": {
+        "grade": "correct",
+        "note": "all vs any"
+      },
+      "h3-set-sorted-order": {
+        "grade": "correct",
+        "note": "sorted(set) vs order"
+      },
+      "h3-first-entry-sorted": {
+        "grade": "correct",
+        "note": "sorted vs insertion"
+      },
+      "h3-enum-not-str": {
+        "grade": "failed",
+        "note": "says there is no defect"
+      },
+      "h3-property-no-setter": {
+        "grade": "correct",
+        "note": "AttributeError named"
+      },
+      "h3-super-init-missing": {
+        "grade": "correct",
+        "note": "missing super()"
+      },
+      "h3-dataclass-eq-false": {
+        "grade": "correct",
+        "note": "eq=False"
+      },
+      "h3-percent-order": {
+        "grade": "correct",
+        "note": "// named"
+      },
+      "h3-partition-index": {
+        "grade": "correct",
+        "note": "partition index"
+      },
+      "h3-stem-find-vs-rfind": {
+        "grade": "partial",
+        "note": "no-extension story; rfind offered"
+      },
+      "h3-split-unbounded": {
+        "grade": "correct",
+        "note": "maxsplit named"
+      },
+      "h3-column-range": {
+        "grade": "correct",
+        "note": "range(len(grid)) vs len(grid[0])"
+      },
+      "h3-max-empty-raise": {
+        "grade": "correct",
+        "note": "ValueError named; default repair"
+      },
+      "h3-sum-no-start": {
+        "grade": "failed",
+        "note": "says sum concatenates and there is no defect"
+      },
+      "h3-last-zero": {
+        "grade": "failed",
+        "note": "says there is no defect"
+      },
+      "h3-cut-bytes-utf8": {
+        "grade": "partial",
+        "note": "says it returns 'h\\u00e9'; mechanism named but outcome wrong"
+      },
+      "h3-capitalize-vs-title": {
+        "grade": "failed",
+        "note": "says there is no defect"
+      },
+      "h3-round-returns-float": {
+        "grade": "failed",
+        "note": "says round(x, 0) returns an int; no defect"
+      }
+    },
+    "chtd-s2": {
+      "h3-counter-most-common": {
+        "grade": "correct",
+        "note": "list-of-tuples named; repair"
+      },
+      "h3-dict-keys-index": {
+        "grade": "correct",
+        "note": "Python-2 subscript named; next(iter)"
+      },
+      "h3-chained-comparison": {
+        "grade": "partial",
+        "note": "repair 'low < value and value > high' reproduces the defect"
+      },
+      "h3-is-vs-equals": {
+        "grade": "correct",
+        "note": "identity vs value"
+      },
+      "h3-copy-not-deep": {
+        "grade": "failed",
+        "note": "says the append only touches the copy; no defect"
+      },
+      "h3-format-missing-key": {
+        "grade": "partial",
+        "note": "KeyError named but the defect is placed in check.py"
+      },
+      "h3-join-nonstring": {
+        "grade": "failed",
+        "note": "blames a trailing comma in the assertion"
+      },
+      "h3-slice-negative-step": {
+        "grade": "correct",
+        "note": "reversed last two named; items[-2:]"
+      },
+      "h3-sorted-descending": {
+        "grade": "partial",
+        "note": "reverse=True would also reverse the names"
+      },
+      "h3-divmod-order": {
+        "grade": "no-answer",
+        "note": "agent-process crash (0xC0000409), empty answer"
+      },
+      "h3-string-count-overlap": {
+        "grade": "no-answer",
+        "note": "180 s timeout; no answer"
+      },
+      "h3-list-index-raises": {
+        "grade": "correct",
+        "note": "ValueError named"
+      },
+      "h3-all-vs-any": {
+        "grade": "correct",
+        "note": "all vs any"
+      },
+      "h3-set-sorted-order": {
+        "grade": "correct",
+        "note": "sorted(set) named"
+      },
+      "h3-first-entry-sorted": {
+        "grade": "correct",
+        "note": "sorted vs insertion"
+      },
+      "h3-enum-not-str": {
+        "grade": "failed",
+        "note": "says there is no defect"
+      },
+      "h3-property-no-setter": {
+        "grade": "partial",
+        "note": "wrong failure mode; _celsius repair works"
+      },
+      "h3-super-init-missing": {
+        "grade": "correct",
+        "note": "missing super()"
+      },
+      "h3-dataclass-eq-false": {
+        "grade": "correct",
+        "note": "eq=False"
+      },
+      "h3-percent-order": {
+        "grade": "correct",
+        "note": "// named"
+      },
+      "h3-partition-index": {
+        "grade": "correct",
+        "note": "partition index"
+      },
+      "h3-stem-find-vs-rfind": {
+        "grade": "correct",
+        "note": "first vs last dot; rfind"
+      },
+      "h3-split-unbounded": {
+        "grade": "failed",
+        "note": "concludes the trailing comma is the defect; misses the unbounded split"
+      },
+      "h3-column-range": {
+        "grade": "partial",
+        "note": "claims the given grid works; repair right"
+      },
+      "h3-max-empty-raise": {
+        "grade": "failed",
+        "note": "says max([]) returns None; no defect"
+      },
+      "h3-sum-no-start": {
+        "grade": "correct",
+        "note": "sum vs join; TypeError named"
+      },
+      "h3-last-zero": {
+        "grade": "correct",
+        "note": "items[-0:] named; guard repair"
+      },
+      "h3-cut-bytes-utf8": {
+        "grade": "correct",
+        "note": "UnicodeDecodeError named"
+      },
+      "h3-capitalize-vs-title": {
+        "grade": "failed",
+        "note": "says there is no defect"
+      },
+      "h3-round-returns-float": {
+        "grade": "correct",
+        "note": "float vs int named; int() repair"
+      }
+    },
+    "ctrl-s0": {
+      "h3-counter-most-common": {
+        "grade": "correct",
+        "note": "list-of-tuples named"
+      },
+      "h3-dict-keys-index": {
+        "grade": "correct",
+        "note": "view not subscriptable"
+      },
+      "h3-chained-comparison": {
+        "grade": "correct",
+        "note": "both-ends comparison named"
+      },
+      "h3-is-vs-equals": {
+        "grade": "correct",
+        "note": "identity vs value"
+      },
+      "h3-copy-not-deep": {
+        "grade": "correct",
+        "note": "shared list named; repair"
+      },
+      "h3-format-missing-key": {
+        "grade": "correct",
+        "note": "KeyError named; default repair"
+      },
+      "h3-join-nonstring": {
+        "grade": "failed",
+        "note": "says the join converts the int; no defect"
+      },
+      "h3-slice-negative-step": {
+        "grade": "correct",
+        "note": "note: says whole list reversed; repair items[-2:]"
+      },
+      "h3-sorted-descending": {
+        "grade": "partial",
+        "note": "confused account; negative-key repair offered"
+      },
+      "h3-divmod-order": {
+        "grade": "failed",
+        "note": "says there is no defect"
+      },
+      "h3-string-count-overlap": {
+        "grade": "correct",
+        "note": "non-overlapping named"
+      },
+      "h3-list-index-raises": {
+        "grade": "correct",
+        "note": "ValueError named"
+      },
+      "h3-all-vs-any": {
+        "grade": "correct",
+        "note": "all vs any"
+      },
+      "h3-set-sorted-order": {
+        "grade": "correct",
+        "note": "sorted(set) named"
+      },
+      "h3-first-entry-sorted": {
+        "grade": "correct",
+        "note": "insertion order named"
+      },
+      "h3-enum-not-str": {
+        "grade": "failed",
+        "note": "says there is no defect"
+      },
+      "h3-property-no-setter": {
+        "grade": "failed",
+        "note": "says it mutates and the check passes"
+      },
+      "h3-super-init-missing": {
+        "grade": "correct",
+        "note": "missing super()"
+      },
+      "h3-dataclass-eq-false": {
+        "grade": "correct",
+        "note": "eq=False"
+      },
+      "h3-percent-order": {
+        "grade": "correct",
+        "note": "// named"
+      },
+      "h3-partition-index": {
+        "grade": "correct",
+        "note": "partition index"
+      },
+      "h3-stem-find-vs-rfind": {
+        "grade": "failed",
+        "note": "incoherent; never names first-vs-last dot"
+      },
+      "h3-split-unbounded": {
+        "grade": "correct",
+        "note": "maxsplit named"
+      },
+      "h3-column-range": {
+        "grade": "failed",
+        "note": "says the given example returns [5, 7, 9]"
+      },
+      "h3-max-empty-raise": {
+        "grade": "correct",
+        "note": "note: says TypeError; ValueError in fact; repair right"
+      },
+      "h3-sum-no-start": {
+        "grade": "correct",
+        "note": "TypeError named; join repair"
+      },
+      "h3-last-zero": {
+        "grade": "failed",
+        "note": "says n=0 returns the empty list"
+      },
+      "h3-cut-bytes-utf8": {
+        "grade": "correct",
+        "note": "UnicodeDecodeError named"
+      },
+      "h3-capitalize-vs-title": {
+        "grade": "correct",
+        "note": "capitalize vs title"
+      },
+      "h3-round-returns-float": {
+        "grade": "failed",
+        "note": "says round(2.4, 0) returns an int"
+      }
+    },
+    "ctrl-s1": {
+      "h3-counter-most-common": {
+        "grade": "correct",
+        "note": "list-of-tuples named"
+      },
+      "h3-dict-keys-index": {
+        "grade": "correct",
+        "note": "not subscriptable named"
+      },
+      "h3-chained-comparison": {
+        "grade": "correct",
+        "note": "both-ends semantics named; repair"
+      },
+      "h3-is-vs-equals": {
+        "grade": "correct",
+        "note": "identity vs value"
+      },
+      "h3-copy-not-deep": {
+        "grade": "correct",
+        "note": "shared list named"
+      },
+      "h3-format-missing-key": {
+        "grade": "correct",
+        "note": "KeyError named; default repair"
+      },
+      "h3-join-nonstring": {
+        "grade": "correct",
+        "note": "TypeError named; str() repair"
+      },
+      "h3-slice-negative-step": {
+        "grade": "correct",
+        "note": "note: says empty; repair items[-2:]"
+      },
+      "h3-sorted-descending": {
+        "grade": "correct",
+        "note": "ascending vs descending; negate"
+      },
+      "h3-divmod-order": {
+        "grade": "failed",
+        "note": "says there is no defect; blames the docstring"
+      },
+      "h3-string-count-overlap": {
+        "grade": "correct",
+        "note": "non-overlapping named; sliding repair"
+      },
+      "h3-list-index-raises": {
+        "grade": "correct",
+        "note": "ValueError named"
+      },
+      "h3-all-vs-any": {
+        "grade": "correct",
+        "note": "all vs any"
+      },
+      "h3-set-sorted-order": {
+        "grade": "correct",
+        "note": "sorted(set) named"
+      },
+      "h3-first-entry-sorted": {
+        "grade": "correct",
+        "note": "sorted vs insertion"
+      },
+      "h3-enum-not-str": {
+        "grade": "failed",
+        "note": "says the code works as intended"
+      },
+      "h3-property-no-setter": {
+        "grade": "correct",
+        "note": "AttributeError named"
+      },
+      "h3-super-init-missing": {
+        "grade": "correct",
+        "note": "missing super()"
+      },
+      "h3-dataclass-eq-false": {
+        "grade": "correct",
+        "note": "eq=False"
+      },
+      "h3-percent-order": {
+        "grade": "correct",
+        "note": "// named"
+      },
+      "h3-partition-index": {
+        "grade": "correct",
+        "note": "partition index"
+      },
+      "h3-stem-find-vs-rfind": {
+        "grade": "partial",
+        "note": "says 'repor'; offers rsplit but claims both assertions fail"
+      },
+      "h3-split-unbounded": {
+        "grade": "correct",
+        "note": "maxsplit named"
+      },
+      "h3-column-range": {
+        "grade": "correct",
+        "note": "range(len(grid)) vs columns named"
+      },
+      "h3-max-empty-raise": {
+        "grade": "correct",
+        "note": "note: says TypeError; repair right"
+      },
+      "h3-sum-no-start": {
+        "grade": "failed",
+        "note": "says sum concatenates and the assertion passes"
+      },
+      "h3-last-zero": {
+        "grade": "correct",
+        "note": "items[-0:] named; guard"
+      },
+      "h3-cut-bytes-utf8": {
+        "grade": "correct",
+        "note": "note: says a replacement char; repair right"
+      },
+      "h3-capitalize-vs-title": {
+        "grade": "correct",
+        "note": "capitalize vs title"
+      },
+      "h3-round-returns-float": {
+        "grade": "failed",
+        "note": "says round returns an int; no defect"
+      }
+    },
+    "v5": {
+      "h3-counter-most-common": {
+        "grade": "correct",
+        "note": "list-of-tuples named; repair"
+      },
+      "h3-dict-keys-index": {
+        "grade": "partial",
+        "note": "claims the given assertion works by luck; repair right"
+      },
+      "h3-chained-comparison": {
+        "grade": "correct",
+        "note": "note: calls it a syntax error; repair right"
+      },
+      "h3-is-vs-equals": {
+        "grade": "correct",
+        "note": "identity vs value"
+      },
+      "h3-copy-not-deep": {
+        "grade": "correct",
+        "note": "shallow sharing named; deepcopy"
+      },
+      "h3-format-missing-key": {
+        "grade": "correct",
+        "note": "KeyError named"
+      },
+      "h3-join-nonstring": {
+        "grade": "failed",
+        "note": "says the assertion passes and invents a quoting requirement"
+      },
+      "h3-slice-negative-step": {
+        "grade": "correct",
+        "note": "note: says empty; repair items[-2:]"
+      },
+      "h3-sorted-descending": {
+        "grade": "partial",
+        "note": "confused account; negative-key repair offered"
+      },
+      "h3-divmod-order": {
+        "grade": "correct",
+        "note": "swap named; return order repair"
+      },
+      "h3-string-count-overlap": {
+        "grade": "correct",
+        "note": "non-overlapping named; sliding"
+      },
+      "h3-list-index-raises": {
+        "grade": "correct",
+        "note": "ValueError named"
+      },
+      "h3-all-vs-any": {
+        "grade": "correct",
+        "note": "all vs any"
+      },
+      "h3-set-sorted-order": {
+        "grade": "correct",
+        "note": "sorted(set) named"
+      },
+      "h3-first-entry-sorted": {
+        "grade": "partial",
+        "note": "circles around min()/insertion order without a working repair"
+      },
+      "h3-enum-not-str": {
+        "grade": "partial",
+        "note": "names .value but claims the current code works"
+      },
+      "h3-property-no-setter": {
+        "grade": "correct",
+        "note": "AttributeError named"
+      },
+      "h3-super-init-missing": {
+        "grade": "correct",
+        "note": "missing super()"
+      },
+      "h3-dataclass-eq-false": {
+        "grade": "correct",
+        "note": "eq=False"
+      },
+      "h3-percent-order": {
+        "grade": "correct",
+        "note": "// named"
+      },
+      "h3-partition-index": {
+        "grade": "correct",
+        "note": "partition index"
+      },
+      "h3-stem-find-vs-rfind": {
+        "grade": "partial",
+        "note": "says 'archive.t'; offers rsplit"
+      },
+      "h3-split-unbounded": {
+        "grade": "correct",
+        "note": "note: mis-states the failure mode; maxsplit repair"
+      },
+      "h3-column-range": {
+        "grade": "partial",
+        "note": "claims the given grid passes; repair right"
+      },
+      "h3-max-empty-raise": {
+        "grade": "correct",
+        "note": "note: says RuntimeError; repair right"
+      },
+      "h3-sum-no-start": {
+        "grade": "correct",
+        "note": "note: says it returns 3; the TypeError is the fact"
+      },
+      "h3-last-zero": {
+        "grade": "correct",
+        "note": "items[-0:] named; guard"
+      },
+      "h3-cut-bytes-utf8": {
+        "grade": "partial",
+        "note": "character-slicing repair would not pass the check"
+      },
+      "h3-capitalize-vs-title": {
+        "grade": "correct",
+        "note": "capitalize vs title"
+      },
+      "h3-round-returns-float": {
+        "grade": "partial",
+        "note": "claims the type check passes; int() repair offered"
+      }
+    }
+  }
+}
