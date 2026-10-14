@@ -50,8 +50,11 @@ PORT = int(os.environ.get("CHTD_EVAL_PORT", "8006"))
 ARM = os.environ.get("CHTD_EVAL_ARM", "base")
 RUN_ROOT = Path(os.environ.get("CHTD_RUN_ROOT", str(CHTD / "data" / "rollouts")))
 SHARED_HOME = Path(os.environ.get("CHTD_SHARED_AGH_HOME", str(RUN_ROOT / "_paired-holdout-home")))
-STUDENT_MODEL = "primary=student/qwen3-4b-instruct-2507"
-PRESET = "minimal-rl"
+# The student model and preset a caller may substitute: the defaults are what every recorded run
+# used, and both are readable/overridable so the sweep is not welded to one model pair (see
+# `docs/running-with-your-own-models.md`).
+STUDENT_MODEL = os.environ.get("CHTD_STUDENT_MODEL", "primary=student/qwen3-4b-instruct-2507")
+PRESET = os.environ.get("CHTD_PRESET", "minimal-rl")
 # A held-out diagnosis is three or four tool calls; a healthy run finishes in ~20 s. A run
 # that has not finished in three minutes is not slow, it is looping, and the sweep should
 # record that and move on.

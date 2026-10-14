@@ -23,7 +23,9 @@ def _write_rows(path: Path, rows: list[dict]) -> str:
 
 def select(baseline_samples: Path, baseline_manifest: Path, chtd_samples: Path,
            chtd_manifest: Path, output: Path, *, epochs: int = 30,
-           output_root: str = "/mnt/proj/chtd-experiments/node4-recollection-20261012/matched-v1") -> dict:
+           output_root: str = "/mnt/proj/chtd-experiments/node4-recollection-20261012/matched-v1",
+           base_model: str = "Qwen/Qwen3-4B-Instruct-2507",
+           teacher_model: str = "agnes-3.0-flash") -> dict:
     base = json.loads(baseline_manifest.read_text(encoding="utf-8"))
     chtd = json.loads(chtd_manifest.read_text(encoding="utf-8"))
     if base["track_sha256"] != chtd["track_sha256"]:
@@ -83,8 +85,8 @@ def select(baseline_samples: Path, baseline_manifest: Path, chtd_samples: Path,
     root = output_root.rstrip("/")
     for arm, digest in (("baseline", baseline_digest), ("chtd", chtd_digest)):
         plan = TrainingPlan(
-            arm=arm, base_model="Qwen/Qwen3-4B-Instruct-2507",
-            base_model_revision=None, teacher_model="agnes-3.0-flash",
+            arm=arm, base_model=base_model,
+            base_model_revision=None, teacher_model=teacher_model,
             track_sha256=base["track_sha256"], dataset_sha256=digest,
             entries=len(common), recipe=recipe,
             output_dir=f"{root}/{arm}-adapter",
@@ -122,10 +124,19 @@ def main() -> int:
     parser.add_argument("--chtd-manifest", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--epochs", type=int, default=30)
-    parser.add_argument("--output-root", default="/mnt/proj/chtd-experiments/node4-recollection-20261012/matched-v1")
+    parser.add_argument("--output-root",
+                        default="/mnt/proj/chtd-experiments/node4-recollection-20261012/matched-v1")
+    parser.add_argument("--base-model", default="Qwen/Qwen3-4B-Instruct-2507",
+                        help="recorded in the generated plans; set it when you train a "
+                             "different student")
+    parser.add_argument("--teacher-model", default="agnes-3.0-flash",
+                        help="recorded in the generated plans; set it when your labels came "
+                             "from a different teacher")
     args = parser.parse_args()
     report = select(args.baseline_samples, args.baseline_manifest, args.chtd_samples,
-                    args.chtd_manifest, args.out, epochs=args.epochs, output_root=args.output_root)
+                    args.chtd_manifest, args.out, epochs=args.epochs,
+                    output_root=args.output_root, base_model=args.base_model,
+                    teacher_model=args.teacher_model)
     print(f"frozen {len(report['task_ids'])} common tasks, one label per arm per task")
     return 0
 

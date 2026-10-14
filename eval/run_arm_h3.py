@@ -57,8 +57,8 @@ PROFILE_STUDENT_URL = os.environ.get(
 HOST = os.environ.get("CHTD_EVAL_HOST", "127.0.0.1")
 ARTIFACT_ID = os.environ.get("CHTD_MODEL_ARTIFACT_ID")
 ARTIFACT_SHA256 = os.environ.get("CHTD_MODEL_ARTIFACT_SHA256")
-STUDENT_MODEL = "primary=student/qwen3-4b-instruct-2507"
-PRESET = "minimal-rl"
+STUDENT_MODEL = os.environ.get("CHTD_STUDENT_MODEL", "primary=student/qwen3-4b-instruct-2507")
+PRESET = os.environ.get("CHTD_PRESET", "minimal-rl")
 TASK_TIMEOUT = 180
 
 

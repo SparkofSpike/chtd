@@ -20,7 +20,10 @@ from harness.trajectory import read_trajectory
 
 
 def build(student_run: Path, fork_run: Path, review_file: Path, ledger_file: Path,
-          prefix_file: Path, output: Path) -> dict:
+          prefix_file: Path, output: Path, preset: str = "minimal-rl") -> dict:
+    """A ``preset`` other than the default is a deliberate track change: every arm of a
+    comparison must then be collected and trained on that same preset, and the recorded track
+    hashes are what make the comparison valid or not."""
     manifest_file = student_run / "collection-manifest.json"
     manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
     review = json.loads(review_file.read_text(encoding="utf-8"))
@@ -29,10 +32,19 @@ def build(student_run: Path, fork_run: Path, review_file: Path, ledger_file: Pat
         raise ValueError("manual review must cover every training task")
     if set(task_ids) & set(manifest["holdout_ids"]):
         raise ValueError("training and holdout tasks overlap")
+    # The models this dataset is built from are whatever the collections recorded, not constants:
+    # a caller running the same protocol with a different teacher or student gets their own names
+    # in the provenance instead of this project's. Falls back to the recorded pair when a run
+    # predates the manifest field.
+    student_model = manifest.get("model") or "qwen3-4b-instruct-2507"
+    fork_manifest_file = fork_run / "collection-manifest.json"
+    fork_manifest = (json.loads(fork_manifest_file.read_text(encoding="utf-8"))
+                     if fork_manifest_file.exists() else {})
+    teacher_model = fork_manifest.get("model") or "agnes-3.0-flash"
     track = expected_track(manifest, observed_tracks(student_run, task_ids))
     prefix = HarnessPrefix.load(prefix_file)
-    if prefix.provenance.get("preset") != "minimal-rl":
-        raise ValueError("training prefix is not the frozen minimal-rl preset")
+    if prefix.provenance.get("preset") != preset:
+        raise ValueError(f"training prefix is not the frozen {preset} preset")
     alignments = {}
     outcomes = OutcomeTable({})
     label_verdicts = {}
@@ -74,9 +86,9 @@ def build(student_run: Path, fork_run: Path, review_file: Path, ledger_file: Pat
                     label_verdicts[divergence.prefix_digest] = judgement["label_eligible"]
             records.extend((
                 RolloutRecord(task_id, "student", student_trajectory.session_key,
-                              str(ledger_file), track, "minimal-rl", "student", "qwen3-4b-instruct-2507"),
+                              str(ledger_file), track, preset, "student", student_model),
                 RolloutRecord(task_id, "teacher", teacher_trajectory.session_key,
-                              str(ledger_file), track, "minimal-rl", "teacher", "agnes-3.0-flash"),
+                              str(ledger_file), track, preset, "teacher", teacher_model),
             ))
     dataset = build_dataset(
         task_ids=task_ids, alignments=alignments,
@@ -121,9 +133,12 @@ def main() -> int:
     parser.add_argument("--ledger", required=True, type=Path)
     parser.add_argument("--prefix", required=True, type=Path)
     parser.add_argument("--out", required=True, type=Path)
+    parser.add_argument("--preset", default="minimal-rl",
+                        help="the frozen track this data was collected on; a different value is "
+                             "a deliberate track change and must hold for every arm")
     args = parser.parse_args()
     report = build(args.student_run, args.fork_run, args.review, args.ledger,
-                   args.prefix, args.out)
+                   args.prefix, args.out, preset=args.preset)
     print(f"admitted {report['admitted_entries']} decisions from {len(report['selected_task_ids'])} "
           f"tasks; refused {report['refused_divergences']} divergences")
     return 0

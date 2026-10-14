@@ -93,6 +93,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--key-file", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--arm", choices=("teacher", "student"), default="teacher")
+    parser.add_argument(
+        "--model", default=None,
+        help=("the model id this arm runs; defaults to the pair every recorded run used "
+              "(qwen3-4b-instruct-2507 for --arm student, agnes-3.0-flash for --arm teacher). "
+              "Whatever is used here is recorded in the manifest."))
     parser.add_argument("--expected-track", default=None)
     parser.add_argument("--throttle-seconds", type=float, default=6.0)
     args = parser.parse_args(argv)
@@ -111,7 +116,7 @@ def main(argv: list[str] | None = None) -> int:
         raise ValueError("the key file does not contain an Agnes sk- credential")
 
     is_student = args.arm == "student"
-    model = "qwen3-4b-instruct-2507" if is_student else "agnes-3.0-flash"
+    model = args.model or ("qwen3-4b-instruct-2507" if is_student else "agnes-3.0-flash")
     manifest = {
         "arm": "student" if is_student else "baseline",
         "definition": ("student decisions on the base student's own trajectory" if is_student

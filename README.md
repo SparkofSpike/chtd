@@ -66,7 +66,7 @@ packages/  The frozen track delivered as a package the harness can install
 distill/   Dataset construction, the signal-quality gate, SFT sample building, and LoRA training
 eval/      Co-harness evaluation, the arm comparison, the instrument benchmarks and the power analysis
 tests/     The pipeline's tests — real ledgers, no model, no GPU, no network
-docs/      Design, method, experiment plan, and the findings write-up
+docs/      Design, method, experiment plan, the findings write-up, and how to run it with your own models
 runs/      Per-run records: what was run, what it measured, and what it cannot support
 reports/   Audits of individual batches (e.g. the collaborator-run holdout-4)
 data/      Generated artifacts (not tracked)
